@@ -6,6 +6,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAppData } from '../context/AppDataContext';
 import { useI18n } from '../i18n/LanguageContext';
 import HomeScreen from '../screens/HomeScreen';
+import JournalScreen from '../screens/JournalScreen';
 import LoginScreen from '../screens/LoginScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import ServiceDetailsScreen from '../screens/ServiceDetailsScreen';
@@ -23,6 +24,7 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 /** Иконки вкладок: [активная, неактивная] */
 const TAB_ICONS: Record<keyof MainTabParamList, [IoniconName, IoniconName]> = {
   Home: ['home', 'home-outline'],
+  Journal: ['ribbon', 'ribbon-outline'],
   Students: ['people', 'people-outline'],
   Profile: ['person-circle', 'person-circle-outline'],
   Settings: ['settings', 'settings-outline'],
@@ -50,6 +52,7 @@ function MainTabs() {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} options={{ title: t('tabHome') }} />
+      <Tab.Screen name="Journal" component={JournalScreen} options={{ title: t('tabJournal') }} />
       <Tab.Screen name="Students" component={StudentsScreen} options={{ title: t('tabStudents') }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: t('tabProfile') }} />
       <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: t('tabSettings') }} />

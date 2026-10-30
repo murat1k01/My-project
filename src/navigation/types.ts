@@ -6,6 +6,7 @@ import type { ServiceId } from '../types/Service';
 /** Вкладки нижней навигации */
 export type MainTabParamList = {
   Home: undefined;
+  Journal: undefined;
   Students: undefined;
   Profile: undefined;
   Settings: undefined;

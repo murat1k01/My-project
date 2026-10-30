@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { ImageBackground, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import Chip from '../components/Chip';
 import EmptyState from '../components/EmptyState';
 import GlassCard from '../components/GlassCard';
@@ -13,15 +14,16 @@ import TopBar from '../components/TopBar';
 import { useAppData } from '../context/AppDataContext';
 import { useCampus } from '../context/CampusContext';
 import { getNextDepartures, getRoute } from '../data/buses';
+import { NEWS } from '../data/info';
 import { findCurrentOrNextLesson } from '../data/schedule';
 import { SERVICES } from '../data/services';
 import { useNow } from '../hooks/useNow';
 import { useI18n } from '../i18n/LanguageContext';
 import type { MainTabScreenProps } from '../navigation/types';
 import { useTheme } from '../theme/ThemeContext';
-import { SCREEN_PADDING, spacing } from '../theme/metrics';
+import { radius, SCREEN_PADDING, spacing } from '../theme/metrics';
 import { fonts, type } from '../theme/typography';
-import { formatToday, getGreetingKey, minutesOfDay } from '../utils/format';
+import { addDays, formatDayMonth, formatToday, getGreetingKey, minutesOfDay } from '../utils/format';
 
 type Filter = 'all' | 'favorites';
 
@@ -157,6 +159,31 @@ export default function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
             </GlassCard>
           </View>
 
+          {/* Новости кампуса: горизонтальная лента, по нажатию открывается раздел «Информация» */}
+          <SectionHeader title={t('homeNews')} right={<Chip label={t('allNews')} onPress={() => openService('info')} />} />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.newsRow}>
+            {NEWS.map((news) => (
+              <Pressable
+                key={news.id}
+                onPress={() => openService('info')}
+                accessibilityRole="button"
+                accessibilityLabel={tr(news.title)}
+                style={({ pressed }) => [styles.newsCard, pressed && styles.pressed]}
+              >
+                <ImageBackground source={news.image} style={styles.newsImage} imageStyle={styles.newsImageRadius}>
+                  <LinearGradient
+                    colors={['rgba(4,6,15,0.05)', 'rgba(4,6,15,0.9)'] as const}
+                    style={[StyleSheet.absoluteFill, styles.newsImageRadius]}
+                  />
+                  <Text style={styles.newsDate}>{formatDayMonth(addDays(now, -news.daysAgo), language)}</Text>
+                  <Text style={styles.newsTitle} numberOfLines={2}>
+                    {tr(news.title)}
+                  </Text>
+                </ImageBackground>
+              </Pressable>
+            ))}
+          </ScrollView>
+
           <SectionHeader
             title={t('servicesTitle')}
             right={
@@ -263,5 +290,34 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: GRID_GAP,
+  },
+  newsRow: {
+    gap: GRID_GAP,
+  },
+  newsCard: {
+    width: 260,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+  },
+  newsImage: {
+    width: '100%',
+    height: 150,
+    padding: spacing.lg,
+    justifyContent: 'flex-end',
+    gap: 4,
+  },
+  newsImageRadius: {
+    borderRadius: radius.lg,
+  },
+  newsDate: {
+    fontFamily: fonts.semibold,
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.8)',
+  },
+  newsTitle: {
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    lineHeight: 19,
+    color: '#FFFFFF',
   },
 });

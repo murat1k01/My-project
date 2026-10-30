@@ -15,7 +15,9 @@ import { useTheme } from '../theme/ThemeContext';
 import { radius, SCREEN_PADDING, spacing } from '../theme/metrics';
 import { fonts, type } from '../theme/typography';
 import type { IoniconName } from '../types/Service';
+import { JOURNAL } from '../data/academic';
 import { formatDateTime } from '../utils/format';
+import { calculateGpa } from '../utils/grades';
 
 /**
  * Профиль текущего пользователя. Заполнять его не нужно:
@@ -36,6 +38,7 @@ export default function ProfileScreen(_props: MainTabScreenProps<'Profile'>) {
   const membershipActive = campus.membership !== null && new Date(campus.membership.endsAt) > new Date();
 
   const stats: { icon: IoniconName; label: string; value: string }[] = [
+    { icon: 'ribbon-outline', label: t('journalGpa'), value: calculateGpa(JOURNAL).toFixed(2) },
     { icon: 'receipt-outline', label: t('activityOrders'), value: String(campus.orders.length) },
     { icon: 'star-outline', label: t('activityFavorites'), value: String(favorites.length) },
     { icon: 'barbell-outline', label: t('activityMembership'), value: membershipActive ? t('activityActive') : t('none') },
@@ -144,10 +147,12 @@ const styles = StyleSheet.create({
   },
   stats: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.md,
   },
   stat: {
-    flex: 1,
+    flexGrow: 1,
+    flexBasis: '40%',
     gap: spacing.xs,
     padding: spacing.md,
   },

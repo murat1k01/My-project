@@ -8,13 +8,15 @@ import ProgressBar from '../../components/ProgressBar';
 import SegmentedTabs from '../../components/SegmentedTabs';
 import ServiceLayout from '../../components/ServiceLayout';
 import { useCampus } from '../../context/CampusContext';
-import { ASSIGNMENTS, calculateGpa, COURSES, letterGrade, MOODLE_URL } from '../../data/lms';
+import { getJournalEntry, JOURNAL } from '../../data/academic';
+import { ASSIGNMENTS, COURSES, MOODLE_URL } from '../../data/lms';
 import { useNow } from '../../hooks/useNow';
 import { useI18n } from '../../i18n/LanguageContext';
 import { useTheme } from '../../theme/ThemeContext';
 import { radius, spacing } from '../../theme/metrics';
 import { fonts, type } from '../../theme/typography';
 import { addDays, formatDayMonth } from '../../utils/format';
+import { calculateGpa, currentScore, letterGrade } from '../../utils/grades';
 import { openExternal } from '../../utils/links';
 import type { ServiceScreenProps } from './types';
 
@@ -109,18 +111,21 @@ export default function LmsService({ service, onBack }: ServiceScreenProps) {
         <>
           <LinearGradient colors={[colors.cardStart, colors.cardEnd] as const} style={styles.gpaCard}>
             <Text style={styles.gpaLabel}>{t('lmsGpa')}</Text>
-            <Text style={styles.gpaValue}>{calculateGpa(COURSES).toFixed(2)}</Text>
+            <Text style={styles.gpaValue}>{calculateGpa(JOURNAL).toFixed(2)}</Text>
             <Text style={styles.gpaScale}>/ 4.00</Text>
           </LinearGradient>
           {COURSES.map((course) => {
-            const grade = letterGrade(course.score);
+            const entry = getJournalEntry(course.id);
+            if (!entry) return null;
+            const score = currentScore(entry);
+            const grade = letterGrade(score);
             return (
               <GlassCard key={course.id} style={styles.gradeRow}>
                 <View style={styles.flex}>
                   <Text style={[type.bodyMedium, { color: colors.text }]}>{tr(course.title)}</Text>
-                  <ProgressBar value={course.score / 100} color={course.color} />
+                  <ProgressBar value={score / 100} color={course.color} />
                 </View>
-                <Text style={[type.subheading, { color: colors.textSecondary }]}>{course.score}</Text>
+                <Text style={[type.subheading, { color: colors.textSecondary }]}>{score}</Text>
                 <View style={[styles.letter, { backgroundColor: isDark ? colors.pill : colors.round }]}>
                   <Text style={[styles.letterText, { color: isDark ? colors.onPill : colors.onRound }]}>{grade.letter}</Text>
                 </View>
