@@ -9,7 +9,8 @@ import PrimaryButton from '../../components/PrimaryButton';
 import SectionHeader from '../../components/SectionHeader';
 import ServiceLayout from '../../components/ServiceLayout';
 import { useCampus } from '../../context/CampusContext';
-import { DORM_RULES, getRepairStatus, isLaundryBusy, LAUNDRY_MACHINES, LAUNDRY_TIMES, MY_ROOM, REPAIR_CATEGORIES } from '../../data/dorm';
+import { DORM_RULES, isLaundryBusy, LAUNDRY_MACHINES, LAUNDRY_TIMES, MY_ROOM, REPAIR_CATEGORIES } from '../../data/dorm';
+import { requestTimeline, STAGE_LABEL } from '../../data/requests';
 import { useNow } from '../../hooks/useNow';
 import { useI18n } from '../../i18n/LanguageContext';
 import { useTheme } from '../../theme/ThemeContext';
@@ -20,7 +21,7 @@ import { createId, dayKey, formatDateTime, formatDayMonth, minutesOfDay, normali
 import type { ServiceScreenProps } from './types';
 
 /** DORM — моя комната, запись в прачечную, заявки на ремонт, гостевые пропуска и правила. */
-export default function DormService({ service, onBack }: ServiceScreenProps) {
+export default function DormService({ service, onBack, openScreen }: ServiceScreenProps) {
   const { colors } = useTheme();
   const { t, tr, language } = useI18n();
   const { campus, updateCampus } = useCampus();
@@ -135,9 +136,13 @@ export default function DormService({ service, onBack }: ServiceScreenProps) {
 
       {campus.repairs.length > 0 ? (
         <>
-          <Text style={[type.subheading, { color: colors.text }]}>{t('dormMyRequests')}</Text>
+          <SectionHeader
+            title={t('dormMyRequests')}
+            right={<Chip label={t('requestsTitle')} icon="document-text-outline" onPress={() => openScreen('Requests')} />}
+          />
           {campus.repairs.slice(0, 5).map((request) => {
-            const status = getRepairStatus(request, now);
+            const timeline = requestTimeline(request.createdAt, now);
+            const status = { label: STAGE_LABEL[timeline.stage], done: timeline.stage === 'resolved' };
             const meta = REPAIR_CATEGORIES.find((item) => item.id === request.category);
             return (
               <GlassCard key={request.id} style={styles.row}>

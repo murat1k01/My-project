@@ -73,7 +73,7 @@ export const FAQ: { id: string; question: LocalizedText; answer: LocalizedText }
   },
   {
     id: 'password',
-    question: lt('Забыл пароль от Moodle. Что делать?', 'Moodle құпиясөзін ұмыттым. Не істеу керек?', 'I forgot my Moodle password. What should I do?'),
+    question: lt('Забыл пароль от Planonus ALT. Что делать?', 'Planonus ALT құпиясөзін ұмыттым. Не істеу керек?', 'I forgot my Planonus ALT password. What should I do?'),
     answer: lt('Напишите или позвоните в IT-поддержку — пароль сбросят после проверки личности.', 'IT қолдауға жазыңыз немесе қоңырау шалыңыз — жеке басыңыз тексерілгеннен кейін құпиясөз қалпына келтіріледі.', 'Contact IT support — they will reset it after verifying your identity.'),
   },
   {

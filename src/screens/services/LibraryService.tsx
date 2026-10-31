@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import Chip from '../../components/Chip';
 import GlassCard from '../../components/GlassCard';
+import LibraryPlan from '../../components/LibraryPlan';
 import PrimaryButton from '../../components/PrimaryButton';
 import SegmentedTabs from '../../components/SegmentedTabs';
 import ServiceLayout from '../../components/ServiceLayout';
 import { useCampus } from '../../context/CampusContext';
-import { isSeatBusy, ONLINE_BOOKS, SEAT_ROWS, SEATS_PER_ROW } from '../../data/library';
+import { Book, BOOK_SECTIONS, BOOKS, BookSection, isSeatBusy, SEAT_ROWS, SEATS_PER_ROW } from '../../data/library';
 import { useNow } from '../../hooks/useNow';
 import { useI18n } from '../../i18n/LanguageContext';
 import { useTheme } from '../../theme/ThemeContext';
@@ -17,16 +19,33 @@ import { dayKey } from '../../utils/format';
 import { openExternal } from '../../utils/links';
 import type { ServiceScreenProps } from './types';
 
-type Tab = 'seats' | 'books';
+type Tab = 'seats' | 'catalog' | 'plan';
 type SeatState = 'free' | 'busy' | 'mine';
 
-/** LIB — схема читального зала со свободными и занятыми местами, бронь места и онлайн-книги. */
+/**
+ * LIB — три вкладки: места в читальном зале (свободные/занятые, бронь),
+ * каталог книг по разделам и план трёх этажей с комнатами.
+ */
 export default function LibraryService({ service, onBack }: ServiceScreenProps) {
   const { colors } = useTheme();
   const { t, tr } = useI18n();
   const { campus, updateCampus } = useCampus();
   const now = useNow();
   const [tab, setTab] = useState<Tab>('seats');
+  const [section, setSection] = useState<BookSection | 'all'>('all');
+  const [floor, setFloor] = useState(1);
+  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  const [highlightTitle, setHighlightTitle] = useState<string | null>(null);
+
+  const books = section === 'all' ? BOOKS : BOOKS.filter((book) => book.section === section);
+
+  /** Переход из каталога к плану: нужный этаж, подсвеченная комната и подсказка с названием книги. */
+  const showOnPlan = (book: Book) => {
+    setFloor(book.location.floor);
+    setSelectedRoomId(book.location.roomId);
+    setHighlightTitle(tr(book.title));
+    setTab('plan');
+  };
 
   // Бронь действует только в тот день, на который сделана
   const mySeat = campus.seat && campus.seat.date === dayKey(now) ? campus.seat.seatId : null;
@@ -62,7 +81,8 @@ export default function LibraryService({ service, onBack }: ServiceScreenProps) 
       <SegmentedTabs<Tab>
         options={[
           { value: 'seats', label: t('libSeats') },
-          { value: 'books', label: t('libBooks') },
+          { value: 'catalog', label: t('libCatalog') },
+          { value: 'plan', label: t('libPlan') },
         ]}
         value={tab}
         onChange={setTab}
@@ -72,7 +92,9 @@ export default function LibraryService({ service, onBack }: ServiceScreenProps) 
         <>
           <GlassCard>
             <View style={styles.hallHeader}>
-              <Text style={[type.heading, { color: colors.text }]}>{t('libHall')}</Text>
+              <Text style={[type.heading, { color: colors.text }]}>
+                {t('libHall')} · {t('libFloor', { n: 2 })}
+              </Text>
               <Text style={[type.caption, { color: colors.success }]}>{t('libFreeCount', { free: freeCount, total: allSeats.length })}</Text>
             </View>
 
@@ -135,12 +157,21 @@ export default function LibraryService({ service, onBack }: ServiceScreenProps) 
             </GlassCard>
           ) : null}
         </>
-      ) : (
+      ) : null}
+
+      {tab === 'catalog' ? (
         <>
+          {/* Разделы каталога */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.sections}>
+            <Chip label={t('libAllSections')} selected={section === 'all'} onPress={() => setSection('all')} />
+            {BOOK_SECTIONS.map((item) => (
+              <Chip key={item.id} label={t(item.label)} selected={section === item.id} onPress={() => setSection(item.id)} />
+            ))}
+          </ScrollView>
           <Text style={[type.caption, { color: colors.textSecondary }]}>{t('libBooksNote')}</Text>
-          {ONLINE_BOOKS.map((book) => (
+          {books.map((book) => (
             <GlassCard key={book.id} style={styles.book}>
-              {/* Обложку рисуем сами: градиент + первые буквы названия */}
+              {/* Обложку рисуем сами: градиент + название */}
               <LinearGradient colors={book.colors} style={styles.cover}>
                 <Text style={styles.coverText} numberOfLines={3}>
                   {tr(book.title)}
@@ -150,21 +181,43 @@ export default function LibraryService({ service, onBack }: ServiceScreenProps) 
               <View style={styles.bookInfo}>
                 <Text style={[type.subheading, { color: colors.text }]}>{tr(book.title)}</Text>
                 <Text style={[type.caption, { color: colors.textSecondary }]}>
-                  {tr(book.author)} · {book.year}
+                  {tr(book.author)} · {book.year} · {t('libPages', { pages: book.pages })}
                 </Text>
-                <Text style={[type.caption, { color: colors.textMuted }]}>{t('libPages', { pages: book.pages })}</Text>
-                <PrimaryButton
-                  title={t('libRead')}
-                  compact
-                  arrow
-                  onPress={() => openExternal(book.url, { title: t('linkErrorTitle'), text: t('linkErrorText', { url: book.url }) })}
-                  style={styles.readButton}
-                />
+                <Text style={[type.caption, { color: colors.textMuted }]}>
+                  {t('libShelf', { floor: book.location.floor, shelf: book.location.shelf })}
+                </Text>
+                <View style={styles.bookActions}>
+                  <PrimaryButton title={t('libShowOnPlan')} variant="glass" icon="map-outline" compact onPress={() => showOnPlan(book)} />
+                  {book.url ? (
+                    <PrimaryButton
+                      title={t('libRead')}
+                      compact
+                      icon="globe-outline"
+                      onPress={() => openExternal(book.url!, { title: t('linkErrorTitle'), text: t('linkErrorText', { url: book.url! }) })}
+                    />
+                  ) : null}
+                </View>
               </View>
             </GlassCard>
           ))}
         </>
-      )}
+      ) : null}
+
+      {tab === 'plan' ? (
+        <LibraryPlan
+          floor={floor}
+          onFloorChange={(next) => {
+            setFloor(next);
+            setHighlightTitle(null);
+          }}
+          selectedRoomId={selectedRoomId}
+          onSelectRoom={(roomId) => {
+            setSelectedRoomId(roomId);
+            setHighlightTitle(null);
+          }}
+          highlightText={highlightTitle ? t('libHighlightBook', { title: highlightTitle }) : undefined}
+        />
+      ) : null}
     </ServiceLayout>
   );
 }
@@ -256,7 +309,11 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 4,
   },
-  readButton: {
+  sections: {
+    gap: spacing.sm,
+  },
+  bookActions: {
     marginTop: spacing.sm,
+    gap: spacing.sm,
   },
 });

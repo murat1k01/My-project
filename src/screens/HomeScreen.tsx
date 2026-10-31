@@ -1,21 +1,15 @@
 import { useState } from 'react';
 import { ImageBackground, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Chip from '../components/Chip';
 import EmptyState from '../components/EmptyState';
-import GlassCard from '../components/GlassCard';
-import IconButton from '../components/IconButton';
-import PrimaryButton from '../components/PrimaryButton';
 import ScreenContainer from '../components/ScreenContainer';
 import SectionHeader from '../components/SectionHeader';
 import ServiceCard from '../components/ServiceCard';
+import SubscriptionBanner from '../components/SubscriptionBanner';
 import TopBar from '../components/TopBar';
 import { useAppData } from '../context/AppDataContext';
-import { useCampus } from '../context/CampusContext';
-import { getNextDepartures, getRoute } from '../data/buses';
 import { NEWS } from '../data/info';
-import { findCurrentOrNextLesson } from '../data/schedule';
 import { SERVICES } from '../data/services';
 import { useNow } from '../hooks/useNow';
 import { useI18n } from '../i18n/LanguageContext';
@@ -23,7 +17,7 @@ import type { MainTabScreenProps } from '../navigation/types';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, SCREEN_PADDING, spacing } from '../theme/metrics';
 import { fonts, type } from '../theme/typography';
-import { addDays, formatDayMonth, formatToday, getGreetingKey, minutesOfDay } from '../utils/format';
+import { addDays, formatDayMonth, formatToday, getGreetingKey } from '../utils/format';
 
 type Filter = 'all' | 'favorites';
 
@@ -34,10 +28,9 @@ const TABLET_BREAKPOINT = 600;
 const MAX_CONTENT_WIDTH = 960;
 
 export default function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
-  const { colors, isDark, toggleTheme } = useTheme();
+  const { colors } = useTheme();
   const { t, tr, language } = useI18n();
   const { session, favorites, isFavorite, toggleFavorite } = useAppData();
-  const { campus } = useCampus();
   const [filter, setFilter] = useState<Filter>('all');
   const now = useNow();
 
@@ -53,30 +46,14 @@ export default function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
   const visibleServices = filter === 'favorites' ? SERVICES.filter((service) => isFavorite(service.id)) : SERVICES;
   const openService = (serviceId: (typeof SERVICES)[number]['id']) => navigation.navigate('ServiceDetails', { serviceId });
 
-  // Виджеты на реальных данных расписания и выбранного маршрута
-  const lessonInfo = findCurrentOrNextLesson(now);
-  const myRoute = getRoute(campus.myRouteId);
-  const nextBus = myRoute ? getNextDepartures(myRoute, now, 1)[0] : undefined;
-
   return (
     <ScreenContainer>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={[styles.content, { maxWidth: MAX_CONTENT_WIDTH }]}>
-          <TopBar
-            label={t('appName')}
-            right={
-              <>
-                <IconButton
-                  icon={isDark ? 'sunny-outline' : 'moon-outline'}
-                  accessibilityLabel={isDark ? t('themeLight') : t('themeDark')}
-                  onPress={toggleTheme}
-                />
-                <IconButton icon="person-outline" accessibilityLabel={t('openProfile')} onPress={() => navigation.navigate('Profile')} />
-              </>
-            }
-          />
+          {/* Профиль и настройки — только в нижней навигации, поэтому в шапке лишь название */}
+          <TopBar label={t('appName')} />
 
-          {/* Заголовок как «Search & Book Flights» в референсе */}
+          {/* Крупный заголовок, как в примерах дизайна */}
           <View style={styles.titleBlock}>
             <Text style={[type.caption, { color: colors.textSecondary }]}>
               {t(getGreetingKey(now))}, {session?.login} · {formatToday(now, language)}
@@ -87,77 +64,8 @@ export default function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
             <Text style={[type.caption, { color: colors.textSecondary }]}>{t('homeSubtitle')}</Text>
           </View>
 
-          {/* Быстрый доступ: круглые иконки сервисов */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickRow}>
-            {SERVICES.map((service) => (
-              <Pressable
-                key={service.id}
-                onPress={() => openService(service.id)}
-                accessibilityRole="button"
-                accessibilityLabel={tr(service.title)}
-                style={({ pressed }) => [styles.quickItem, pressed && styles.pressed]}
-              >
-                <View style={[styles.quickIcon, { backgroundColor: colors.glass, borderColor: colors.border }]}>
-                  <Ionicons name={service.icon} size={20} color={colors.text} />
-                </View>
-                <Text style={[styles.quickLabel, { color: colors.textSecondary }]}>{service.code}</Text>
-              </Pressable>
-            ))}
-          </ScrollView>
-
-          {/* Виджеты: следующая пара и ближайший автобус */}
-          <View style={styles.widgets}>
-            <GlassCard style={styles.widget}>
-              <View style={styles.widgetHeader}>
-                <Text style={[type.label, { color: colors.textMuted }]}>{t('nextLesson').toUpperCase()}</Text>
-                <View style={[styles.widgetIcon, { backgroundColor: colors.primary }]}>
-                  <Ionicons name="calendar" size={16} color={colors.onPrimary} />
-                </View>
-              </View>
-              {lessonInfo ? (
-                <View>
-                  <Text style={[type.title, { color: colors.text }]}>
-                    {lessonInfo.lesson.start}
-                    {lessonInfo.status === 'now' ? <Text style={[type.caption, { color: colors.success }]}>  ● {t('lessonNow')}</Text> : null}
-                  </Text>
-                  <Text style={[type.bodyMedium, { color: colors.text }]} numberOfLines={1}>
-                    {tr(lessonInfo.lesson.subject)}
-                  </Text>
-                  <Text style={[type.caption, { color: colors.textSecondary }]}>
-                    {t('room', { room: lessonInfo.lesson.room })} · {lessonInfo.lesson.teacher}
-                  </Text>
-                </View>
-              ) : (
-                <Text style={[type.body, { color: colors.textSecondary }]}>{t('noMoreLessons')}</Text>
-              )}
-              <PrimaryButton title={t('openSchedule')} compact arrow onPress={() => openService('cal')} />
-            </GlassCard>
-
-            <GlassCard style={styles.widget}>
-              <View style={styles.widgetHeader}>
-                <Text style={[type.label, { color: colors.textMuted }]}>{t('nextBus').toUpperCase()}</Text>
-                <View style={[styles.widgetIcon, { backgroundColor: myRoute?.color ?? colors.primary }]}>
-                  <Ionicons name="bus" size={16} color="#FFFFFF" />
-                </View>
-              </View>
-              {myRoute ? (
-                <View>
-                  <Text style={[type.title, { color: colors.text }]}>
-                    №{myRoute.number}{' '}
-                    <Text style={[type.caption, { color: colors.textSecondary }]}>
-                      {nextBus !== undefined ? t('busIn', { min: nextBus - minutesOfDay(now) }) : '—'}
-                    </Text>
-                  </Text>
-                  <Text style={[type.bodyMedium, { color: colors.text }]} numberOfLines={1}>
-                    {tr(myRoute.name)}
-                  </Text>
-                </View>
-              ) : (
-                <Text style={[type.body, { color: colors.textSecondary }]}>{t('noRouteChosen')}</Text>
-              )}
-              <PrimaryButton title={myRoute ? t('openService') : t('chooseRoute')} compact arrow onPress={() => openService('bus')} />
-            </GlassCard>
-          </View>
+          {/* Точка входа в подписку */}
+          <SubscriptionBanner onPress={() => navigation.navigate('Subscription')} />
 
           {/* Новости кампуса: горизонтальная лента, по нажатию открывается раздел «Информация» */}
           <SectionHeader title={t('homeNews')} right={<Chip label={t('allNews')} onPress={() => openService('info')} />} />

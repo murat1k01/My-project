@@ -12,7 +12,7 @@ type Props = {
   onPress: () => void;
   variant?: Variant;
   icon?: IoniconName;
-  /** Круглая кнопка со стрелкой ↗ справа — фирменный элемент дизайна */
+  /** Круглый значок со стрелкой ↗ внутри кнопки (как «Lancez votre projet» в примере) */
   arrow?: boolean;
   loading?: boolean;
   disabled?: boolean;
@@ -20,7 +20,10 @@ type Props = {
   style?: StyleProp<ViewStyle>;
 };
 
-/** Кнопка-«пилюля»: белая с тёмным текстом (основная), синяя, стеклянная или для опасных действий. */
+/**
+ * Кнопка-«пилюля». Основной вариант контрастный: белая на тёмной теме, чёрная на светлой.
+ * Стрелка — часть самой кнопки (контрастный кружок внутри), отдельных плавающих кружков нет.
+ */
 export default function PrimaryButton({
   title,
   onPress,
@@ -35,17 +38,18 @@ export default function PrimaryButton({
   const { colors, isDark } = useTheme();
   const isDisabled = disabled || loading;
 
+  const contrast = isDark
+    ? { background: colors.pill, text: colors.onPill, border: colors.pill }
+    : { background: colors.round, text: colors.onRound, border: colors.round };
   const palette: Record<Variant, { background: string; text: string; border: string }> = {
-    // В светлой теме белая пилюля на светлом фоне не видна — используем тёмную
-    light: isDark
-      ? { background: colors.pill, text: colors.onPill, border: colors.pill }
-      : { background: colors.round, text: colors.onRound, border: colors.round },
-    primary: { background: colors.primary, text: colors.onPrimary, border: colors.primary },
+    light: contrast,
+    primary: contrast,
     glass: { background: colors.glass, text: colors.text, border: colors.border },
     danger: { background: colors.dangerSoft, text: colors.danger, border: colors.dangerSoft },
   };
   const current = palette[variant];
   const height = compact ? TOUCH_SIZE : 54;
+  const circle = height - 10;
 
   return (
     <Pressable
@@ -54,59 +58,62 @@ export default function PrimaryButton({
       accessibilityRole="button"
       accessibilityLabel={title}
       accessibilityState={{ disabled: isDisabled, busy: loading }}
-      style={({ pressed }) => [styles.row, pressed && styles.pressed, isDisabled && styles.disabled, style]}
+      style={({ pressed }) => [
+        styles.pill,
+        { height, backgroundColor: current.background, borderColor: current.border },
+        arrow && styles.withArrow,
+        pressed && styles.pressed,
+        isDisabled && styles.disabled,
+        style,
+      ]}
     >
-      <View
-        style={[
-          styles.pill,
-          { height, backgroundColor: current.background, borderColor: current.border },
-          compact && styles.compactPill,
-        ]}
-      >
-        {loading ? (
-          <ActivityIndicator color={current.text} />
-        ) : (
-          <>
+      {loading ? (
+        <ActivityIndicator color={current.text} />
+      ) : (
+        <>
+          {arrow ? (
+            <View style={[styles.arrow, { width: circle, height: circle, borderRadius: circle / 2, backgroundColor: current.text }]}>
+              <Feather name="arrow-up-right" size={compact ? 16 : 20} color={variant === 'glass' ? colors.background : current.background} />
+            </View>
+          ) : null}
+          <View style={[styles.content, arrow && styles.contentWithArrow]}>
             {icon ? <Ionicons name={icon} size={compact ? 16 : 18} color={current.text} /> : null}
             <Text style={[styles.title, compact && styles.compactTitle, { color: current.text }]} numberOfLines={1}>
               {title}
             </Text>
-          </>
-        )}
-      </View>
-      {arrow ? (
-        <View
-          style={[
-            styles.arrow,
-            { width: height, height, borderRadius: height / 2 },
-            { backgroundColor: variant === 'primary' ? colors.round : colors.primary },
-          ]}
-        >
-          <Feather name="arrow-up-right" size={compact ? 18 : 22} color="#FFFFFF" />
-        </View>
-      ) : null}
+          </View>
+        </>
+      )}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
   pill: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm,
     borderRadius: radius.pill,
     borderWidth: 1,
     paddingHorizontal: spacing.xl,
   },
-  compactPill: {
-    paddingHorizontal: spacing.lg,
+  withArrow: {
+    paddingLeft: 5,
+  },
+  arrow: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  content: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+  },
+  contentWithArrow: {
+    flex: 1,
+    // Компенсируем кружок слева, чтобы текст оставался по центру кнопки
+    marginRight: 30,
   },
   title: {
     fontFamily: fonts.semibold,
@@ -114,10 +121,6 @@ const styles = StyleSheet.create({
   },
   compactTitle: {
     fontSize: 14,
-  },
-  arrow: {
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   pressed: {
     opacity: 0.85,

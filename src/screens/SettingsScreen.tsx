@@ -5,6 +5,7 @@ import Constants from 'expo-constants';
 import Chip from '../components/Chip';
 import PrimaryButton from '../components/PrimaryButton';
 import ScreenContainer from '../components/ScreenContainer';
+import SubscriptionBanner from '../components/SubscriptionBanner';
 import TopBar from '../components/TopBar';
 import { useAppData } from '../context/AppDataContext';
 import { useSignOut } from '../hooks/useSignOut';
@@ -16,13 +17,13 @@ import { radius, SCREEN_PADDING, spacing } from '../theme/metrics';
 import { type } from '../theme/typography';
 import type { IoniconName } from '../types/Service';
 
-export default function SettingsScreen(_props: MainTabScreenProps<'Settings'>) {
+export default function SettingsScreen({ navigation }: MainTabScreenProps<'Settings'>) {
   const { colors, isDark, setMode } = useTheme();
   const { t, language, setLanguage } = useI18n();
   const { session, students, favorites } = useAppData();
   const signOut = useSignOut();
 
-  const appName = Constants.expoConfig?.name ?? 'Campus Hub';
+  const appName = Constants.expoConfig?.name ?? 'ALTushki';
   const appVersion = Constants.expoConfig?.version ?? t('notSpecified');
   const platformName = Platform.OS === 'ios' ? 'iOS' : Platform.OS === 'android' ? 'Android' : Platform.OS;
 
@@ -59,6 +60,8 @@ export default function SettingsScreen(_props: MainTabScreenProps<'Settings'>) {
             <Row icon="person-outline" label={t('loginLabel')} value={session?.login ?? '—'} />
             <Row icon="shield-checkmark-outline" label={t('authType')} value={t('authTypeValue')} />
           </Section>
+
+          <SubscriptionBanner onPress={() => navigation.navigate('Subscription')} />
 
           <Section title={t('dataOnDevice')}>
             <Row icon="people-outline" label={t('studentsInList')} value={String(students.length)} />

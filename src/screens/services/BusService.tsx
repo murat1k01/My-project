@@ -1,41 +1,73 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import BusMap from '../../components/BusMap';
+import Chip from '../../components/Chip';
 import GlassCard from '../../components/GlassCard';
 import PrimaryButton from '../../components/PrimaryButton';
 import SectionHeader from '../../components/SectionHeader';
 import ServiceLayout from '../../components/ServiceLayout';
 import { useCampus } from '../../context/CampusContext';
-import { BUS_ROUTES, getNextDepartures, getRoute } from '../../data/buses';
+import { BUS_ROUTES, getBusPositions, getNextDepartures, getRoute, TOTAL_BUSES } from '../../data/buses';
 import { useNow } from '../../hooks/useNow';
 import { useI18n } from '../../i18n/LanguageContext';
 import { withAlpha } from '../../theme/colors';
 import { useTheme } from '../../theme/ThemeContext';
 import { radius, spacing } from '../../theme/metrics';
 import { fonts, type } from '../../theme/typography';
-import { formatTenge, fromMinutes, minutesOfDay } from '../../utils/format';
+import { formatMoney, fromMinutes, minutesOfDay } from '../../utils/format';
 import type { ServiceScreenProps } from './types';
 
-/** BUS — выбор маршрута, ближайшие отправления и остановки. Выбранный маршрут виден на главной. */
+/** BUS — общее число автобусов, карта Алматы с маршрутами и автобусами, пробки, выбор маршрута, отправления и остановки. */
 export default function BusService({ service, onBack }: ServiceScreenProps) {
   const { colors } = useTheme();
   const { t, tr } = useI18n();
   const { campus, updateCampus } = useCampus();
-  const now = useNow();
+  // Обновляем каждые 15 секунд, чтобы автобусы на карте двигались
+  const now = useNow(15_000);
+  const [showTraffic, setShowTraffic] = useState(true);
   const [selectedId, setSelectedId] = useState(campus.myRouteId ?? BUS_ROUTES[0].id);
 
   const route = getRoute(selectedId) ?? BUS_ROUTES[0];
   const departures = getNextDepartures(route, now, 5);
   const isMine = campus.myRouteId === route.id;
   const nowMinutes = minutesOfDay(now);
+  const positions = BUS_ROUTES.flatMap((item) => getBusPositions(item, now));
+
+  const summary = [
+    { label: t('busTotal'), value: String(TOTAL_BUSES) },
+    { label: t('busOnLine'), value: String(positions.length) },
+    { label: t('busRoutesCount'), value: String(BUS_ROUTES.length) },
+  ];
 
   const infoTiles = [
     { label: t('busInterval'), value: `${route.intervalMin} ${t('minutesShort')}` },
     { label: t('busTravel'), value: `${route.travelMin} ${t('minutesShort')}` },
-    { label: t('busFare'), value: route.fare === 0 ? t('busFree') : formatTenge(route.fare) },
+    { label: t('busFleet'), value: String(route.buses) },
+    { label: t('busFare'), value: route.fare === 0 ? t('busFree') : formatMoney(route.fare, t('currency')) },
   ];
 
   return (
     <ServiceLayout service={service} onBack={onBack}>
+      {/* Общее количество автобусов */}
+      <View style={styles.tiles}>
+        {summary.map((tile) => (
+          <View key={tile.label} style={[styles.tile, { backgroundColor: colors.glass, borderColor: colors.border }]}>
+            <Text style={[type.title, { color: colors.text }]}>{tile.value}</Text>
+            <Text style={[type.caption, { color: colors.textMuted }]} numberOfLines={2}>
+              {tile.label}
+            </Text>
+          </View>
+        ))}
+      </View>
+
+      {/* Карта Алматы: маршруты, автобусы, пробки */}
+      <SectionHeader
+        title={t('busMap')}
+        right={<Chip label={t('busTraffic')} icon="car-outline" selected={showTraffic} onPress={() => setShowTraffic((prev) => !prev)} />}
+      />
+      <BusMap selectedRouteId={route.id} positions={positions} showTraffic={showTraffic} onSelectRoute={setSelectedId} />
+      <Text style={[type.caption, { color: colors.textMuted }]}>{t('busMapNote')}</Text>
+
       <SectionHeader title={t('busChoose')} />
       <View style={styles.routes}>
         {BUS_ROUTES.map((item) => {
@@ -120,12 +152,12 @@ export default function BusService({ service, onBack }: ServiceScreenProps) {
           const last = index === route.stops.length - 1;
           const offset = Math.round((route.travelMin * index) / (route.stops.length - 1));
           return (
-            <View key={stop.en} style={styles.stopRow}>
+            <View key={stop.name.en} style={styles.stopRow}>
               <View style={styles.timeline}>
                 <View style={[styles.dot, { borderColor: route.color, backgroundColor: last || index === 0 ? route.color : colors.background }]} />
                 {!last ? <View style={[styles.line, { backgroundColor: withAlpha(route.color, 0.5) }]} /> : null}
               </View>
-              <Text style={[type.body, styles.flex, { color: colors.text }]}>{tr(stop)}</Text>
+              <Text style={[type.body, styles.flex, { color: colors.text }]}>{tr(stop.name)}</Text>
               <Text style={[type.caption, { color: colors.textMuted }]}>+{offset} {t('minutesShort')}</Text>
             </View>
           );

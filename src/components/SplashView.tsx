@@ -43,7 +43,7 @@ export default function SplashView({ message, duration = 1600 }: Props) {
         <View style={styles.logo}>
           <Ionicons name="school" size={38} color="#FFFFFF" />
         </View>
-        <Text style={styles.title}>Campus Hub</Text>
+        <Text style={styles.title}>ALTushki</Text>
         <View style={styles.track}>
           <Animated.View
             style={[styles.bar, { width: progress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }]}

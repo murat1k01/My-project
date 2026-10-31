@@ -9,10 +9,12 @@ import HomeScreen from '../screens/HomeScreen';
 import JournalScreen from '../screens/JournalScreen';
 import LoginScreen from '../screens/LoginScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import RequestsScreen from '../screens/RequestsScreen';
 import ServiceDetailsScreen from '../screens/ServiceDetailsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import StudentProfileScreen from '../screens/StudentProfileScreen';
 import StudentsScreen from '../screens/StudentsScreen';
+import SubscriptionScreen from '../screens/SubscriptionScreen';
 import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/typography';
 import type { IoniconName } from '../types/Service';
@@ -89,6 +91,8 @@ export default function AppNavigator() {
             <Stack.Screen name="Main" component={MainTabs} />
             <Stack.Screen name="ServiceDetails" component={ServiceDetailsScreen} />
             <Stack.Screen name="StudentProfile" component={StudentProfileScreen} />
+            <Stack.Screen name="Requests" component={RequestsScreen} />
+            <Stack.Screen name="Subscription" component={SubscriptionScreen} />
           </>
         ) : (
           // При выходе экран входа появляется с анимацией «назад»

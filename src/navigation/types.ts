@@ -21,6 +21,8 @@ export type RootStackParamList = {
   Main: NavigatorScreenParams<MainTabParamList> | undefined;
   ServiceDetails: { serviceId: ServiceId };
   StudentProfile: { studentId: string };
+  Requests: undefined;
+  Subscription: undefined;
 };
 
 export type RootStackScreenProps<T extends keyof RootStackParamList> = NativeStackScreenProps<RootStackParamList, T>;

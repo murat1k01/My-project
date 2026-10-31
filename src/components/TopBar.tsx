@@ -1,25 +1,23 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useI18n } from '../i18n/LanguageContext';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing } from '../theme/metrics';
 import { fonts } from '../theme/typography';
-import AppMenu from './AppMenu';
 import IconButton from './IconButton';
 
 type Props = {
-  /** Небольшая подпись слева (например, «Campus Hub»), если нет кнопки «Назад» */
+  /** Небольшая подпись слева (например, «ALTushki»), если нет кнопки «Назад» */
   label?: string;
   onBack?: () => void;
-  /** Дополнительные кнопки справа перед кнопкой меню */
+  /** Кнопки действий текущего экрана справа (профиль и настройки — только в нижней навигации) */
   right?: ReactNode;
 };
 
-/** Верхняя панель как в референсе: подпись слева, белая круглая кнопка меню «≡» справа. */
+/** Верхняя панель: подпись или кнопка «Назад» слева, действия экрана справа. */
 export default function TopBar({ label, onBack, right }: Props) {
   const { colors } = useTheme();
   const { t } = useI18n();
-  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <View style={styles.row}>
@@ -30,11 +28,7 @@ export default function TopBar({ label, onBack, right }: Props) {
           {label}
         </Text>
       )}
-      <View style={styles.right}>
-        {right}
-        <IconButton icon="menu" variant="light" accessibilityLabel={t('menu')} onPress={() => setMenuOpen(true)} />
-      </View>
-      <AppMenu visible={menuOpen} onClose={() => setMenuOpen(false)} />
+      {right ? <View style={styles.right}>{right}</View> : null}
     </View>
   );
 }
@@ -45,12 +39,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: spacing.md,
+    minHeight: 44,
     paddingVertical: spacing.md,
   },
   label: {
     flex: 1,
-    fontFamily: fonts.medium,
-    fontSize: 15,
+    fontFamily: fonts.semibold,
+    fontSize: 16,
+    letterSpacing: -0.2,
   },
   right: {
     flexDirection: 'row',

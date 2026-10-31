@@ -3,13 +3,12 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import GlassCard from '../../components/GlassCard';
-import PrimaryButton from '../../components/PrimaryButton';
 import ProgressBar from '../../components/ProgressBar';
 import SegmentedTabs from '../../components/SegmentedTabs';
 import ServiceLayout from '../../components/ServiceLayout';
 import { useCampus } from '../../context/CampusContext';
 import { getJournalEntry, JOURNAL } from '../../data/academic';
-import { ASSIGNMENTS, COURSES, MOODLE_URL } from '../../data/lms';
+import { ASSIGNMENTS, COURSES } from '../../data/lms';
 import { useNow } from '../../hooks/useNow';
 import { useI18n } from '../../i18n/LanguageContext';
 import { useTheme } from '../../theme/ThemeContext';
@@ -17,7 +16,6 @@ import { radius, spacing } from '../../theme/metrics';
 import { fonts, type } from '../../theme/typography';
 import { addDays, formatDayMonth } from '../../utils/format';
 import { calculateGpa, currentScore, letterGrade } from '../../utils/grades';
-import { openExternal } from '../../utils/links';
 import type { ServiceScreenProps } from './types';
 
 type Tab = 'courses' | 'tasks' | 'grades';
@@ -134,13 +132,6 @@ export default function LmsService({ service, onBack }: ServiceScreenProps) {
           })}
         </>
       ) : null}
-
-      <PrimaryButton
-        title={t('lmsOpenMoodle')}
-        variant="primary"
-        arrow
-        onPress={() => openExternal(MOODLE_URL, { title: t('linkErrorTitle'), text: t('linkErrorText', { url: MOODLE_URL }) })}
-      />
     </ServiceLayout>
   );
 }

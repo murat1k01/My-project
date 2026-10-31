@@ -21,12 +21,16 @@ type Props = {
 
 /** Круглая кнопка с иконкой — как кнопка меню «≡» и стрелки в референсе. */
 export default function IconButton({ icon, onPress, accessibilityLabel, variant = 'glass', badge, size = TOUCH_SIZE, iconColor }: Props) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
 
+  // «primary» — контрастная кнопка (белая в тёмной теме, чёрная в светлой), без синего цвета
+  const contrast = isDark
+    ? { background: colors.pill, color: colors.onPill, border: colors.pill }
+    : { background: colors.round, color: colors.onRound, border: colors.round };
   const palette: Record<RoundVariant, { background: string; color: string; border: string }> = {
     light: { background: colors.pill, color: colors.onPill, border: colors.pill },
     glass: { background: colors.glass, color: colors.text, border: colors.border },
-    primary: { background: colors.primary, color: colors.onPrimary, border: colors.primary },
+    primary: contrast,
     dark: { background: colors.round, color: colors.onRound, border: colors.round },
     danger: { background: colors.dangerSoft, color: colors.danger, border: colors.dangerSoft },
   };

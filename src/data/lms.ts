@@ -1,9 +1,9 @@
 import { LocalizedText, lt } from '../i18n/localized';
 
 /**
- * ПРИМЕР данных из LMS. Важно подключить реальные курсы из Moodle университета.
+ * ПРИМЕР данных из LMS. Важно подключить реальные курсы из Planonus ALT университета.
  * Оценки курсов берутся из журнала (src/data/academic.ts) по совпадающему id,
- * поэтому в Moodle, журнале и профиле они всегда одинаковые.
+ * поэтому в Planonus ALT, журнале и профиле они всегда одинаковые.
  */
 export type Course = {
   id: string;
@@ -39,5 +39,3 @@ export const ASSIGNMENTS: Assignment[] = [
   { id: 'a6', courseId: 'mobile', title: lt('Тест по React Native', 'React Native бойынша тест', 'React Native quiz'), dueInDays: 10 },
 ];
 
-/** Официальный сайт Moodle. Важно заменить адресом Moodle вашего университета. */
-export const MOODLE_URL = 'https://moodle.org';

@@ -5,6 +5,7 @@ import GlassCard from '../components/GlassCard';
 import PrimaryButton from '../components/PrimaryButton';
 import ProfileCard from '../components/ProfileCard';
 import ScreenContainer from '../components/ScreenContainer';
+import SubscriptionBanner from '../components/SubscriptionBanner';
 import TopBar from '../components/TopBar';
 import { useAppData } from '../context/AppDataContext';
 import { useCampus } from '../context/CampusContext';
@@ -16,6 +17,8 @@ import { radius, SCREEN_PADDING, spacing } from '../theme/metrics';
 import { fonts, type } from '../theme/typography';
 import type { IoniconName } from '../types/Service';
 import { JOURNAL } from '../data/academic';
+import { collectRequests } from '../data/requests';
+import { isSubscriptionActive } from '../data/subscription';
 import { formatDateTime } from '../utils/format';
 import { calculateGpa } from '../utils/grades';
 
@@ -23,7 +26,7 @@ import { calculateGpa } from '../utils/grades';
  * Профиль текущего пользователя. Заполнять его не нужно:
  * показаны примерные данные с пометкой «важно заполнить реальные сведения».
  */
-export default function ProfileScreen(_props: MainTabScreenProps<'Profile'>) {
+export default function ProfileScreen({ navigation }: MainTabScreenProps<'Profile'>) {
   const { colors } = useTheme();
   const { t, language } = useI18n();
   const { session, favorites } = useAppData();
@@ -36,6 +39,8 @@ export default function ProfileScreen(_props: MainTabScreenProps<'Profile'>) {
   const [first = session.login, last = ''] = session.login.split(/[._-]/);
   const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
   const membershipActive = campus.membership !== null && new Date(campus.membership.endsAt) > new Date();
+  const hasPlus = isSubscriptionActive(campus.subscription, new Date());
+  const requestsCount = collectRequests(campus).length;
 
   const stats: { icon: IoniconName; label: string; value: string }[] = [
     { icon: 'ribbon-outline', label: t('journalGpa'), value: calculateGpa(JOURNAL).toFixed(2) },
@@ -59,7 +64,7 @@ export default function ProfileScreen(_props: MainTabScreenProps<'Profile'>) {
             firstName={capitalize(first)}
             lastName={capitalize(last)}
             seed={session.login}
-            badge="IS-23"
+            badge={hasPlus ? 'IS-23 · Plus' : 'IS-23'}
             rows={[
               { icon: 'business-outline', label: t('profileFaculty'), value: t('exampleFaculty') },
               { icon: 'school-outline', label: t('program'), value: t('exampleProgram') },
@@ -87,6 +92,15 @@ export default function ProfileScreen(_props: MainTabScreenProps<'Profile'>) {
               </View>
             </View>
           </GlassCard>
+
+          <SubscriptionBanner onPress={() => navigation.navigate('Subscription')} />
+
+          <PrimaryButton
+            title={`${t('requestsTitle')} · ${requestsCount}`}
+            variant="glass"
+            icon="document-text-outline"
+            onPress={() => navigation.navigate('Requests')}
+          />
 
           <Text style={[type.heading, { color: colors.text }]}>{t('myActivity')}</Text>
           <View style={styles.stats}>

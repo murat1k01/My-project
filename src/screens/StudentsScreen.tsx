@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import ApplicationModal from '../components/ApplicationModal';
 import EmptyState from '../components/EmptyState';
 import FormField from '../components/FormField';
 import GlassCard from '../components/GlassCard';
@@ -16,7 +17,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { SCREEN_PADDING, spacing, TOUCH_SIZE } from '../theme/metrics';
 import { type } from '../theme/typography';
 import type { Student, StudentDraft } from '../types/Student';
-import { getFullName, matchesStudentQuery, normalizeText } from '../utils/format';
+import { formatPhone, matchesStudentQuery, normalizeText } from '../utils/format';
 
 export default function StudentsScreen({ navigation }: MainTabScreenProps<'Students'>) {
   const { colors } = useTheme();
@@ -26,6 +27,11 @@ export default function StudentsScreen({ navigation }: MainTabScreenProps<'Stude
   const [query, setQuery] = useState('');
   // Если студентов ещё нет — сразу показываем форму добавления
   const [formOpen, setFormOpen] = useState(students.length === 0);
+  // Студент, которому сейчас пишем отклик/заявку (null — окно закрыто)
+  const [respondTo, setRespondTo] = useState<Student | null>(null);
+
+  // Порядковый номер записи: первый добавленный студент — №1
+  const numberOf = (student: Student) => students.length - students.indexOf(student);
 
   const filteredStudents = useMemo(
     () => students.filter((student) => matchesStudentQuery(student, query)),
@@ -42,7 +48,8 @@ export default function StudentsScreen({ navigation }: MainTabScreenProps<'Stude
   };
 
   const handleDelete = (student: Student) => {
-    Alert.alert(t('deleteStudentTitle'), t('deleteStudentText', { name: getFullName(student) }), [
+    const name = student.phone ? formatPhone(student.phone) : `№${numberOf(student)}`;
+    Alert.alert(t('deleteStudentTitle'), t('deleteStudentText', { name }), [
       { text: t('cancel'), style: 'cancel' },
       { text: t('delete'), style: 'destructive', onPress: () => void removeStudent(student.id) },
     ]);
@@ -53,12 +60,15 @@ export default function StudentsScreen({ navigation }: MainTabScreenProps<'Stude
       <TopBar
         label={t('appName')}
         right={
-          <IconButton
-            icon={formOpen ? 'close' : 'add'}
-            variant={formOpen ? 'glass' : 'primary'}
-            accessibilityLabel={formOpen ? t('hideForm') : t('addStudent')}
-            onPress={() => setFormOpen((prev) => !prev)}
-          />
+          <>
+            <IconButton icon="document-text-outline" accessibilityLabel={t('requestsTitle')} onPress={() => navigation.navigate('Requests')} />
+            <IconButton
+              icon={formOpen ? 'close' : 'add'}
+              variant={formOpen ? 'glass' : 'primary'}
+              accessibilityLabel={formOpen ? t('hideForm') : t('addStudent')}
+              onPress={() => setFormOpen((prev) => !prev)}
+            />
+          </>
         }
       />
       <View style={styles.titleBlock}>
@@ -114,7 +124,9 @@ export default function StudentsScreen({ navigation }: MainTabScreenProps<'Stude
           renderItem={({ item }) => (
             <StudentCard
               student={item}
-              onOpenProfile={(student) => navigation.navigate('StudentProfile', { studentId: student.id })}
+              index={numberOf(item)}
+              onOpenInfo={(student) => navigation.navigate('StudentProfile', { studentId: student.id })}
+              onRespond={setRespondTo}
               onDelete={handleDelete}
             />
           )}
@@ -144,6 +156,7 @@ export default function StudentsScreen({ navigation }: MainTabScreenProps<'Stude
           keyboardDismissMode="on-drag"
         />
       </KeyboardAvoidingView>
+      <ApplicationModal student={respondTo} onClose={() => setRespondTo(null)} />
     </ScreenContainer>
   );
 }

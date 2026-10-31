@@ -11,19 +11,21 @@ import ProgressBar from '../../components/ProgressBar';
 import SectionHeader from '../../components/SectionHeader';
 import SegmentedTabs from '../../components/SegmentedTabs';
 import ServiceLayout from '../../components/ServiceLayout';
+import SubscriptionBanner from '../../components/SubscriptionBanner';
 import { useCampus } from '../../context/CampusContext';
 import { cartCount, cartSubtotal, DELIVERY_FEE, Dish, DishCategory, FOOD_CATEGORIES, getDish, getOrderStatus, MENU } from '../../data/food';
+import { isSubscriptionActive } from '../../data/subscription';
 import { useNow } from '../../hooks/useNow';
 import { useI18n } from '../../i18n/LanguageContext';
 import { useTheme } from '../../theme/ThemeContext';
 import { radius, SCREEN_PADDING, spacing } from '../../theme/metrics';
 import { fonts, type } from '../../theme/typography';
 import type { DeliveryType, FoodOrder } from '../../types/Campus';
-import { createId, formatClock, formatTenge, normalizeText } from '../../utils/format';
+import { createId, formatClock, formatMoney, normalizeText } from '../../utils/format';
 import type { ServiceScreenProps } from './types';
 
 /** FOOD — меню с фото и ценами в тенге, корзина, доставка или самовывоз, статус заказа. */
-export default function FoodService({ service, onBack }: ServiceScreenProps) {
+export default function FoodService({ service, onBack, openScreen }: ServiceScreenProps) {
   const { colors } = useTheme();
   const { t, tr } = useI18n();
   const { campus, updateCampus } = useCampus();
@@ -39,7 +41,10 @@ export default function FoodService({ service, onBack }: ServiceScreenProps) {
   const dishes = category === 'all' ? MENU : MENU.filter((dish) => dish.category === category);
   const count = cartCount(campus.cart);
   const subtotal = cartSubtotal(campus.cart);
-  const deliveryFee = delivery === 'delivery' ? DELIVERY_FEE : 0;
+  // С подпиской ALTushki Plus доставка бесплатна
+  const hasPlus = isSubscriptionActive(campus.subscription, now);
+  const deliveryFee = delivery === 'delivery' && !hasPlus ? DELIVERY_FEE : 0;
+  const money = (amount: number) => formatMoney(amount, t('currency'));
 
   const changeQty = (dishId: string, delta: number) =>
     updateCampus((prev) => {
@@ -74,7 +79,7 @@ export default function FoodService({ service, onBack }: ServiceScreenProps) {
   const cartBar =
     count > 0 ? (
       <PrimaryButton
-        title={`${t('foodCart')} · ${count} · ${formatTenge(subtotal)}`}
+        title={`${t('foodCart')} · ${count} · ${money(subtotal)}`}
         icon="bag-handle-outline"
         arrow
         onPress={() => setCheckoutOpen(true)}
@@ -83,6 +88,8 @@ export default function FoodService({ service, onBack }: ServiceScreenProps) {
 
   return (
     <ServiceLayout service={service} onBack={onBack} footer={cartBar}>
+      <SubscriptionBanner onPress={() => openScreen('Subscription')} text={t('subFreeDelivery')} />
+
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
         {FOOD_CATEGORIES.map((item) => (
           <Chip key={item.id} label={t(item.label)} selected={category === item.id} onPress={() => setCategory(item.id)} />
@@ -99,7 +106,9 @@ export default function FoodService({ service, onBack }: ServiceScreenProps) {
           {campus.orders.slice(0, 5).map((order) => {
             const status = getOrderStatus(order, now);
             const created = new Date(order.createdAt);
-            const etaMinutes = order.delivery === 'delivery' ? 30 : 15;
+            // Ожидаемое время: доставка — 30 минут, самовывоз — 15 минут после заказа
+            const eta = new Date(created.getTime() + (order.delivery === 'delivery' ? 30 : 15) * 60_000);
+            const finished = status.step === status.total;
             return (
               <GlassCard key={order.id}>
                 <View style={styles.orderHeader}>
@@ -115,12 +124,12 @@ export default function FoodService({ service, onBack }: ServiceScreenProps) {
                 <Text style={[type.caption, { color: colors.textMuted }]}>
                   {order.lines.map((line) => `${getDish(line.dishId) ? tr(getDish(line.dishId)!.name) : '?'} × ${line.qty}`).join(', ')}
                 </Text>
-                <View style={styles.orderFooter}>
-                  <Text style={[type.caption, { color: colors.textMuted }]}>
-                    {status.step < status.total ? t('foodEta', { min: etaMinutes }) : ''}
-                  </Text>
-                  <Text style={[type.subheading, { color: colors.text }]}>{formatTenge(order.subtotal + order.deliveryFee)}</Text>
-                </View>
+                {!finished ? (
+                  <View style={styles.orderFooter}>
+                    <Ionicons name="time-outline" size={16} color={colors.text} />
+                    <Text style={[type.bodyMedium, { color: colors.text }]}>{t('foodEtaAt', { time: formatClock(eta) })}</Text>
+                  </View>
+                ) : null}
               </GlassCard>
             );
           })}
@@ -149,7 +158,7 @@ export default function FoodService({ service, onBack }: ServiceScreenProps) {
                         <Image source={dish.image} style={styles.cartImage} />
                         <View style={styles.flex}>
                           <Text style={[type.bodyMedium, { color: colors.text }]}>{tr(dish.name)}</Text>
-                          <Text style={[type.caption, { color: colors.textMuted }]}>{formatTenge(dish.price * qty)}</Text>
+                          <Text style={[type.caption, { color: colors.textMuted }]}>{money(dish.price * qty)}</Text>
                         </View>
                         <Stepper qty={qty} onChange={(delta) => changeQty(dishId, delta)} />
                       </View>
@@ -179,14 +188,16 @@ export default function FoodService({ service, onBack }: ServiceScreenProps) {
                       }}
                       error={addressError}
                     />
-                    <Text style={[type.caption, { color: colors.textMuted }]}>{t('foodDeliveryFeeNote', { price: formatTenge(DELIVERY_FEE) })}</Text>
+                    <Text style={[type.caption, { color: hasPlus ? colors.success : colors.textMuted }]}>
+                      {hasPlus ? t('subFreeDelivery') : t('foodDeliveryFeeNote', { price: money(DELIVERY_FEE) })}
+                    </Text>
                   </>
                 ) : null}
 
                 <View style={[styles.totals, { borderColor: colors.border }]}>
-                  <TotalRow label={t('foodSubtotal')} value={formatTenge(subtotal)} />
-                  {delivery === 'delivery' ? <TotalRow label={t('foodDelivery')} value={formatTenge(deliveryFee)} /> : null}
-                  <TotalRow label={t('foodTotal')} value={formatTenge(subtotal + deliveryFee)} bold />
+                  <TotalRow label={t('foodSubtotal')} value={money(subtotal)} />
+                  {delivery === 'delivery' ? <TotalRow label={t('foodDelivery')} value={money(deliveryFee)} /> : null}
+                  <TotalRow label={t('foodTotal')} value={money(subtotal + deliveryFee)} bold />
                 </View>
 
                 <View style={[styles.payNote, { backgroundColor: colors.warningSoft }]}>
@@ -220,7 +231,7 @@ function DishRow({ dish, qty, onChange }: { dish: Dish; qty: number; onChange: (
           {dish.amount} {dish.unit === 'g' ? t('unitG') : t('unitMl')}
         </Text>
         <View style={styles.dishFooter}>
-          <Text style={[type.heading, { color: colors.text }]}>{formatTenge(dish.price)}</Text>
+          <Text style={[type.heading, { color: colors.text }]}>{formatMoney(dish.price, t('currency'))}</Text>
           {qty > 0 ? (
             <Stepper qty={qty} onChange={onChange} />
           ) : (
@@ -317,7 +328,7 @@ const styles = StyleSheet.create({
   orderFooter: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: spacing.sm,
   },
   modalBackdrop: {
     flex: 1,

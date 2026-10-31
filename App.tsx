@@ -21,7 +21,7 @@ import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 const MIN_SPLASH_MS = 1800;
 
 /**
- * Точка входа Campus Hub.
+ * Точка входа ALTushki.
  * App.tsx только подключает шрифты, провайдеры (безопасные области, тема, язык, данные)
  * и навигацию — вся логика вынесена в папку src/.
  */

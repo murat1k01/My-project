@@ -1,55 +1,73 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useI18n } from '../i18n/LanguageContext';
 import { useTheme } from '../theme/ThemeContext';
-import { radius, spacing } from '../theme/metrics';
-import { fonts, type } from '../theme/typography';
+import { spacing } from '../theme/metrics';
+import { type } from '../theme/typography';
 import type { Student } from '../types/Student';
-import { getFullName } from '../utils/format';
-import Avatar from './Avatar';
+import { formatPhone, phoneHref } from '../utils/format';
+import { openExternal } from '../utils/links';
 import GlassCard from './GlassCard';
 import IconButton from './IconButton';
 import PrimaryButton from './PrimaryButton';
 
 type Props = {
   student: Student;
-  onOpenProfile: (student: Student) => void;
+  /** Номер записи в списке — чтобы карточки отличались без показа личных данных */
+  index: number;
+  onOpenInfo: (student: Student) => void;
+  onRespond: (student: Student) => void;
   onDelete: (student: Student) => void;
 };
 
 /**
- * Карточка студента (лабораторная работа №2):
- * ФИО, группа, специальность и кнопка «Открыть профиль».
+ * Карточка студента. Имя, факультет, специальность, группа и курс здесь НЕ показываются —
+ * они доступны по кнопке «Информация». На карточке: номер телефона (нажимаемая ссылка tel:)
+ * и действия: информация, отклик/заявка, звонок, удаление.
  */
-export default function StudentCard({ student, onOpenProfile, onDelete }: Props) {
+export default function StudentCard({ student, index, onOpenInfo, onRespond, onDelete }: Props) {
   const { colors } = useTheme();
   const { t } = useI18n();
-  const fullName = getFullName(student);
+  const phone = student.phone ? formatPhone(student.phone) : '';
+
+  const call = () => {
+    const href = phoneHref(student.phone);
+    void openExternal(href, { title: t('linkErrorTitle'), text: t('linkErrorText', { url: phone }) });
+  };
 
   return (
     <GlassCard>
       <View style={styles.header}>
-        <Avatar firstName={student.firstName} lastName={student.lastName} seed={student.id} size={52} />
-        <View style={styles.info}>
-          <Text style={[type.subheading, { color: colors.text }]} numberOfLines={2}>
-            {fullName}
-          </Text>
-          <View style={styles.metaRow}>
-            <View style={[styles.groupPill, { backgroundColor: colors.primarySoft }]}>
-              <Text style={[styles.groupText, { color: colors.primary }]}>{student.group}</Text>
-            </View>
-            <Text style={[type.caption, styles.program, { color: colors.textSecondary }]} numberOfLines={1}>
-              {student.program || t('programNotSet')}
-            </Text>
-          </View>
+        <View style={[styles.avatar, { backgroundColor: colors.primarySoft }]}>
+          <Ionicons name="person-outline" size={22} color={colors.text} />
         </View>
+        <View style={styles.info}>
+          <Text style={[type.caption, { color: colors.textMuted }]}>
+            {t('studentLabel')} · №{index}
+          </Text>
+          {phone ? (
+            <Text
+              style={[type.subheading, styles.link, { color: colors.text }]}
+              onPress={call}
+              accessibilityRole="link"
+              accessibilityLabel={t('callA11y', { phone })}
+            >
+              {phone}
+            </Text>
+          ) : (
+            <Text style={[type.body, { color: colors.textSecondary }]}>{t('studentNoPhone')}</Text>
+          )}
+        </View>
+        {phone ? <IconButton icon="call-outline" variant="primary" accessibilityLabel={t('callA11y', { phone })} onPress={call} /> : null}
       </View>
 
       <View style={styles.actions}>
-        <PrimaryButton title={t('openProfile')} compact arrow onPress={() => onOpenProfile(student)} style={styles.open} />
+        <PrimaryButton title={t('studentInfo')} variant="glass" icon="information-circle-outline" compact onPress={() => onOpenInfo(student)} style={styles.flex} />
+        <PrimaryButton title={t('studentRespond')} compact onPress={() => onRespond(student)} style={styles.flex} />
         <IconButton
           icon="trash-outline"
           variant="danger"
-          accessibilityLabel={t('deleteStudentA11y', { name: fullName })}
+          accessibilityLabel={t('deleteStudentA11y', { name: phone || `№${index}` })}
           onPress={() => onDelete(student)}
         />
       </View>
@@ -63,33 +81,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
   },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   info: {
     flex: 1,
-    gap: 6,
+    gap: 2,
   },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  groupPill: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    borderRadius: radius.pill,
-  },
-  groupText: {
-    fontFamily: fonts.bold,
-    fontSize: 12,
-  },
-  program: {
-    flex: 1,
+  link: {
+    textDecorationLine: 'underline',
   },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
   },
-  open: {
+  flex: {
     flex: 1,
   },
 });

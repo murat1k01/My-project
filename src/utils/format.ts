@@ -19,10 +19,12 @@ export function getInitials(firstName: string, lastName: string): string {
   return initials || '?';
 }
 
-/** Поиск по имени и фамилии без учёта регистра и лишних пробелов. */
+/** Поиск по имени, фамилии или номеру телефона без учёта регистра и лишних пробелов. */
 export function matchesStudentQuery(student: Student, query: string): boolean {
   const normalizedQuery = normalizeText(query).toLowerCase();
   if (!normalizedQuery) return true;
+  const queryDigits = normalizedQuery.replace(/\D/g, '');
+  if (queryDigits.length >= 3 && student.phone.includes(queryDigits)) return true;
   const direct = getFullName(student).toLowerCase();
   const reversed = normalizeText(`${student.lastName} ${student.firstName}`).toLowerCase();
   return direct.includes(normalizedQuery) || reversed.includes(normalizedQuery);
@@ -30,12 +32,42 @@ export function matchesStudentQuery(student: Student, query: string): boolean {
 
 // ---------- Деньги ----------
 
-/** 2450 → «2 450 ₸» (неразрывные пробелы, чтобы сумма не переносилась) */
-export function formatTenge(amount: number): string {
+/**
+ * 2450 → «2 450 тг» (подпись валюты берётся из перевода: «тг» или «KZT»).
+ * Неразрывные пробелы не дают сумме переноситься на две строки.
+ */
+export function formatMoney(amount: number, currency: string): string {
   const digits = Math.round(amount)
     .toString()
     .replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-  return `${digits} ₸`;
+  return `${digits} ${currency}`;
+}
+
+// ---------- Телефон ----------
+
+/** Оставляет только цифры и приводит казахстанский номер к виду 7XXXXXXXXXX. */
+export function normalizePhone(value: string): string {
+  let digits = value.replace(/\D/g, '');
+  if (digits.length === 11 && digits.startsWith('8')) digits = `7${digits.slice(1)}`;
+  if (digits.length === 10) digits = `7${digits}`;
+  return digits;
+}
+
+export function isValidPhone(value: string): boolean {
+  const digits = value.replace(/\D/g, '');
+  return digits.length === 10 || digits.length === 11;
+}
+
+/** 77471543655 → «+7 747 154 36 55» */
+export function formatPhone(value: string): string {
+  const d = normalizePhone(value);
+  if (d.length !== 11) return value;
+  return `+${d[0]} ${d.slice(1, 4)} ${d.slice(4, 7)} ${d.slice(7, 9)} ${d.slice(9, 11)}`;
+}
+
+/** Ссылка для звонка: 77471543655 → «tel:+77471543655» */
+export function phoneHref(value: string): string {
+  return `tel:+${normalizePhone(value)}`;
 }
 
 // ---------- Даты и время ----------

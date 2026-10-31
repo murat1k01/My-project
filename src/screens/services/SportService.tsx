@@ -16,7 +16,7 @@ import { dateNames } from '../../i18n/translations';
 import { useTheme } from '../../theme/ThemeContext';
 import { radius, spacing } from '../../theme/metrics';
 import { fonts, type } from '../../theme/typography';
-import { addDays, formatDate, formatTenge } from '../../utils/format';
+import { addDays, formatDate, formatMoney } from '../../utils/format';
 import type { ServiceScreenProps } from './types';
 
 type Tab = 'membership' | 'training';
@@ -105,7 +105,7 @@ export default function SportService({ service, onBack }: ServiceScreenProps) {
                     <Text style={[type.heading, { color: colors.text }]}>{tr(plan.name)}</Text>
                     <Text style={[type.caption, { color: colors.textMuted }]}>{t('sportDays', { days: plan.durationDays })}</Text>
                   </View>
-                  <Text style={[type.title, { color: colors.text }]}>{formatTenge(plan.price)}</Text>
+                  <Text style={[type.title, { color: colors.text }]}>{formatMoney(plan.price, t('currency'))}</Text>
                 </View>
                 {plan.features.map((feature) => (
                   <View key={feature.en} style={styles.row}>

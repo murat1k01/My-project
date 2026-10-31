@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode } from 'react';
 import { ImageBackground, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -9,7 +9,6 @@ import { useTheme } from '../theme/ThemeContext';
 import { radius, SCREEN_PADDING, spacing } from '../theme/metrics';
 import { fonts, type } from '../theme/typography';
 import type { Service } from '../types/Service';
-import AppMenu from './AppMenu';
 import ExampleNotice from './ExampleNotice';
 import IconButton from './IconButton';
 
@@ -23,14 +22,13 @@ type Props = {
 
 /**
  * Общий макет экранов сервисов: большое фото с плавным переходом в фон,
- * кнопки «назад», «избранное», «меню», заголовок и содержимое.
+ * кнопки «назад» и «избранное», заголовок и содержимое.
  */
 export default function ServiceLayout({ service, onBack, children, footer }: Props) {
   const { colors } = useTheme();
   const { t, tr } = useI18n();
   const { isFavorite, toggleFavorite } = useAppData();
   const insets = useSafeAreaInsets();
-  const [menuOpen, setMenuOpen] = useState(false);
   const favorite = isFavorite(service.id);
 
   return (
@@ -47,16 +45,13 @@ export default function ServiceLayout({ service, onBack, children, footer }: Pro
           />
           <View style={styles.heroButtons}>
             <IconButton icon="chevron-back" variant="glass" iconColor="#FFFFFF" accessibilityLabel={t('back')} onPress={onBack} />
-            <View style={styles.heroRight}>
-              <IconButton
-                icon={favorite ? 'star' : 'star-outline'}
-                variant="glass"
-                iconColor={favorite ? '#FBBF24' : '#FFFFFF'}
-                accessibilityLabel={favorite ? t('removeFavoriteA11y', { name: tr(service.title) }) : t('addFavoriteA11y', { name: tr(service.title) })}
-                onPress={() => toggleFavorite(service.id)}
-              />
-              <IconButton icon="menu" variant="light" accessibilityLabel={t('menu')} onPress={() => setMenuOpen(true)} />
-            </View>
+            <IconButton
+              icon={favorite ? 'star' : 'star-outline'}
+              variant="glass"
+              iconColor={favorite ? '#FBBF24' : '#FFFFFF'}
+              accessibilityLabel={favorite ? t('removeFavoriteA11y', { name: tr(service.title) }) : t('addFavoriteA11y', { name: tr(service.title) })}
+              onPress={() => toggleFavorite(service.id)}
+            />
           </View>
         </ImageBackground>
 
@@ -77,7 +72,6 @@ export default function ServiceLayout({ service, onBack, children, footer }: Pro
       </ScrollView>
 
       {footer ? <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>{footer}</View> : null}
-      <AppMenu visible={menuOpen} onClose={() => setMenuOpen(false)} />
     </View>
   );
 }

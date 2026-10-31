@@ -1,6 +1,6 @@
 import { LocalizedText, lt } from '../i18n/localized';
 import type { TranslationKey } from '../i18n/translations';
-import type { RepairCategory, RepairRequest } from '../types/Campus';
+import type { RepairCategory } from '../types/Campus';
 import type { IoniconName } from '../types/Service';
 import { hashString } from '../utils/format';
 
@@ -23,14 +23,6 @@ export const REPAIR_CATEGORIES: { id: RepairCategory; label: TranslationKey; ico
   { id: 'furniture', label: 'dormCatFurniture', icon: 'cube-outline' },
   { id: 'internet', label: 'dormCatInternet', icon: 'wifi-outline' },
 ];
-
-/** Статус демо-заявки по прошедшему времени: новая → в работе → выполнена. */
-export function getRepairStatus(request: RepairRequest, now: Date): { label: TranslationKey; done: boolean } {
-  const minutes = (now.getTime() - new Date(request.createdAt).getTime()) / 60_000;
-  if (minutes < 10) return { label: 'dormStatusNew', done: false };
-  if (minutes < 60) return { label: 'dormStatusProgress', done: false };
-  return { label: 'dormStatusDone', done: true };
-}
 
 export const DORM_RULES: LocalizedText[] = [
   lt('Тишина с 23:00 до 07:00', 'Тыныштық 23:00-ден 07:00-ге дейін', 'Quiet hours from 23:00 to 07:00'),

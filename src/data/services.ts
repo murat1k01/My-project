@@ -2,7 +2,7 @@ import { lt } from '../i18n/localized';
 import type { Service, ServiceId } from '../types/Service';
 import { images } from './images';
 
-/** Единственный источник данных о восьми сервисах Campus Hub. */
+/** Единственный источник данных о восьми сервисах ALTushki. */
 export const SERVICES: Service[] = [
   {
     id: 'cal',
@@ -34,7 +34,7 @@ export const SERVICES: Service[] = [
   {
     id: 'lms',
     code: 'LMS',
-    title: lt('Moodle', 'Moodle', 'Moodle'),
+    title: lt('Planonus ALT', 'Planonus ALT', 'Planonus ALT'),
     description: lt('Курсы, задания и оценки', 'Курстар, тапсырмалар және бағалар', 'Courses, tasks and grades'),
     icon: 'school-outline',
     accent: '#FB923C',

@@ -58,16 +58,25 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function isStudent(value: unknown): value is Student {
-  return (
-    isRecord(value) &&
-    typeof value.id === 'string' &&
-    typeof value.firstName === 'string' &&
-    typeof value.lastName === 'string' &&
-    typeof value.group === 'string' &&
-    typeof value.program === 'string' &&
-    typeof value.createdAt === 'string'
-  );
+/**
+ * Приводит сохранённую запись к текущему типу Student.
+ * Записи из прошлой версии приложения (без телефона, факультета и курса) не теряются:
+ * недостающие поля становятся пустыми строками.
+ */
+function toStudent(value: unknown): Student | null {
+  if (!isRecord(value) || typeof value.id !== 'string' || typeof value.createdAt !== 'string') return null;
+  const text = (field: unknown) => (typeof field === 'string' ? field : '');
+  return {
+    id: value.id,
+    createdAt: value.createdAt,
+    firstName: text(value.firstName),
+    lastName: text(value.lastName),
+    group: text(value.group),
+    program: text(value.program),
+    faculty: text(value.faculty),
+    course: text(value.course),
+    phone: text(value.phone),
+  };
 }
 
 function isSession(value: unknown): value is Session {
@@ -93,7 +102,8 @@ export function clearSession(): Promise<boolean> {
 
 export async function loadStudents(): Promise<Student[]> {
   const value = await readJson(STORAGE_KEYS.students);
-  return Array.isArray(value) ? value.filter(isStudent) : [];
+  if (!Array.isArray(value)) return [];
+  return value.map(toStudent).filter((student): student is Student => student !== null);
 }
 
 export function saveStudents(students: Student[]): Promise<boolean> {
@@ -164,6 +174,8 @@ export async function loadCampus(): Promise<CampusState> {
     laundry: recordOrNull(value.laundry, ['machine', 'time', 'date']),
     repairs: arrayOf(value.repairs, (item) => isRecord(item) && typeof item.id === 'string'),
     guestPasses: arrayOf(value.guestPasses, (item) => isRecord(item) && typeof item.id === 'string'),
+    applications: arrayOf(value.applications, (item) => isRecord(item) && typeof item.id === 'string'),
+    subscription: recordOrNull(value.subscription, ['planId', 'startedAt', 'endsAt']),
   };
 }
 

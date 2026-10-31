@@ -46,7 +46,7 @@ export default function ServiceDetailsScreen({ navigation, route }: RootStackScr
   }
 
   const Screen = SERVICE_SCREENS[service.id];
-  return <Screen service={service} onBack={navigation.goBack} />;
+  return <Screen service={service} onBack={navigation.goBack} openScreen={(screen) => navigation.navigate(screen)} />;
 }
 
 const styles = StyleSheet.create({

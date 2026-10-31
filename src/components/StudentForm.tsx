@@ -1,7 +1,11 @@
-import { useRef, useState } from 'react';
-import { StyleSheet, TextInputInstance, View } from 'react-native';
+import { useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 import { useI18n } from '../i18n/LanguageContext';
+import type { TranslationKey } from '../i18n/translations';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing } from '../theme/metrics';
+import { type } from '../theme/typography';
+import type { IoniconName } from '../types/Service';
 import type { StudentDraft } from '../types/Student';
 import { cleanStudentDraft, hasErrors, StudentErrors, validateStudent } from '../utils/validation';
 import FormField from './FormField';
@@ -13,18 +17,28 @@ type Props = {
   onSubmit: (draft: StudentDraft) => Promise<boolean>;
 };
 
-const EMPTY_DRAFT: StudentDraft = { firstName: '', lastName: '', group: '', program: '' };
+const EMPTY_DRAFT: StudentDraft = { firstName: '', lastName: '', group: '', program: '', faculty: '', course: '', phone: '' };
 
-/** Форма добавления студента с проверкой обязательных полей. */
+/** Описание полей формы: какой ключ перевода, иконка и тип клавиатуры у каждого. */
+const OPTIONAL_FIELDS: { field: keyof StudentDraft; label: TranslationKey; placeholder?: TranslationKey; icon: IoniconName }[] = [
+  { field: 'firstName', label: 'firstName', placeholder: 'firstNamePlaceholder', icon: 'person-outline' },
+  { field: 'lastName', label: 'lastName', placeholder: 'lastNamePlaceholder', icon: 'person-outline' },
+  { field: 'faculty', label: 'faculty', icon: 'business-outline' },
+  { field: 'program', label: 'program', placeholder: 'programPlaceholder', icon: 'school-outline' },
+  { field: 'group', label: 'group', placeholder: 'groupPlaceholder', icon: 'people-outline' },
+  { field: 'course', label: 'course', icon: 'ribbon-outline' },
+];
+
+/**
+ * Форма добавления студента. Обязателен только телефон —
+ * имя, группа, специальность и остальное можно не заполнять.
+ */
 export default function StudentForm({ submitLabel, onSubmit }: Props) {
+  const { colors } = useTheme();
   const { t } = useI18n();
   const [values, setValues] = useState<StudentDraft>(EMPTY_DRAFT);
   const [errors, setErrors] = useState<StudentErrors>({});
   const [submitting, setSubmitting] = useState(false);
-
-  const lastNameRef = useRef<TextInputInstance>(null);
-  const groupRef = useRef<TextInputInstance>(null);
-  const programRef = useRef<TextInputInstance>(null);
 
   const updateField = (field: keyof StudentDraft, text: string) => {
     setValues((prev) => ({ ...prev, [field]: text }));
@@ -50,56 +64,34 @@ export default function StudentForm({ submitLabel, onSubmit }: Props) {
 
   return (
     <View style={styles.form}>
+      <Text style={[type.caption, { color: colors.textMuted }]}>{t('optionalHint')}</Text>
+
       <FormField
-        label={`${t('firstName')} *`}
-        placeholder={t('firstNamePlaceholder')}
-        icon="person-outline"
-        value={values.firstName}
-        onChangeText={(text) => updateField('firstName', text)}
-        error={errorText('firstName')}
-        autoCapitalize="words"
-        returnKeyType="next"
-        submitBehavior="submit"
-        onSubmitEditing={() => lastNameRef.current?.focus()}
+        label={`${t('phone')} *`}
+        placeholder={t('phonePlaceholder')}
+        icon="call-outline"
+        value={values.phone}
+        onChangeText={(text) => updateField('phone', text)}
+        error={errorText('phone')}
+        keyboardType="phone-pad"
+        textContentType="telephoneNumber"
+        autoComplete="tel"
       />
-      <FormField
-        ref={lastNameRef}
-        label={`${t('lastName')} *`}
-        placeholder={t('lastNamePlaceholder')}
-        icon="person-outline"
-        value={values.lastName}
-        onChangeText={(text) => updateField('lastName', text)}
-        error={errorText('lastName')}
-        autoCapitalize="words"
-        returnKeyType="next"
-        submitBehavior="submit"
-        onSubmitEditing={() => groupRef.current?.focus()}
-      />
-      <FormField
-        ref={groupRef}
-        label={`${t('group')} *`}
-        placeholder={t('groupPlaceholder')}
-        icon="people-outline"
-        value={values.group}
-        onChangeText={(text) => updateField('group', text)}
-        error={errorText('group')}
-        autoCapitalize="characters"
-        autoCorrect={false}
-        returnKeyType="next"
-        submitBehavior="submit"
-        onSubmitEditing={() => programRef.current?.focus()}
-      />
-      <FormField
-        ref={programRef}
-        label={t('program')}
-        placeholder={t('programPlaceholder')}
-        icon="school-outline"
-        value={values.program}
-        onChangeText={(text) => updateField('program', text)}
-        error={errorText('program')}
-        returnKeyType="done"
-        onSubmitEditing={handleSubmit}
-      />
+
+      {OPTIONAL_FIELDS.map((item) => (
+        <FormField
+          key={item.field}
+          label={t(item.label)}
+          placeholder={item.placeholder ? t(item.placeholder) : undefined}
+          icon={item.icon}
+          value={values[item.field]}
+          onChangeText={(text) => updateField(item.field, text)}
+          error={errorText(item.field)}
+          autoCapitalize={item.field === 'group' ? 'characters' : 'words'}
+          keyboardType={item.field === 'course' ? 'number-pad' : 'default'}
+        />
+      ))}
+
       <PrimaryButton title={submitLabel} arrow onPress={handleSubmit} loading={submitting} style={styles.submit} />
     </View>
   );

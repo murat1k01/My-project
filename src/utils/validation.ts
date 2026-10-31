@@ -1,6 +1,6 @@
 import type { TranslationKey } from '../i18n/translations';
 import type { StudentDraft } from '../types/Student';
-import { normalizeText } from './format';
+import { isValidPhone, normalizePhone, normalizeText } from './format';
 
 export const LOGIN_MIN_LENGTH = 4;
 export const PASSWORD_MIN_LENGTH = 8;
@@ -31,23 +31,20 @@ export function validateLogin(login: string, password: string): LoginErrors {
   return errors;
 }
 
+/**
+ * Обязателен только телефон. Имя, группа, специальность и остальные поля
+ * необязательны — проверяется лишь их максимальная длина.
+ */
 export function validateStudent(draft: StudentDraft): StudentErrors {
   const errors: StudentErrors = {};
-  const firstName = normalizeText(draft.firstName);
-  const lastName = normalizeText(draft.lastName);
-  const group = normalizeText(draft.group);
-  const program = normalizeText(draft.program);
 
-  if (!firstName) errors.firstName = 'errFirstNameRequired';
-  else if (firstName.length > 40) errors.firstName = 'errFirstNameLong';
+  if (!draft.phone.trim()) errors.phone = 'errPhoneRequired';
+  else if (!isValidPhone(draft.phone)) errors.phone = 'errPhoneInvalid';
 
-  if (!lastName) errors.lastName = 'errLastNameRequired';
-  else if (lastName.length > 40) errors.lastName = 'errLastNameLong';
-
-  if (!group) errors.group = 'errGroupRequired';
-  else if (group.length > 20) errors.group = 'errGroupLong';
-
-  if (program.length > 80) errors.program = 'errProgramLong';
+  if (normalizeText(draft.firstName).length > 40) errors.firstName = 'errFirstNameLong';
+  if (normalizeText(draft.lastName).length > 40) errors.lastName = 'errLastNameLong';
+  if (normalizeText(draft.group).length > 20) errors.group = 'errGroupLong';
+  if (normalizeText(draft.program).length > 80) errors.program = 'errProgramLong';
 
   return errors;
 }
@@ -59,6 +56,9 @@ export function cleanStudentDraft(draft: StudentDraft): StudentDraft {
     lastName: normalizeText(draft.lastName),
     group: normalizeText(draft.group).toUpperCase(),
     program: normalizeText(draft.program),
+    faculty: normalizeText(draft.faculty),
+    course: normalizeText(draft.course),
+    phone: normalizePhone(draft.phone),
   };
 }
 

@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import Chip from '../components/Chip';
 import FormField from '../components/FormField';
 import PrimaryButton from '../components/PrimaryButton';
 import ScreenContainer from '../components/ScreenContainer';
@@ -24,6 +25,7 @@ import { useAppData } from '../context/AppDataContext';
 import { images } from '../data/images';
 import { SERVICES } from '../data/services';
 import { useI18n } from '../i18n/LanguageContext';
+import { LANGUAGES } from '../i18n/translations';
 import { withAlpha } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, SCREEN_PADDING, spacing, TOUCH_SIZE } from '../theme/metrics';
@@ -42,7 +44,7 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
  */
 export default function LoginScreen() {
   const { colors, isDark } = useTheme();
-  const { t } = useI18n();
+  const { t, language, setLanguage } = useI18n();
   const { signIn } = useAppData();
 
   const [login, setLogin] = useState('');
@@ -105,7 +107,13 @@ export default function LoginScreen() {
               { opacity: appear, transform: [{ translateY: appear.interpolate({ inputRange: [0, 1], outputRange: [24, 0] }) }] },
             ]}
           >
-            <TopBar label={t('appName')} />
+            {/* До входа нижней навигации нет, поэтому язык можно выбрать прямо здесь */}
+            <TopBar
+              label={t('appName')}
+              right={LANGUAGES.map((item) => (
+                <Chip key={item.code} label={item.short} selected={language === item.code} onPress={() => setLanguage(item.code)} />
+              ))}
+            />
 
             <View style={styles.titleBlock}>
               <Text style={[type.display, styles.title, { color: colors.text }]}>{t('loginTitle')}</Text>

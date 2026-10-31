@@ -52,6 +52,25 @@ export type GuestPass = {
   date: string;
 };
 
+/** Отклик или заявка, отправленные из раздела «Студенты». */
+export type ApplicationKind = 'response' | 'application';
+
+export type StudentApplication = {
+  id: string;
+  kind: ApplicationKind;
+  studentId: string;
+  /** Номер телефона студента на момент отправки — запись понятна, даже если студента удалили */
+  studentPhone: string;
+  text: string;
+  createdAt: string;
+};
+
+export type Subscription = {
+  planId: string;
+  startedAt: string;
+  endsAt: string;
+};
+
 export type CampusState = {
   seat: SeatReservation | null;
   myRouteId: string | null;
@@ -64,6 +83,8 @@ export type CampusState = {
   laundry: LaundryBooking | null;
   repairs: RepairRequest[];
   guestPasses: GuestPass[];
+  applications: StudentApplication[];
+  subscription: Subscription | null;
 };
 
 export const EMPTY_CAMPUS_STATE: CampusState = {
@@ -77,4 +98,6 @@ export const EMPTY_CAMPUS_STATE: CampusState = {
   laundry: null,
   repairs: [],
   guestPasses: [],
+  applications: [],
+  subscription: null,
 };
