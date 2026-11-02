@@ -1,4 +1,5 @@
-import { ImageBackground, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ImageBackground, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from './AppText';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useI18n } from '../i18n/LanguageContext';
@@ -36,8 +37,7 @@ export default function ServiceCard({ service, width, isFavorite, onPress, onTog
             style={[StyleSheet.absoluteFill, styles.imageRadius]}
           />
           <View style={styles.codeChip}>
-            <Ionicons name={service.icon} size={13} color="#FFFFFF" />
-            <Text style={styles.code}>{service.code}</Text>
+            <Ionicons name={service.icon} size={16} color="#FFFFFF" />
           </View>
           <View>
             <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
@@ -88,19 +88,9 @@ const styles = StyleSheet.create({
   },
   codeChip: {
     alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    padding: 8,
     borderRadius: radius.pill,
     backgroundColor: 'rgba(4, 6, 15, 0.55)',
-  },
-  code: {
-    fontFamily: fonts.bold,
-    fontSize: 11,
-    letterSpacing: 0.8,
-    color: '#FFFFFF',
   },
   bottom: {
     flexDirection: 'row',

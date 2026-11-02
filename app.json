@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "ALTushki",
+    "name": "Campus Hub",
     "slug": "MyFirstApp",
     "version": "1.0.0",
     "orientation": "default",
@@ -11,7 +11,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#2F6BFF",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -23,7 +23,22 @@
     },
     "plugins": [
       "expo-status-bar",
-      "expo-font"
+      "expo-font",
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Campus Hub показывает ваше местоположение на карте автобусов, только когда вы об этом просите."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Campus Hub использует выбранное вами фото для профиля.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ]
     ]
   }
 }

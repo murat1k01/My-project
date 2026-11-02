@@ -1,4 +1,5 @@
-import { ActivityIndicator, Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { ActivityIndicator, Pressable, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
+import { Text } from './AppText';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, spacing, TOUCH_SIZE } from '../theme/metrics';

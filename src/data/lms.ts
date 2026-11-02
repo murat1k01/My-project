@@ -23,11 +23,11 @@ export type Assignment = {
 };
 
 export const COURSES: Course[] = [
-  { id: 'mobile', title: lt('Мобильные приложения', 'Мобильді қосымшалар', 'Mobile Applications'), teacher: 'Сейтжанов Б.М.', progress: 68, color: '#2F6BFF' },
-  { id: 'db', title: lt('Базы данных', 'Деректер қоры', 'Databases'), teacher: 'Ким Е.В.', progress: 54, color: '#10B981' },
-  { id: 'web', title: lt('Веб-разработка', 'Веб-әзірлеу', 'Web Development'), teacher: 'Жумабаев Е.Т.', progress: 75, color: '#F97316' },
-  { id: 'algo', title: lt('Алгоритмы и структуры данных', 'Алгоритмдер және деректер құрылымы', 'Algorithms and Data Structures'), teacher: 'Оспанова Г.Р.', progress: 41, color: '#A855F7' },
-  { id: 'english', title: lt('Английский язык', 'Ағылшын тілі', 'English'), teacher: 'Smith J.', progress: 80, color: '#EC4899' },
+  { id: 'mobile', title: lt('Мобильные приложения', 'Мобильді қосымшалар', 'Mobile Applications'), teacher: 'Преподаватель', progress: 68, color: '#2F6BFF' },
+  { id: 'db', title: lt('Базы данных', 'Деректер қоры', 'Databases'), teacher: 'Преподаватель', progress: 54, color: '#10B981' },
+  { id: 'web', title: lt('Веб-разработка', 'Веб-әзірлеу', 'Web Development'), teacher: 'Преподаватель', progress: 75, color: '#F97316' },
+  { id: 'algo', title: lt('Алгоритмы и структуры данных', 'Алгоритмдер және деректер құрылымы', 'Algorithms and Data Structures'), teacher: 'Преподаватель', progress: 41, color: '#A855F7' },
+  { id: 'english', title: lt('Английский язык', 'Ағылшын тілі', 'English'), teacher: 'Преподаватель', progress: 80, color: '#EC4899' },
 ];
 
 export const ASSIGNMENTS: Assignment[] = [

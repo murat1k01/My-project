@@ -25,7 +25,7 @@ export const JOURNAL: JournalEntry[] = [
   {
     subjectId: 'mobile',
     subject: lt('Мобильные приложения', 'Мобильді қосымшалар', 'Mobile Applications'),
-    teacher: 'Сейтжанов Б.М.',
+    teacher: 'Преподаватель',
     credits: 5,
     rk1: 92,
     rk2: 88,
@@ -36,7 +36,7 @@ export const JOURNAL: JournalEntry[] = [
   {
     subjectId: 'db',
     subject: lt('Базы данных', 'Деректер қоры', 'Databases'),
-    teacher: 'Ким Е.В.',
+    teacher: 'Преподаватель',
     credits: 5,
     rk1: 84,
     rk2: 80,
@@ -47,7 +47,7 @@ export const JOURNAL: JournalEntry[] = [
   {
     subjectId: 'web',
     subject: lt('Веб-разработка', 'Веб-әзірлеу', 'Web Development'),
-    teacher: 'Жумабаев Е.Т.',
+    teacher: 'Преподаватель',
     credits: 4,
     rk1: 90,
     rk2: 86,
@@ -58,7 +58,7 @@ export const JOURNAL: JournalEntry[] = [
   {
     subjectId: 'algo',
     subject: lt('Алгоритмы и структуры данных', 'Алгоритмдер және деректер құрылымы', 'Algorithms and Data Structures'),
-    teacher: 'Оспанова Г.Р.',
+    teacher: 'Преподаватель',
     credits: 5,
     rk1: 70,
     rk2: 76,
@@ -69,7 +69,7 @@ export const JOURNAL: JournalEntry[] = [
   {
     subjectId: 'english',
     subject: lt('Английский язык', 'Ағылшын тілі', 'English'),
-    teacher: 'Smith J.',
+    teacher: 'Преподаватель',
     credits: 3,
     rk1: 95,
     rk2: 97,
@@ -80,7 +80,7 @@ export const JOURNAL: JournalEntry[] = [
   {
     subjectId: 'math',
     subject: lt('Математический анализ', 'Математикалық талдау', 'Calculus'),
-    teacher: 'Ахметова А.К.',
+    teacher: 'Преподаватель',
     credits: 5,
     rk1: 45,
     rk2: 52,
@@ -91,7 +91,7 @@ export const JOURNAL: JournalEntry[] = [
   {
     subjectId: 'networks',
     subject: lt('Компьютерные сети', 'Компьютерлік желілер', 'Computer Networks'),
-    teacher: 'Ибраев К.А.',
+    teacher: 'Преподаватель',
     credits: 4,
     rk1: 78,
     rk2: 82,
@@ -102,7 +102,7 @@ export const JOURNAL: JournalEntry[] = [
   {
     subjectId: 'history',
     subject: lt('История Казахстана', 'Қазақстан тарихы', 'History of Kazakhstan'),
-    teacher: 'Нурланова Д.С.',
+    teacher: 'Преподаватель',
     credits: 3,
     rk1: 88,
     rk2: 90,

@@ -1,115 +1,116 @@
 import { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
-import ApplicationModal from '../components/ApplicationModal';
-import EmptyState from '../components/EmptyState';
+import { api, errorMessage } from '../api/client';
+import type { Student } from '../api/types';
+import AuthGate from '../components/AuthGate';
+import CallButton from '../components/CallButton';
+import Chip from '../components/Chip';
+import FormBanner from '../components/FormBanner';
+import FormField from '../components/FormField';
+import GlassCard from '../components/GlassCard';
 import PrimaryButton from '../components/PrimaryButton';
 import ProfileCard from '../components/ProfileCard';
-import ScreenContainer from '../components/ScreenContainer';
-import TopBar from '../components/TopBar';
-import { useAppData } from '../context/AppDataContext';
+import ScreenScroll from '../components/ScreenScroll';
+import StateView from '../components/StateView';
+import { useApi } from '../hooks/useApi';
 import { useI18n } from '../i18n/LanguageContext';
 import type { RootStackScreenProps } from '../navigation/types';
-import { useTheme } from '../theme/ThemeContext';
-import { SCREEN_PADDING, spacing } from '../theme/metrics';
-import { type } from '../theme/typography';
-import type { Student } from '../types/Student';
-import { formatDate, formatPhone, phoneHref } from '../utils/format';
-import { openExternal } from '../utils/links';
+import { formatPhone } from '../utils/format';
+import { StyleSheet, View } from 'react-native';
+import { spacing } from '../theme/metrics';
 
-/**
- * Раздел «Информация о студенте»: здесь (а не на карточке в списке) показаны
- * имя, факультет, специальность, группа и курс. Отсюда же можно позвонить и отправить отклик.
- */
+type Kind = 'response' | 'application';
+
 export default function StudentProfileScreen({ navigation, route }: RootStackScreenProps<'StudentProfile'>) {
-  const { colors } = useTheme();
-  const { t, language } = useI18n();
-  const { getStudent, removeStudent } = useAppData();
-  const [respondTo, setRespondTo] = useState<Student | null>(null);
-  const student = getStudent(route.params.studentId);
-
-  const title = (
-    <Text style={[type.display, { color: colors.text }]} accessibilityRole="header">
-      {t('studentInfoTitle')}
-    </Text>
+  const { t } = useI18n();
+  return (
+    <ScreenScroll title={t('studentProfileTitle')} onBack={navigation.goBack}>
+      <AuthGate>
+        <StudentDetails studentId={route.params.studentId} onOpenRequests={() => navigation.navigate('Requests')} />
+      </AuthGate>
+    </ScreenScroll>
   );
+}
 
-  if (!student) {
-    return (
-      <ScreenContainer edges={['top', 'bottom', 'left', 'right']}>
-        <View style={styles.content}>
-          <TopBar onBack={navigation.goBack} />
-          {title}
-          <EmptyState
-            icon="person-remove-outline"
-            title={t('studentNotFoundTitle')}
-            message={t('studentNotFoundText')}
-            actionLabel={t('backToList')}
-            onAction={navigation.goBack}
-          />
-        </View>
-      </ScreenContainer>
-    );
-  }
+function StudentDetails({ studentId, onOpenRequests }: { studentId: string; onOpenRequests: () => void }) {
+  const { t } = useI18n();
+  const { data, loading, error, reload } = useApi<{ student: Student }>(`/api/students/${encodeURIComponent(studentId)}`);
+  const student = data?.student;
+  const [kind, setKind] = useState<Kind>('response');
+  const [text, setText] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
 
-  const value = (text: string) => text || t('notSpecified');
-  const phone = student.phone ? formatPhone(student.phone) : '';
-
-  const call = () =>
-    void openExternal(phoneHref(student.phone), { title: t('linkErrorTitle'), text: t('linkErrorText', { url: phone }) });
-
-  const handleDelete = () => {
-    Alert.alert(t('deleteStudentTitle'), t('deleteStudentText', { name: phone || t('studentLabel') }), [
-      { text: t('cancel'), style: 'cancel' },
-      {
-        text: t('delete'),
-        style: 'destructive',
-        onPress: () => {
-          navigation.goBack();
-          void removeStudent(student.id);
-        },
-      },
-    ]);
+  const send = async () => {
+    if (sending) return;
+    if (text.trim().length < 5) {
+      setSendError(t('errAppText'));
+      return;
+    }
+    setSending(true);
+    setSendError(null);
+    try {
+      await api('POST', '/api/requests', { kind, targetUserId: studentId, text });
+      setText('');
+      setSent(true);
+    } catch (e) {
+      setSendError(errorMessage(e));
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
-    <ScreenContainer edges={['top', 'bottom', 'left', 'right']}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+    <StateView loading={loading} error={error} hasData={data !== null} onRetry={() => void reload()}>
+      {student ? (
         <View style={styles.content}>
-          <TopBar onBack={navigation.goBack} />
-          {title}
           <ProfileCard
-            firstName={student.firstName || t('studentLabel')}
+            firstName={student.firstName}
             lastName={student.lastName}
             seed={student.id}
-            badge={value(student.group)}
+            photo={student.photo}
+            badge={student.group}
             rows={[
-              { icon: 'call-outline', label: t('phone'), value: phone || t('studentNoPhone') },
-              { icon: 'business-outline', label: t('faculty'), value: value(student.faculty) },
-              { icon: 'school-outline', label: t('program'), value: value(student.program) },
-              { icon: 'people-outline', label: t('group'), value: value(student.group) },
-              { icon: 'ribbon-outline', label: t('course'), value: value(student.course) },
-              { icon: 'calendar-outline', label: t('addedOn'), value: formatDate(student.createdAt, language) },
+              { icon: 'school-outline', label: t('university'), value: student.university },
+              { icon: 'business-outline', label: t('faculty'), value: student.faculty },
+              { icon: 'book-outline', label: t('program'), value: student.program },
+              { icon: 'ribbon-outline', label: t('course'), value: String(student.course) },
+              { icon: 'call-outline', label: t('phone'), value: student.phone ? formatPhone(student.phone) : t('studentPhoneHidden') },
             ]}
           />
-          {phone ? <PrimaryButton title={`${t('callStudent')} · ${phone}`} icon="call-outline" onPress={call} /> : null}
-          <PrimaryButton title={t('studentRespond')} variant="glass" icon="chatbubble-ellipses-outline" onPress={() => setRespondTo(student)} />
-          <PrimaryButton title={t('deleteStudent')} variant="danger" icon="trash-outline" onPress={handleDelete} />
+          {student.phone ? <CallButton phone={student.phone} /> : null}
+          <GlassCard>
+            <View style={styles.kinds}>
+              <Chip label={t('reqKindResponse')} selected={kind === 'response'} onPress={() => setKind('response')} />
+              <Chip label={t('reqKindApplication')} selected={kind === 'application'} onPress={() => setKind('application')} />
+            </View>
+            <FormField
+              placeholder={t('appTextPlaceholder')}
+              value={text}
+              multiline
+              onChangeText={(value) => {
+                setText(value);
+                setSent(false);
+              }}
+            />
+            {sendError ? <FormBanner text={sendError} /> : null}
+            {sent ? <FormBanner kind="success" text={t('appSentText')} /> : null}
+            <PrimaryButton title={t('appSend')} arrow loading={sending} onPress={send} />
+            <PrimaryButton title={t('requestsTitle')} variant="glass" compact onPress={onOpenRequests} />
+          </GlassCard>
         </View>
-      </ScrollView>
-      <ApplicationModal student={respondTo} onClose={() => setRespondTo(null)} />
-    </ScreenContainer>
+      ) : null}
+    </StateView>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
-    paddingBottom: spacing.xxl,
-  },
   content: {
-    width: '100%',
-    maxWidth: 760,
-    alignSelf: 'center',
-    paddingHorizontal: SCREEN_PADDING,
     gap: spacing.lg,
+  },
+  kinds: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
   },
 });

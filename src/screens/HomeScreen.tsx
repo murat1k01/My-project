@@ -1,23 +1,31 @@
 import { useState } from 'react';
-import { ImageBackground, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useIsFocused } from '@react-navigation/native';
+import type { LaundryBooking } from '../api/types';
+import { Text } from '../components/AppText';
+import CallButton, { PROJECT_PHONE } from '../components/CallButton';
 import Chip from '../components/Chip';
 import EmptyState from '../components/EmptyState';
+import FormBanner from '../components/FormBanner';
+import GlassCard from '../components/GlassCard';
+import IconButton from '../components/IconButton';
+import PrimaryButton from '../components/PrimaryButton';
 import ScreenContainer from '../components/ScreenContainer';
 import SectionHeader from '../components/SectionHeader';
 import ServiceCard from '../components/ServiceCard';
-import SubscriptionBanner from '../components/SubscriptionBanner';
 import TopBar from '../components/TopBar';
 import { useAppData } from '../context/AppDataContext';
-import { NEWS } from '../data/info';
+import { useAuth } from '../context/AuthContext';
 import { SERVICES } from '../data/services';
+import { useApi } from '../hooks/useApi';
 import { useNow } from '../hooks/useNow';
 import { useI18n } from '../i18n/LanguageContext';
 import type { MainTabScreenProps } from '../navigation/types';
 import { useTheme } from '../theme/ThemeContext';
-import { radius, SCREEN_PADDING, spacing } from '../theme/metrics';
-import { fonts, type } from '../theme/typography';
-import { addDays, formatDayMonth, formatToday, getGreetingKey } from '../utils/format';
+import { SCREEN_PADDING, spacing } from '../theme/metrics';
+import { type } from '../theme/typography';
+import type { Service } from '../types/Service';
+import { formatDayMonth, formatPhone, formatToday, getGreetingKey } from '../utils/format';
 
 type Filter = 'all' | 'favorites';
 
@@ -27,12 +35,19 @@ const TABLET_BREAKPOINT = 600;
 /** На очень широких экранах контент не растягивается бесконечно */
 const MAX_CONTENT_WIDTH = 960;
 
+const HOME_SERVICES = SERVICES.filter((service) => !service.hidden);
+
 export default function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
   const { colors } = useTheme();
-  const { t, tr, language } = useI18n();
-  const { session, favorites, isFavorite, toggleFavorite } = useAppData();
+  const { t, language } = useI18n();
+  const { user } = useAuth();
+  const { favorites, isFavorite, toggleFavorite } = useAppData();
   const [filter, setFilter] = useState<Filter>('all');
   const now = useNow();
+  const focused = useIsFocused();
+  // Напоминание о ближайшей стирке: запрашиваем, когда экран открыт и пользователь вошёл
+  const bookings = useApi<{ bookings: LaundryBooking[] }>(user && focused ? '/api/laundry/bookings' : null);
+  const nextBooking = user ? bookings.data?.bookings[0] : undefined;
 
   // Адаптивная сетка: число колонок зависит от ширины экрана (2 — телефон, 3 — планшет),
   // а ширина карточки считается от фактической ширины сетки (onLayout) — так учитываются
@@ -43,20 +58,23 @@ export default function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
   const availableWidth = gridWidth || Math.min(width, MAX_CONTENT_WIDTH) - SCREEN_PADDING * 2;
   const cardWidth = Math.floor((availableWidth - GRID_GAP * (columns - 1)) / columns);
 
-  const visibleServices = filter === 'favorites' ? SERVICES.filter((service) => isFavorite(service.id)) : SERVICES;
-  const openService = (serviceId: (typeof SERVICES)[number]['id']) => navigation.navigate('ServiceDetails', { serviceId });
+  const visibleServices = filter === 'favorites' ? HOME_SERVICES.filter((service) => isFavorite(service.id)) : HOME_SERVICES;
+
+  const openService = (service: Service) => {
+    if (service.route) navigation.navigate(service.route);
+    else navigation.navigate('ServiceDetails', { serviceId: service.id });
+  };
 
   return (
     <ScreenContainer>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={[styles.content, { maxWidth: MAX_CONTENT_WIDTH }]}>
-          {/* Профиль и настройки — только в нижней навигации, поэтому в шапке лишь название */}
-          <TopBar label={t('appName')} />
+          <TopBar label={t('appName')} right={<IconButton icon="settings-outline" variant="glass" accessibilityLabel={t('settingsTitle')} onPress={() => navigation.navigate('Settings')} />} />
 
-          {/* Крупный заголовок, как в примерах дизайна */}
           <View style={styles.titleBlock}>
             <Text style={[type.caption, { color: colors.textSecondary }]}>
-              {t(getGreetingKey(now))}, {session?.login} · {formatToday(now, language)}
+              {t(getGreetingKey(now))}
+              {user ? `, ${user.firstName}` : ''} · {formatToday(now, language)}
             </Text>
             <Text style={[type.display, { color: colors.text }]} accessibilityRole="header">
               {t('homeTitle')}
@@ -64,45 +82,21 @@ export default function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
             <Text style={[type.caption, { color: colors.textSecondary }]}>{t('homeSubtitle')}</Text>
           </View>
 
-          {/* Точка входа в подписку */}
-          <SubscriptionBanner onPress={() => navigation.navigate('Subscription')} />
+          {!user ? <PrimaryButton title={t('signIn')} arrow onPress={() => navigation.navigate('Login')} /> : null}
 
-          {/* Новости кампуса: горизонтальная лента, по нажатию открывается раздел «Информация» */}
-          <SectionHeader title={t('homeNews')} right={<Chip label={t('allNews')} onPress={() => openService('info')} />} />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.newsRow}>
-            {NEWS.map((news) => (
-              <Pressable
-                key={news.id}
-                onPress={() => openService('info')}
-                accessibilityRole="button"
-                accessibilityLabel={tr(news.title)}
-                style={({ pressed }) => [styles.newsCard, pressed && styles.pressed]}
-              >
-                <ImageBackground source={news.image} style={styles.newsImage} imageStyle={styles.newsImageRadius}>
-                  <LinearGradient
-                    colors={['rgba(4,6,15,0.05)', 'rgba(4,6,15,0.9)'] as const}
-                    style={[StyleSheet.absoluteFill, styles.newsImageRadius]}
-                  />
-                  <Text style={styles.newsDate}>{formatDayMonth(addDays(now, -news.daysAgo), language)}</Text>
-                  <Text style={styles.newsTitle} numberOfLines={2}>
-                    {tr(news.title)}
-                  </Text>
-                </ImageBackground>
-              </Pressable>
-            ))}
-          </ScrollView>
+          {nextBooking ? (
+            <FormBanner
+              kind="info"
+              text={t('laundryReminder', { date: formatDayMonth(new Date(`${nextBooking.date}T00:00:00`), language), time: nextBooking.slot, machine: nextBooking.machine })}
+            />
+          ) : null}
 
           <SectionHeader
             title={t('servicesTitle')}
             right={
               <>
-                <Chip label={`${t('filterAll')} ${SERVICES.length}`} selected={filter === 'all'} onPress={() => setFilter('all')} />
-                <Chip
-                  label={`${t('filterFavorites')} ${favorites.length}`}
-                  icon="star"
-                  selected={filter === 'favorites'}
-                  onPress={() => setFilter('favorites')}
-                />
+                <Chip label={`${t('filterAll')} ${HOME_SERVICES.length}`} selected={filter === 'all'} onPress={() => setFilter('all')} />
+                <Chip label={`${t('filterFavorites')} ${favorites.filter((id) => HOME_SERVICES.some((s) => s.id === id)).length}`} icon="star" selected={filter === 'favorites'} onPress={() => setFilter('favorites')} />
               </>
             }
           />
@@ -116,20 +110,21 @@ export default function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
                   service={service}
                   width={cardWidth}
                   isFavorite={isFavorite(service.id)}
-                  onPress={() => openService(service.id)}
+                  onPress={() => openService(service)}
                   onToggleFavorite={() => toggleFavorite(service.id)}
                 />
               ))}
             </View>
           ) : (
-            <EmptyState
-              icon="star-outline"
-              title={t('emptyFavTitle')}
-              message={t('emptyFavText')}
-              actionLabel={t('showAll')}
-              onAction={() => setFilter('all')}
-            />
+            <EmptyState icon="star-outline" title={t('emptyFavTitle')} message={t('emptyFavText')} actionLabel={t('showAll')} onAction={() => setFilter('all')} />
           )}
+
+          <GlassCard>
+            <Text style={[type.subheading, { color: colors.text }]}>{t('contactProject')}</Text>
+            <Text style={[type.body, { color: colors.textSecondary }]}>{formatPhone(PROJECT_PHONE)}</Text>
+            <Text style={[type.caption, { color: colors.textMuted }]}>{t('contactProjectNote')}</Text>
+            <CallButton compact />
+          </GlassCard>
         </View>
       </ScrollView>
     </ScreenContainer>
@@ -149,83 +144,9 @@ const styles = StyleSheet.create({
   titleBlock: {
     gap: spacing.sm,
   },
-  quickRow: {
-    gap: spacing.md,
-  },
-  quickItem: {
-    alignItems: 'center',
-    gap: 6,
-  },
-  quickIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  quickLabel: {
-    fontFamily: fonts.semibold,
-    fontSize: 10,
-    letterSpacing: 0.6,
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-  widgets: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: GRID_GAP,
-  },
-  widget: {
-    flexGrow: 1,
-    flexBasis: 260,
-    justifyContent: 'space-between',
-  },
-  widgetHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  widgetIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: GRID_GAP,
-  },
-  newsRow: {
-    gap: GRID_GAP,
-  },
-  newsCard: {
-    width: 260,
-    borderRadius: radius.lg,
-    overflow: 'hidden',
-  },
-  newsImage: {
-    width: '100%',
-    height: 150,
-    padding: spacing.lg,
-    justifyContent: 'flex-end',
-    gap: 4,
-  },
-  newsImageRadius: {
-    borderRadius: radius.lg,
-  },
-  newsDate: {
-    fontFamily: fonts.semibold,
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.8)',
-  },
-  newsTitle: {
-    fontFamily: fonts.medium,
-    fontSize: 15,
-    lineHeight: 19,
-    color: '#FFFFFF',
   },
 });

@@ -1,58 +1,32 @@
 import { useState } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '../../components/AppText';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import GlassCard from '../../components/GlassCard';
 import PrimaryButton from '../../components/PrimaryButton';
-import ProgressBar from '../../components/ProgressBar';
 import SectionHeader from '../../components/SectionHeader';
 import SegmentedTabs from '../../components/SegmentedTabs';
 import ServiceLayout from '../../components/ServiceLayout';
 import { useCampus } from '../../context/CampusContext';
-import { getPlan, MEMBERSHIP_PLANS, MembershipPlan, SPORT_HOURS, SPORT_SECTIONS, TRAINING_PLAN } from '../../data/sport';
+import { MEMBERSHIP_PLANS, SPORT_HOURS, SPORT_SECTIONS, TRAINING_PLAN } from '../../data/sport';
 import { useNow } from '../../hooks/useNow';
 import { useI18n } from '../../i18n/LanguageContext';
 import { dateNames } from '../../i18n/translations';
 import { useTheme } from '../../theme/ThemeContext';
 import { radius, spacing } from '../../theme/metrics';
 import { fonts, type } from '../../theme/typography';
-import { addDays, formatDate, formatMoney } from '../../utils/format';
+import { formatMoney } from '../../utils/format';
 import type { ServiceScreenProps } from './types';
 
 type Tab = 'membership' | 'training';
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-/** SPORT — абонементы (оформление и срок действия), режим работы, секции и недельный план тренировок. */
+/** Спорт: примеры абонементов (купить в приложении нельзя), режим работы, секции и недельный план тренировок. */
 export default function SportService({ service, onBack }: ServiceScreenProps) {
   const { colors } = useTheme();
   const { t, tr, language } = useI18n();
   const { campus, updateCampus } = useCampus();
   const now = useNow();
   const [tab, setTab] = useState<Tab>('membership');
-
-  const membership = campus.membership && new Date(campus.membership.endsAt) > now ? campus.membership : null;
-  const activePlan = membership ? getPlan(membership.planId) : undefined;
-  // round, а не ceil: при переходе на летнее/зимнее время в периоде может «набежать» лишний час
-  const daysLeft = membership && activePlan
-    ? Math.min(activePlan.durationDays, Math.max(1, Math.round((new Date(membership.endsAt).getTime() - now.getTime()) / DAY_MS)))
-    : 0;
-
-  const buy = (plan: MembershipPlan) => {
-    const apply = () =>
-      updateCampus((prev) => ({
-        ...prev,
-        membership: { planId: plan.id, startedAt: new Date().toISOString(), endsAt: addDays(new Date(), plan.durationDays).toISOString() },
-      }));
-    if (membership) {
-      Alert.alert(t('sportReplaceTitle'), t('sportReplaceText'), [
-        { text: t('cancel'), style: 'cancel' },
-        { text: t('sportBuy'), onPress: apply },
-      ]);
-    } else {
-      apply();
-    }
-  };
 
   const toggleSection = (id: string) =>
     updateCampus((prev) => ({
@@ -75,54 +49,23 @@ export default function SportService({ service, onBack }: ServiceScreenProps) {
 
       {tab === 'membership' ? (
         <>
-          {membership && activePlan ? (
-            <LinearGradient colors={[colors.cardStart, colors.cardEnd] as const} style={styles.activeCard}>
-              <Text style={styles.activeLabel}>{t('sportActive').toUpperCase()}</Text>
-              <Text style={styles.activeName}>{tr(activePlan.name)}</Text>
-              <Text style={styles.activeText}>{t('sportValidUntil', { date: formatDate(membership.endsAt, language) })}</Text>
-              <ProgressBar value={daysLeft / activePlan.durationDays} color="#FFFFFF" />
-              <Text style={styles.activeText}>{t('sportDaysLeft', { days: daysLeft })}</Text>
-              <PrimaryButton
-                title={t('sportCancel')}
-                variant="glass"
-                compact
-                onPress={() => updateCampus((prev) => ({ ...prev, membership: null }))}
-              />
-            </LinearGradient>
-          ) : (
-            <GlassCard style={styles.row}>
-              <Ionicons name="card-outline" size={22} color={colors.textMuted} />
-              <Text style={[type.body, { color: colors.textSecondary }]}>{t('sportNoMembership')}</Text>
-            </GlassCard>
-          )}
-
-          {MEMBERSHIP_PLANS.map((plan) => {
-            const isActive = activePlan?.id === plan.id;
-            return (
-              <GlassCard key={plan.id} style={isActive && { borderColor: colors.primary }}>
-                <View style={styles.planHeader}>
-                  <View>
-                    <Text style={[type.heading, { color: colors.text }]}>{tr(plan.name)}</Text>
-                    <Text style={[type.caption, { color: colors.textMuted }]}>{t('sportDays', { days: plan.durationDays })}</Text>
-                  </View>
-                  <Text style={[type.title, { color: colors.text }]}>{formatMoney(plan.price, t('currency'))}</Text>
+          {MEMBERSHIP_PLANS.map((plan) => (
+            <GlassCard key={plan.id}>
+              <View style={styles.planHeader}>
+                <View style={styles.flex}>
+                  <Text style={[type.heading, { color: colors.text }]}>{tr(plan.name)}</Text>
+                  <Text style={[type.caption, { color: colors.textMuted }]}>{t('sportDays', { days: plan.durationDays })}</Text>
                 </View>
-                {plan.features.map((feature) => (
-                  <View key={feature.en} style={styles.row}>
-                    <Ionicons name="checkmark-circle" size={18} color={colors.success} />
-                    <Text style={[type.body, styles.flex, { color: colors.textSecondary }]}>{tr(feature)}</Text>
-                  </View>
-                ))}
-                <PrimaryButton
-                  title={isActive ? t('sportActive') : t('sportBuy')}
-                  arrow={!isActive}
-                  variant={isActive ? 'glass' : 'light'}
-                  disabled={isActive}
-                  onPress={() => buy(plan)}
-                />
-              </GlassCard>
-            );
-          })}
+                <Text style={[type.title, { color: colors.text }]}>{formatMoney(plan.price, t('currency'))}</Text>
+              </View>
+              {plan.features.map((feature) => (
+                <View key={feature.en} style={styles.row}>
+                  <Ionicons name="checkmark-circle" size={18} color={colors.success} />
+                  <Text style={[type.body, styles.flex, { color: colors.textSecondary }]}>{tr(feature)}</Text>
+                </View>
+              ))}
+            </GlassCard>
+          ))}
           <Text style={[type.caption, { color: colors.textMuted }]}>{t('sportPayNote')}</Text>
         </>
       ) : (
@@ -192,28 +135,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-  },
-  activeCard: {
-    borderRadius: radius.lg,
-    padding: spacing.xl,
-    gap: spacing.sm,
-  },
-  activeLabel: {
-    fontFamily: fonts.semibold,
-    fontSize: 12,
-    letterSpacing: 0.6,
-    color: 'rgba(255,255,255,0.75)',
-  },
-  activeName: {
-    fontFamily: fonts.regular,
-    fontSize: 30,
-    letterSpacing: -0.8,
-    color: '#FFFFFF',
-  },
-  activeText: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.85)',
   },
   planHeader: {
     flexDirection: 'row',

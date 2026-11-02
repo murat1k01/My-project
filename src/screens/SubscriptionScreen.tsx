@@ -1,111 +1,144 @@
-import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import { api, errorMessage } from '../api/client';
+import type { Plan, PlanId, SubscriptionInfo } from '../api/types';
+import { Text } from '../components/AppText';
+import FormBanner from '../components/FormBanner';
 import GlassCard from '../components/GlassCard';
 import PrimaryButton from '../components/PrimaryButton';
-import ScreenContainer from '../components/ScreenContainer';
-import TopBar from '../components/TopBar';
-import { useCampus } from '../context/CampusContext';
-import { getSubscriptionPlan, isSubscriptionActive, SUBSCRIPTION_PLANS } from '../data/subscription';
+import ScreenScroll from '../components/ScreenScroll';
+import StateView from '../components/StateView';
+import { useAuth } from '../context/AuthContext';
+import { useApi } from '../hooks/useApi';
 import { useI18n } from '../i18n/LanguageContext';
 import type { RootStackScreenProps } from '../navigation/types';
 import { useTheme } from '../theme/ThemeContext';
-import { radius, SCREEN_PADDING, spacing } from '../theme/metrics';
-import { fonts, type } from '../theme/typography';
-import { addDays, formatDate, formatMoney } from '../utils/format';
+import { spacing } from '../theme/metrics';
+import { type } from '../theme/typography';
+import { confirmAction } from '../utils/dialogs';
+import { formatDate, formatMoney } from '../utils/format';
 
-/** Оформление подписки ALTushki Plus: выбор плана, демо-оформление, отмена. */
+/**
+ * Тарифы и оформление. Платёжная система не подключена: сервер отвечает на оформление отказом,
+ * поэтому деньги не списываются, а успешная оплата нигде не имитируется.
+ */
 export default function SubscriptionScreen({ navigation }: RootStackScreenProps<'Subscription'>) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const { t, language } = useI18n();
-  const { campus, updateCampus } = useCampus();
-  const [planId, setPlanId] = useState(SUBSCRIPTION_PLANS[1].id);
+  const { user, subscription, refresh } = useAuth();
+  const { data, loading, error, reload } = useApi<{ plans: Plan[]; paymentsEnabled: boolean }>('/api/plans');
+  const [checkoutPlan, setCheckoutPlan] = useState<Plan | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<{ kind: 'error' | 'success' | 'info'; text: string } | null>(null);
 
-  const now = new Date();
-  const active = isSubscriptionActive(campus.subscription, now) ? campus.subscription : null;
-  const activePlan = active ? getSubscriptionPlan(active.planId) : undefined;
-  const selected = getSubscriptionPlan(planId) ?? SUBSCRIPTION_PLANS[0];
+  // При открытии уточняем статус подписки: она могла истечь
+  useEffect(() => {
+    if (user) void refresh().catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const subscribe = () => {
-    const endsAt = addDays(new Date(), selected.durationDays).toISOString();
-    updateCampus((prev) => ({ ...prev, subscription: { planId: selected.id, startedAt: new Date().toISOString(), endsAt } }));
-    Alert.alert(t('subActivatedTitle'), t('subActivatedText', { date: formatDate(endsAt, language) }));
+  const checkout = async (plan: Plan) => {
+    if (busy) return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      await api('POST', '/api/subscription/checkout', { plan: plan.id });
+      await refresh();
+      setCheckoutPlan(null);
+      setMessage({ kind: 'success', text: t('subActivated') });
+    } catch (e) {
+      setMessage({ kind: 'info', text: errorMessage(e) });
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const cancel = () => {
-    Alert.alert(t('subCancelTitle'), t('subCancelText'), [
-      { text: t('cancel'), style: 'cancel' },
-      { text: t('subCancel'), style: 'destructive', onPress: () => updateCampus((prev) => ({ ...prev, subscription: null })) },
-    ]);
+  const cancelSubscription = () => {
+    confirmAction({
+      title: t('subCancelTitle'),
+      text: t('subCancelText'),
+      confirm: t('subCancel'),
+      cancel: t('back'),
+      destructive: true,
+      onConfirm: () => {
+        void (async () => {
+          setBusy(true);
+          setMessage(null);
+          try {
+            await api<{ subscription: SubscriptionInfo }>('POST', '/api/subscription/cancel');
+            await refresh();
+            setMessage({ kind: 'success', text: t('subCanceled') });
+          } catch (e) {
+            setMessage({ kind: 'error', text: errorMessage(e) });
+          } finally {
+            setBusy(false);
+          }
+        })();
+      },
+    });
   };
 
-  const benefits = [
-    { icon: 'bicycle-outline' as const, text: t('subBenefitDelivery') },
-    { icon: 'ribbon-outline' as const, text: t('subBenefitBadge') },
-  ];
+  const choose = (plan: Plan) => {
+    if (!user) {
+      navigation.navigate('Login');
+      return;
+    }
+    setMessage(null);
+    setCheckoutPlan(plan);
+  };
+
+  const planName = (id: PlanId | null) => data?.plans.find((plan) => plan.id === id)?.name ?? '';
 
   return (
-    <ScreenContainer edges={['top', 'bottom', 'left', 'right']}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.content}>
-          <TopBar onBack={navigation.goBack} />
-          <View style={styles.titleBlock}>
-            <Text style={[type.display, { color: colors.text }]} accessibilityRole="header">
-              {t('subName')}
-            </Text>
-            <Text style={[type.caption, { color: colors.textSecondary }]}>{t('subTagline')}</Text>
-          </View>
+    <ScreenScroll title={t('subName')} subtitle={t('subTagline')} onBack={navigation.goBack}>
+      {data && !data.paymentsEnabled ? <FormBanner kind="info" text={t('subPaymentsOff')} /> : null}
+      {subscription.status === 'expired' ? <FormBanner text={t('subExpiredPlan', { plan: planName(subscription.previousPlan), date: subscription.expiresAt ? formatDate(subscription.expiresAt, language) : '' })} /> : null}
+      {subscription.status === 'canceled' && subscription.expiresAt ? <FormBanner kind="info" text={t('subCanceledUntil', { date: formatDate(subscription.expiresAt, language) })} /> : null}
+      {message ? <FormBanner kind={message.kind} text={message.text} /> : null}
 
-          <LinearGradient colors={[colors.cardStart, colors.cardEnd] as const} style={styles.hero}>
-            <Text style={styles.heroLabel}>{t('subCurrentPlan').toUpperCase()}</Text>
-            <Text style={styles.heroTitle}>{activePlan ? t(activePlan.name) : t('subInactive')}</Text>
-            {active ? <Text style={styles.heroText}>{t('subActiveUntil', { date: formatDate(active.endsAt, language) })}</Text> : null}
-          </LinearGradient>
+      {checkoutPlan ? (
+        <GlassCard style={{ borderColor: colors.primary }}>
+          <Text style={[type.heading, { color: colors.text }]}>{t('subCheckout', { plan: checkoutPlan.name })}</Text>
+          <Text style={[type.body, { color: colors.textSecondary }]}>
+            {formatMoney(checkoutPlan.price, t('currency'))} / {checkoutPlan.period}
+          </Text>
+          <Text style={[type.caption, { color: colors.textMuted }]}>{t('subCheckoutNote')}</Text>
+          <PrimaryButton title={t('subPay', { price: formatMoney(checkoutPlan.price, t('currency')) })} arrow loading={busy} onPress={() => void checkout(checkoutPlan)} />
+          <PrimaryButton title={t('cancel')} variant="glass" compact onPress={() => setCheckoutPlan(null)} />
+        </GlassCard>
+      ) : null}
 
-          <GlassCard>
-            <Text style={[type.subheading, { color: colors.text }]}>{t('subBenefitsTitle')}</Text>
-            {benefits.map((benefit) => (
-              <View key={benefit.text} style={styles.benefit}>
-                <View style={[styles.benefitIcon, { backgroundColor: colors.primarySoft }]}>
-                  <Ionicons name={benefit.icon} size={18} color={colors.text} />
-                </View>
-                <Text style={[type.body, styles.flex, { color: colors.text }]}>{benefit.text}</Text>
-              </View>
-            ))}
-          </GlassCard>
-
-          {SUBSCRIPTION_PLANS.map((plan) => {
-            const isSelected = plan.id === planId;
-            return (
-              <Pressable
-                key={plan.id}
-                onPress={() => setPlanId(plan.id)}
-                accessibilityRole="radio"
-                accessibilityState={{ selected: isSelected }}
-                style={[
-                  styles.plan,
-                  { backgroundColor: colors.glass, borderColor: isSelected ? colors.text : colors.border },
-                ]}
-              >
-                <View style={[styles.radio, { borderColor: colors.text }]}>
-                  {isSelected ? <View style={[styles.radioDot, { backgroundColor: isDark ? colors.pill : colors.round }]} /> : null}
-                </View>
+      <StateView loading={loading} error={error} hasData={data !== null} onRetry={() => void reload()}>
+        {data?.plans.map((plan) => {
+          const current = user !== null && plan.id === subscription.plan;
+          return (
+            <GlassCard key={plan.id} style={current ? { borderColor: colors.primary, borderWidth: 2 } : undefined}>
+              <View style={styles.header}>
                 <View style={styles.flex}>
-                  <Text style={[type.subheading, { color: colors.text }]}>{t(plan.name)}</Text>
-                  <Text style={[type.caption, { color: colors.textMuted }]}>{t('sportDays', { days: plan.durationDays })}</Text>
+                  <Text style={[type.heading, { color: colors.text }]}>{plan.name}</Text>
+                  {current ? <Text style={[type.label, { color: colors.primary }]}>{t('subCurrentPlan')}</Text> : null}
                 </View>
-                <Text style={[type.heading, { color: colors.text }]}>{formatMoney(plan.price, t('currency'))}</Text>
-              </Pressable>
-            );
-          })}
-
-          <PrimaryButton title={t('subBuy', { price: formatMoney(selected.price, t('currency')) })} arrow onPress={subscribe} />
-          {active ? <PrimaryButton title={t('subCancel')} variant="danger" onPress={cancel} /> : null}
-          <Text style={[type.caption, { color: colors.textMuted }]}>{t('subDemoNote')}</Text>
-        </View>
-      </ScrollView>
-    </ScreenContainer>
+                <Text style={[type.subheading, { color: colors.text }]}>{plan.price > 0 ? `${formatMoney(plan.price, t('currency'))} / ${plan.period}` : t('busFree')}</Text>
+              </View>
+              {plan.features.map((feature) => (
+                <View key={feature} style={styles.feature}>
+                  <Ionicons name="checkmark-circle" size={18} color={colors.success} />
+                  <Text style={[type.body, styles.flex, { color: colors.textSecondary }]}>{feature}</Text>
+                </View>
+              ))}
+              {current && subscription.expiresAt && subscription.status === 'active' ? (
+                <>
+                  <Text style={[type.caption, { color: colors.textMuted }]}>{t('subActiveUntil', { date: formatDate(subscription.expiresAt, language) })}</Text>
+                  <PrimaryButton title={t('subCancel')} variant="danger" compact disabled={busy} onPress={cancelSubscription} />
+                </>
+              ) : null}
+              {!current && plan.price > 0 ? <PrimaryButton title={t('subOpen')} arrow compact onPress={() => choose(plan)} /> : null}
+            </GlassCard>
+          );
+        })}
+      </StateView>
+    </ScreenScroll>
   );
 }
 
@@ -113,72 +146,16 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
   },
-  scroll: {
-    paddingBottom: spacing.xxl,
-  },
-  content: {
-    width: '100%',
-    maxWidth: 760,
-    alignSelf: 'center',
-    paddingHorizontal: SCREEN_PADDING,
-    gap: spacing.lg,
-  },
-  titleBlock: {
-    gap: spacing.xs,
-  },
-  hero: {
-    borderRadius: radius.lg,
-    padding: spacing.xl,
-    gap: 4,
-  },
-  heroLabel: {
-    fontFamily: fonts.semibold,
-    fontSize: 12,
-    letterSpacing: 0.6,
-    color: 'rgba(255,255,255,0.7)',
-  },
-  heroTitle: {
-    fontFamily: fonts.regular,
-    fontSize: 30,
-    letterSpacing: -0.8,
-    color: '#FFFFFF',
-  },
-  heroText: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.8)',
-  },
-  benefit: {
+  header: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
+    flexWrap: 'wrap',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
   },
-  benefitIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  plan: {
+  feature: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    padding: spacing.lg,
-    borderRadius: radius.lg,
-    borderWidth: 1.5,
-  },
-  radio: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  radioDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    alignItems: 'flex-start',
+    gap: spacing.sm,
   },
 });

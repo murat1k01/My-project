@@ -1,4 +1,5 @@
-import { Alert, Linking } from 'react-native';
+import { Linking } from 'react-native';
+import { notify } from './dialogs';
 
 /**
  * Безопасное открытие внешних ссылок: разрешены только https:// и tel:.
@@ -6,12 +7,12 @@ import { Alert, Linking } from 'react-native';
  */
 export async function openExternal(url: string, messages: { title: string; text: string }): Promise<void> {
   if (!url.startsWith('https://') && !url.startsWith('tel:')) {
-    Alert.alert(messages.title, messages.text);
+    notify(messages.title, messages.text);
     return;
   }
   try {
     await Linking.openURL(url);
   } catch {
-    Alert.alert(messages.title, messages.text);
+    notify(messages.title, messages.text);
   }
 }

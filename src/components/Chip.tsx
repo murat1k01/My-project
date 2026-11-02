@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
+import { Text } from './AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, spacing } from '../theme/metrics';
@@ -24,6 +25,7 @@ export default function Chip({ label, selected = false, onPress, icon, disabled 
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
+      accessibilityLabel={label}
       accessibilityState={{ selected, disabled }}
       style={({ pressed }) => [
         styles.chip,

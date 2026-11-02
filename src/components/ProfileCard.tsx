@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from './AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../theme/ThemeContext';
@@ -21,16 +22,17 @@ type Props = {
   /** Строка под именем (например, группа) */
   badge: string;
   rows: ProfileRow[];
+  photo?: string | null;
 };
 
 /** Карточка профиля: синий градиент с аватаром и именем, ниже — строки с данными. */
-export default function ProfileCard({ firstName, lastName, seed, badge, rows }: Props) {
+export default function ProfileCard({ firstName, lastName, seed, badge, rows, photo }: Props) {
   const { colors } = useTheme();
 
   return (
     <View style={[styles.card, { borderColor: colors.border, backgroundColor: colors.glass }]}>
       <LinearGradient colors={[colors.cardStart, colors.cardEnd] as const} style={styles.hero}>
-        <Avatar firstName={firstName} lastName={lastName} seed={seed} size={84} />
+        <Avatar firstName={firstName} lastName={lastName} seed={seed} size={84} photo={photo} />
         <Text style={styles.name}>{`${firstName} ${lastName}`.trim()}</Text>
         <View style={styles.badge}>
           <Text style={styles.badgeText}>{badge}</Text>

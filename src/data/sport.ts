@@ -58,12 +58,12 @@ export type SportSection = {
 };
 
 export const SPORT_SECTIONS: SportSection[] = [
-  { id: 'gym', name: lt('Тренажёрный зал', 'Тренажер залы', 'Gym'), schedule: lt('Ежедневно · 07:00–22:00', 'Күн сайын · 07:00–22:00', 'Daily · 07:00–22:00'), coach: 'Касымов Е.Б.', icon: 'barbell-outline' },
-  { id: 'volleyball', name: lt('Волейбол', 'Волейбол', 'Volleyball'), schedule: lt('Пн, Ср, Пт · 18:00–19:30', 'Дс, Ср, Жм · 18:00–19:30', 'Mon, Wed, Fri · 18:00–19:30'), coach: 'Абдрахманова Л.С.', icon: 'tennisball-outline' },
-  { id: 'basketball', name: lt('Баскетбол', 'Баскетбол', 'Basketball'), schedule: lt('Вт, Чт · 17:00–18:30', 'Сс, Бс · 17:00–18:30', 'Tue, Thu · 17:00–18:30'), coach: 'Петров А.И.', icon: 'basketball-outline' },
-  { id: 'football', name: lt('Мини-футбол', 'Мини-футбол', 'Futsal'), schedule: lt('Ср, Сб · 16:00–17:30', 'Ср, Сн · 16:00–17:30', 'Wed, Sat · 16:00–17:30'), coach: 'Тулегенов Н.А.', icon: 'football-outline' },
-  { id: 'boxing', name: lt('Бокс', 'Бокс', 'Boxing'), schedule: lt('Пн, Чт · 19:00–20:30', 'Дс, Бс · 19:00–20:30', 'Mon, Thu · 19:00–20:30'), coach: 'Серикбаев М.К.', icon: 'fitness-outline' },
-  { id: 'yoga', name: lt('Йога', 'Йога', 'Yoga'), schedule: lt('Вт, Сб · 09:00–10:00', 'Сс, Сн · 09:00–10:00', 'Tue, Sat · 09:00–10:00'), coach: 'Ли А.В.', icon: 'body-outline' },
+  { id: 'gym', name: lt('Тренажёрный зал', 'Тренажер залы', 'Gym'), schedule: lt('Ежедневно · 07:00–22:00', 'Күн сайын · 07:00–22:00', 'Daily · 07:00–22:00'), coach: 'Тренер спорткомплекса', icon: 'barbell-outline' },
+  { id: 'volleyball', name: lt('Волейбол', 'Волейбол', 'Volleyball'), schedule: lt('Пн, Ср, Пт · 18:00–19:30', 'Дс, Ср, Жм · 18:00–19:30', 'Mon, Wed, Fri · 18:00–19:30'), coach: 'Тренер спорткомплекса', icon: 'tennisball-outline' },
+  { id: 'basketball', name: lt('Баскетбол', 'Баскетбол', 'Basketball'), schedule: lt('Вт, Чт · 17:00–18:30', 'Сс, Бс · 17:00–18:30', 'Tue, Thu · 17:00–18:30'), coach: 'Тренер спорткомплекса', icon: 'basketball-outline' },
+  { id: 'football', name: lt('Мини-футбол', 'Мини-футбол', 'Futsal'), schedule: lt('Ср, Сб · 16:00–17:30', 'Ср, Сн · 16:00–17:30', 'Wed, Sat · 16:00–17:30'), coach: 'Тренер спорткомплекса', icon: 'football-outline' },
+  { id: 'boxing', name: lt('Бокс', 'Бокс', 'Boxing'), schedule: lt('Пн, Чт · 19:00–20:30', 'Дс, Бс · 19:00–20:30', 'Mon, Thu · 19:00–20:30'), coach: 'Тренер спорткомплекса', icon: 'fitness-outline' },
+  { id: 'yoga', name: lt('Йога', 'Йога', 'Yoga'), schedule: lt('Вт, Сб · 09:00–10:00', 'Сс, Сн · 09:00–10:00', 'Tue, Sat · 09:00–10:00'), coach: 'Тренер спорткомплекса', icon: 'body-outline' },
 ];
 
 /** Недельный режим тренировок в зале (индекс как у Date.getDay(): 0 — воскресенье). */

@@ -1,13 +1,15 @@
 import { ReactNode } from 'react';
-import { ImageBackground, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ImageBackground, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from './AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppData } from '../context/AppDataContext';
 import { useI18n } from '../i18n/LanguageContext';
+import type { TranslationKey } from '../i18n/translations';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, SCREEN_PADDING, spacing } from '../theme/metrics';
-import { fonts, type } from '../theme/typography';
+import { type } from '../theme/typography';
 import type { Service } from '../types/Service';
 import ExampleNotice from './ExampleNotice';
 import IconButton from './IconButton';
@@ -18,13 +20,15 @@ type Props = {
   children: ReactNode;
   /** Закреплённая снизу панель (например, корзина столовой) */
   footer?: ReactNode;
+  /** Пометка о примерных данных; null — на экране только настоящие данные */
+  notice?: TranslationKey | null;
 };
 
 /**
  * Общий макет экранов сервисов: большое фото с плавным переходом в фон,
  * кнопки «назад» и «избранное», заголовок и содержимое.
  */
-export default function ServiceLayout({ service, onBack, children, footer }: Props) {
+export default function ServiceLayout({ service, onBack, children, footer, notice = 'exampleNotice' }: Props) {
   const { colors } = useTheme();
   const { t, tr } = useI18n();
   const { isFavorite, toggleFavorite } = useAppData();
@@ -58,15 +62,14 @@ export default function ServiceLayout({ service, onBack, children, footer }: Pro
         <View style={styles.content}>
           <View style={styles.titleBlock}>
             <View style={[styles.codeChip, { backgroundColor: service.accent }]}>
-              <Ionicons name={service.icon} size={14} color="#04060F" />
-              <Text style={styles.code}>{service.code}</Text>
+              <Ionicons name={service.icon} size={18} color="#04060F" />
             </View>
             <Text style={[type.display, { color: colors.text }]} accessibilityRole="header">
               {tr(service.title)}
             </Text>
             <Text style={[type.body, { color: colors.textSecondary }]}>{tr(service.description)}</Text>
           </View>
-          <ExampleNotice />
+          {notice ? <ExampleNotice textKey={notice} /> : null}
           {children}
         </View>
       </ScrollView>
@@ -108,18 +111,8 @@ const styles = StyleSheet.create({
   },
   codeChip: {
     alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    padding: 8,
     borderRadius: radius.pill,
-  },
-  code: {
-    fontFamily: fonts.bold,
-    fontSize: 12,
-    letterSpacing: 0.8,
-    color: '#04060F',
   },
   footer: {
     position: 'absolute',

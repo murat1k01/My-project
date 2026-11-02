@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from './AppText';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing } from '../theme/metrics';
 import { type } from '../theme/typography';

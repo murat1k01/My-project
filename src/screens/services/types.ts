@@ -5,5 +5,5 @@ export type ServiceScreenProps = {
   service: Service;
   onBack: () => void;
   /** Переход на общие экраны приложения из сервиса (заявки, подписка) */
-  openScreen: (screen: 'Requests' | 'Subscription') => void;
+  openScreen: (screen: 'Requests' | 'Subscription' | 'Login') => void;
 };

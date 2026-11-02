@@ -1,16 +1,13 @@
-import { Alert } from 'react-native';
-import { useAppData } from '../context/AppDataContext';
+import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n/LanguageContext';
+import { confirmAction } from '../utils/dialogs';
 
 /** Выход с подтверждением — используется в профиле и настройках. */
 export function useSignOut(): () => void {
-  const { signOut } = useAppData();
+  const { signOut } = useAuth();
   const { t } = useI18n();
 
   return () => {
-    Alert.alert(t('signOutTitle'), t('signOutText'), [
-      { text: t('cancel'), style: 'cancel' },
-      { text: t('signOutConfirm'), style: 'destructive', onPress: () => void signOut() },
-    ]);
+    confirmAction({ title: t('signOutTitle'), text: t('signOutText'), confirm: t('signOutConfirm'), cancel: t('cancel'), destructive: true, onConfirm: () => void signOut() });
   };
 }

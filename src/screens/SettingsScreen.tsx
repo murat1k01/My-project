@@ -1,84 +1,78 @@
 import { ReactNode } from 'react';
-import { Platform, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Platform, StyleSheet, Switch, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
+import { Text } from '../components/AppText';
 import Chip from '../components/Chip';
 import PrimaryButton from '../components/PrimaryButton';
-import ScreenContainer from '../components/ScreenContainer';
-import SubscriptionBanner from '../components/SubscriptionBanner';
-import TopBar from '../components/TopBar';
-import { useAppData } from '../context/AppDataContext';
+import ScreenScroll from '../components/ScreenScroll';
+import { useAuth } from '../context/AuthContext';
 import { useSignOut } from '../hooks/useSignOut';
 import { useI18n } from '../i18n/LanguageContext';
-import { LANGUAGES } from '../i18n/translations';
-import type { MainTabScreenProps } from '../navigation/types';
+import { LANGUAGES, TranslationKey } from '../i18n/translations';
+import type { RootStackScreenProps } from '../navigation/types';
+import { FontScaleId, useFontScale } from '../theme/FontScaleContext';
 import { useTheme } from '../theme/ThemeContext';
-import { radius, SCREEN_PADDING, spacing } from '../theme/metrics';
+import { radius, spacing } from '../theme/metrics';
 import { type } from '../theme/typography';
 import type { IoniconName } from '../types/Service';
 
-export default function SettingsScreen({ navigation }: MainTabScreenProps<'Settings'>) {
+const FONT_OPTIONS: { id: FontScaleId; label: TranslationKey }[] = [
+  { id: 'small', label: 'fontSmall' },
+  { id: 'standard', label: 'fontStandard' },
+  { id: 'large', label: 'fontLarge' },
+  { id: 'xlarge', label: 'fontXLarge' },
+];
+
+export default function SettingsScreen({ navigation }: RootStackScreenProps<'Settings'>) {
   const { colors, isDark, setMode } = useTheme();
   const { t, language, setLanguage } = useI18n();
-  const { session, students, favorites } = useAppData();
+  const { scaleId, setScaleId } = useFontScale();
+  const { user } = useAuth();
   const signOut = useSignOut();
 
-  const appName = Constants.expoConfig?.name ?? 'ALTushki';
   const appVersion = Constants.expoConfig?.version ?? t('notSpecified');
-  const platformName = Platform.OS === 'ios' ? 'iOS' : Platform.OS === 'android' ? 'Android' : Platform.OS;
+  const platformName = Platform.OS === 'ios' ? 'iOS' : Platform.OS === 'android' ? 'Android' : t('platformWeb');
 
   return (
-    <ScreenContainer>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.content}>
-          <TopBar label={t('appName')} />
-          <Text style={[type.display, { color: colors.text }]} accessibilityRole="header">
-            {t('settingsTitle')}
-          </Text>
-
-          <Section title={t('appearance')}>
-            <Row icon={isDark ? 'moon' : 'sunny'} label={t('darkTheme')}>
-              <Switch
-                value={isDark}
-                onValueChange={(value) => setMode(value ? 'dark' : 'light')}
-                trackColor={{ false: colors.border, true: colors.primary }}
-                thumbColor={Platform.OS === 'android' ? '#FFFFFF' : undefined}
-                accessibilityLabel={t('darkTheme')}
-              />
-            </Row>
-          </Section>
-
-          <Section title={t('language')}>
-            <View style={styles.chips}>
-              {LANGUAGES.map((item) => (
-                <Chip key={item.code} label={item.name} selected={language === item.code} onPress={() => setLanguage(item.code)} />
-              ))}
-            </View>
-          </Section>
-
-          <Section title={t('account')}>
-            <Row icon="person-outline" label={t('loginLabel')} value={session?.login ?? '—'} />
-            <Row icon="shield-checkmark-outline" label={t('authType')} value={t('authTypeValue')} />
-          </Section>
-
-          <SubscriptionBanner onPress={() => navigation.navigate('Subscription')} />
-
-          <Section title={t('dataOnDevice')}>
-            <Row icon="people-outline" label={t('studentsInList')} value={String(students.length)} />
-            <Row icon="star-outline" label={t('favoriteServices')} value={String(favorites.length)} />
-            <Text style={[type.caption, styles.note, { color: colors.textMuted }]}>{t('storageNote')}</Text>
-          </Section>
-
-          <Section title={t('about')}>
-            <Row icon="school-outline" label={t('appNameLabel')} value={appName} />
-            <Row icon="pricetag-outline" label={t('version')} value={appVersion} />
-            <Row icon="phone-portrait-outline" label={t('platform')} value={platformName} />
-          </Section>
-
-          <PrimaryButton title={t('signOut')} variant="danger" icon="log-out-outline" onPress={signOut} />
+    <ScreenScroll title={t('settingsTitle')} onBack={navigation.goBack}>
+      <Section title={t('fontSize')}>
+        <View style={styles.chips}>
+          {FONT_OPTIONS.map((option) => (
+            <Chip key={option.id} label={t(option.label)} selected={scaleId === option.id} onPress={() => setScaleId(option.id)} />
+          ))}
         </View>
-      </ScrollView>
-    </ScreenContainer>
+        <Text style={[type.body, styles.note, { color: colors.textSecondary }]}>{t('fontPreview')}</Text>
+      </Section>
+
+      <Section title={t('appearance')}>
+        <Row icon={isDark ? 'moon' : 'sunny'} label={t('darkTheme')}>
+          <Switch
+            value={isDark}
+            onValueChange={(value) => setMode(value ? 'dark' : 'light')}
+            trackColor={{ false: colors.border, true: colors.primary }}
+            thumbColor={Platform.OS === 'android' ? '#FFFFFF' : undefined}
+            accessibilityLabel={t('darkTheme')}
+          />
+        </Row>
+      </Section>
+
+      <Section title={t('language')}>
+        <View style={styles.chips}>
+          {LANGUAGES.map((item) => (
+            <Chip key={item.code} label={item.name} selected={language === item.code} onPress={() => setLanguage(item.code)} />
+          ))}
+        </View>
+      </Section>
+
+      <Section title={t('about')}>
+        <Row icon="school-outline" label={t('appNameLabel')} value={t('appName')} />
+        <Row icon="pricetag-outline" label={t('version')} value={appVersion} />
+        <Row icon="phone-portrait-outline" label={t('platform')} value={platformName} />
+      </Section>
+
+      {user ? <PrimaryButton title={t('signOut')} variant="danger" icon="log-out-outline" onPress={signOut} /> : null}
+    </ScreenScroll>
   );
 }
 
@@ -117,16 +111,6 @@ function Row({ icon, label, value, children }: RowProps) {
 }
 
 const styles = StyleSheet.create({
-  scroll: {
-    paddingHorizontal: SCREEN_PADDING,
-    paddingBottom: spacing.xxl,
-  },
-  content: {
-    width: '100%',
-    maxWidth: 760,
-    alignSelf: 'center',
-    gap: spacing.xl,
-  },
   section: {
     gap: spacing.sm,
   },
@@ -158,6 +142,6 @@ const styles = StyleSheet.create({
     maxWidth: '50%',
   },
   note: {
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
   },
 });

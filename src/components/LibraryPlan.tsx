@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from './AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { ENTRANCE_ROOM_ID, getRoom, LIBRARY_FLOORS, LIBRARY_ROOMS } from '../data/library';
 import { useI18n } from '../i18n/LanguageContext';

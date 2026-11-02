@@ -1,33 +1,24 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useCampus } from '../context/CampusContext';
-import { isSubscriptionActive } from '../data/subscription';
+import { Text } from './AppText';
+import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n/LanguageContext';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, spacing } from '../theme/metrics';
 import { fonts } from '../theme/typography';
 import { formatDate } from '../utils/format';
 
-type Props = {
-  onPress: () => void;
-  /** Короткий текст вместо стандартного описания (например, для столовой) */
-  text?: string;
-};
-
-/**
- * Заметная точка входа в оформление подписки ALTushki Plus.
- * Используется на главной, в профиле, в настройках и в столовой.
- */
-export default function SubscriptionBanner({ onPress, text }: Props) {
+/** Точка входа в подписку: показывает текущий тариф, срок действия и истечение. */
+export default function SubscriptionBanner({ onPress }: { onPress: () => void }) {
   const { colors } = useTheme();
   const { t, language } = useI18n();
-  const { campus } = useCampus();
-  const active = isSubscriptionActive(campus.subscription, new Date());
+  const { subscription } = useAuth();
+  const paid = subscription.plan !== 'free';
 
-  const subtitle = active
-    ? t('subActiveUntil', { date: formatDate(campus.subscription!.endsAt, language) })
-    : text ?? t('subBannerText');
+  let subtitle = t('subBannerText');
+  if (subscription.status === 'expired') subtitle = t('subExpired');
+  else if (paid && subscription.expiresAt) subtitle = t('subActiveUntil', { date: formatDate(subscription.expiresAt, language) });
 
   return (
     <Pressable
@@ -38,7 +29,7 @@ export default function SubscriptionBanner({ onPress, text }: Props) {
     >
       <LinearGradient colors={[colors.cardStart, colors.cardEnd] as const} style={styles.card}>
         <View style={styles.icon}>
-          <Ionicons name={active ? 'checkmark-circle' : 'sparkles'} size={22} color="#111111" />
+          <Ionicons name={paid ? 'checkmark-circle' : 'sparkles'} size={22} color="#111111" />
         </View>
         <View style={styles.texts}>
           <Text style={styles.title}>{t('subName')}</Text>
@@ -48,7 +39,7 @@ export default function SubscriptionBanner({ onPress, text }: Props) {
         </View>
         <View style={styles.cta}>
           <Text style={styles.ctaText} numberOfLines={1}>
-            {active ? t('subManage') : t('subOpen')}
+            {paid ? t('subManage') : t('subOpen')}
           </Text>
           <Feather name="arrow-up-right" size={16} color="#111111" />
         </View>
@@ -101,7 +92,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: spacing.md,
-    height: 38,
+    minHeight: 38,
     borderRadius: radius.pill,
     backgroundColor: '#FFFFFF',
   },

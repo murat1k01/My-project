@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../../components/AppText';
 import Chip from '../../components/Chip';
 import EmptyState from '../../components/EmptyState';
 import GlassCard from '../../components/GlassCard';

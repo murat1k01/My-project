@@ -6,10 +6,10 @@ import type { ServiceId } from '../types/Service';
 /** Вкладки нижней навигации */
 export type MainTabParamList = {
   Home: undefined;
-  Journal: undefined;
-  Students: undefined;
+  Library: undefined;
+  Transport: undefined;
+  Info: undefined;
   Profile: undefined;
-  Settings: undefined;
 };
 
 /**
@@ -17,12 +17,22 @@ export type MainTabParamList = {
  * поэтому открыть профиль студента без studentId невозможно — TypeScript не даст.
  */
 export type RootStackParamList = {
-  Login: undefined;
   Main: NavigatorScreenParams<MainTabParamList> | undefined;
+  Login: undefined;
+  Register: undefined;
+  Forgot: undefined;
   ServiceDetails: { serviceId: ServiceId };
+  BookDetails: { bookId: string };
+  InfoDetail: { slug: string };
+  Students: undefined;
   StudentProfile: { studentId: string };
+  Journal: undefined;
+  Planner: undefined;
   Requests: undefined;
   Subscription: undefined;
+  Settings: undefined;
+  ProfileEdit: undefined;
+  Admin: undefined;
 };
 
 export type RootStackScreenProps<T extends keyof RootStackParamList> = NativeStackScreenProps<RootStackParamList, T>;

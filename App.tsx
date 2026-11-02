@@ -10,19 +10,21 @@ import {
   useFonts,
 } from '@expo-google-fonts/inter';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import SplashView from './src/components/SplashView';
 import { AppDataProvider, useAppData } from './src/context/AppDataContext';
+import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { CampusProvider, useCampus } from './src/context/CampusContext';
 import { LanguageProvider, useI18n } from './src/i18n/LanguageContext';
 import AppNavigator from './src/navigation/AppNavigator';
-import LoadingScreen from './src/screens/LoadingScreen';
+import { FontScaleProvider, useFontScale } from './src/theme/FontScaleContext';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 
-/** Минимальное время показа экрана загрузки, чтобы анимация успела проиграться */
-const MIN_SPLASH_MS = 1800;
+/** Минимальное время показа логотипа, чтобы анимация успела проиграться */
+const MIN_SPLASH_MS = 900;
 
 /**
- * Точка входа ALTushki.
- * App.tsx только подключает шрифты, провайдеры (безопасные области, тема, язык, данные)
+ * Точка входа Campus Hub.
+ * App.tsx только подключает шрифты, провайдеры (безопасные области, тема, язык, вход, данные)
  * и навигацию — вся логика вынесена в папку src/.
  */
 export default function App() {
@@ -43,13 +45,17 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <LanguageProvider>
-          <AppDataProvider>
-            <CampusProvider>
-              <Root />
-            </CampusProvider>
-          </AppDataProvider>
-        </LanguageProvider>
+        <FontScaleProvider>
+          <LanguageProvider>
+            <AuthProvider>
+              <AppDataProvider>
+                <CampusProvider>
+                  <Root />
+                </CampusProvider>
+              </AppDataProvider>
+            </AuthProvider>
+          </LanguageProvider>
+        </FontScaleProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );
@@ -57,7 +63,9 @@ export default function App() {
 
 function Root() {
   const { isDark, ready: themeReady } = useTheme();
-  const { ready: languageReady } = useI18n();
+  const { ready: fontScaleReady } = useFontScale();
+  const { ready: languageReady, t } = useI18n();
+  const { ready: authReady } = useAuth();
   const { ready: dataReady } = useAppData();
   const { ready: campusReady } = useCampus();
   const [minTimePassed, setMinTimePassed] = useState(false);
@@ -67,12 +75,12 @@ function Root() {
     return () => clearTimeout(timer);
   }, []);
 
-  const ready = themeReady && languageReady && dataReady && campusReady && minTimePassed;
+  const ready = themeReady && fontScaleReady && languageReady && authReady && dataReady && campusReady && minTimePassed;
 
   return (
     <>
       <StatusBar style={!ready || isDark ? 'light' : 'dark'} />
-      {ready ? <AppNavigator /> : <LoadingScreen />}
+      {ready ? <AppNavigator /> : <SplashView message={t('loading')} />}
     </>
   );
 }

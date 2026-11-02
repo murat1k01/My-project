@@ -1,11 +1,10 @@
 import { LocalizedText, lt } from '../i18n/localized';
-import type { TranslationKey } from '../i18n/translations';
 import type { IoniconName } from '../types/Service';
 import { dayKey, hashString } from '../utils/format';
 
 /**
- * ПРИМЕР данных библиотеки: читальный зал, каталог, этажи и план комнат.
- * Важно заменить реальной планировкой и фондом библиотеки университета.
+ * ПРИМЕР данных читального зала: места, этажи и план комнат.
+ * Важно заменить реальной планировкой библиотеки университета.
  */
 
 // ---------- Места в читальном зале ----------
@@ -71,41 +70,3 @@ export const LIBRARY_ROOMS: LibraryRoom[] = [
 export function getRoom(id: string | null): LibraryRoom | undefined {
   return LIBRARY_ROOMS.find((room) => room.id === id);
 }
-
-// ---------- Каталог ----------
-
-export type BookSection = 'fiction' | 'study' | 'it' | 'science';
-
-export const BOOK_SECTIONS: { id: BookSection; label: TranslationKey }[] = [
-  { id: 'fiction', label: 'libSecFiction' },
-  { id: 'study', label: 'libSecStudy' },
-  { id: 'it', label: 'libSecIt' },
-  { id: 'science', label: 'libSecScience' },
-];
-
-export type Book = {
-  id: string;
-  title: LocalizedText;
-  author: LocalizedText;
-  year: number;
-  pages: number;
-  section: BookSection;
-  /** Где стоит бумажный экземпляр (пример) */
-  location: { floor: number; roomId: string; shelf: string };
-  /** Ссылка на бесплатную онлайн-версию (Project Gutenberg — книги в общественном достоянии) */
-  url?: string;
-  colors: [string, string];
-};
-
-export const BOOKS: Book[] = [
-  { id: 'war-and-peace', section: 'fiction', title: lt('Война и мир', 'Соғыс және бейбітшілік', 'War and Peace'), author: lt('Лев Толстой', 'Лев Толстой', 'Leo Tolstoy'), year: 1869, pages: 1225, url: 'https://www.gutenberg.org/ebooks/2600', location: { floor: 2, roomId: 'shelves', shelf: 'F-01' }, colors: ['#1E3A8A', '#3B82F6'] },
-  { id: 'crime-and-punishment', section: 'fiction', title: lt('Преступление и наказание', 'Қылмыс пен жаза', 'Crime and Punishment'), author: lt('Фёдор Достоевский', 'Фёдор Достоевский', 'Fyodor Dostoevsky'), year: 1866, pages: 551, url: 'https://www.gutenberg.org/ebooks/2554', location: { floor: 2, roomId: 'shelves', shelf: 'F-02' }, colors: ['#7F1D1D', '#EF4444'] },
-  { id: 'abai', section: 'fiction', title: lt('Путь Абая', 'Абай жолы', 'The Path of Abai'), author: lt('Мухтар Ауэзов', 'Мұхтар Әуезов', 'Mukhtar Auezov'), year: 1956, pages: 1500, location: { floor: 2, roomId: 'shelves', shelf: 'F-05' }, colors: ['#065F46', '#10B981'] },
-  { id: 'pride-and-prejudice', section: 'fiction', title: lt('Гордость и предубеждение', 'Тәкаппарлық пен алалау', 'Pride and Prejudice'), author: lt('Джейн Остин', 'Джейн Остин', 'Jane Austen'), year: 1813, pages: 432, url: 'https://www.gutenberg.org/ebooks/1342', location: { floor: 2, roomId: 'shelves', shelf: 'F-08' }, colors: ['#831843', '#EC4899'] },
-  { id: 'sherlock', section: 'fiction', title: lt('Приключения Шерлока Холмса', 'Шерлок Холмстің шытырман оқиғалары', 'The Adventures of Sherlock Holmes'), author: lt('Артур Конан Дойл', 'Артур Конан Дойл', 'Arthur Conan Doyle'), year: 1892, pages: 307, url: 'https://www.gutenberg.org/ebooks/1661', location: { floor: 2, roomId: 'shelves', shelf: 'F-09' }, colors: ['#78350F', '#F59E0B'] },
-  { id: 'piskunov', section: 'study', title: lt('Дифференциальное и интегральное исчисление', 'Дифференциалдық және интегралдық есептеу', 'Differential and Integral Calculus'), author: lt('Николай Пискунов', 'Николай Пискунов', 'Nikolai Piskunov'), year: 1985, pages: 432, location: { floor: 2, roomId: 'shelves', shelf: 'M-21' }, colors: ['#1F2937', '#6B7280'] },
-  { id: 'clean-code', section: 'it', title: lt('Чистый код', 'Таза код', 'Clean Code'), author: lt('Роберт Мартин', 'Роберт Мартин', 'Robert C. Martin'), year: 2008, pages: 464, location: { floor: 3, roomId: 'itfund', shelf: 'IT-12' }, colors: ['#0F172A', '#334155'] },
-  { id: 'grokking', section: 'it', title: lt('Грокаем алгоритмы', 'Алгоритмдерді түсіну', 'Grokking Algorithms'), author: lt('Адитья Бхаргава', 'Адитья Бхаргава', 'Aditya Bhargava'), year: 2016, pages: 256, location: { floor: 3, roomId: 'itfund', shelf: 'IT-07' }, colors: ['#312E81', '#8B5CF6'] },
-  { id: 'brief-history', section: 'science', title: lt('Краткая история времени', 'Уақыттың қысқаша тарихы', 'A Brief History of Time'), author: lt('Стивен Хокинг', 'Стивен Хокинг', 'Stephen Hawking'), year: 1988, pages: 256, location: { floor: 2, roomId: 'periodicals', shelf: 'N-05' }, colors: ['#111827', '#4B5563'] },
-  { id: 'frankenstein', section: 'fiction', title: lt('Франкенштейн', 'Франкенштейн', 'Frankenstein'), author: lt('Мэри Шелли', 'Мэри Шелли', 'Mary Shelley'), year: 1818, pages: 280, url: 'https://www.gutenberg.org/ebooks/84', location: { floor: 2, roomId: 'shelves', shelf: 'F-11' }, colors: ['#3F3F46', '#A1A1AA'] },
-];

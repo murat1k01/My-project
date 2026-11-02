@@ -1,67 +1,39 @@
 import type { TranslationKey } from '../i18n/translations';
-import type { StudentDraft } from '../types/Student';
-import { isValidPhone, normalizePhone, normalizeText } from './format';
-
-export const LOGIN_MIN_LENGTH = 4;
-export const PASSWORD_MIN_LENGTH = 8;
-
-/** Ошибки хранятся как ключи перевода — текст показывается на выбранном языке. */
-export type LoginErrors = {
-  login?: TranslationKey;
-  password?: TranslationKey;
-};
-
-export type StudentErrors = Partial<Record<keyof StudentDraft, TranslationKey>>;
-
-// Латиница, кириллица (включая казахские буквы), цифры, точка, дефис, подчёркивание.
-const LOGIN_PATTERN = /^[A-Za-zА-Яа-яЁёӘәҒғҚқҢңӨөҰұҮүҺһІі0-9._-]+$/;
-
-export function validateLogin(login: string, password: string): LoginErrors {
-  const errors: LoginErrors = {};
-  const trimmedLogin = login.trim();
-
-  if (!trimmedLogin) errors.login = 'errLoginRequired';
-  else if (trimmedLogin.length < LOGIN_MIN_LENGTH) errors.login = 'errLoginShort';
-  else if (!LOGIN_PATTERN.test(trimmedLogin)) errors.login = 'errLoginChars';
-
-  // Пароль не обрезаем: пробелы могут быть его частью.
-  if (!password) errors.password = 'errPasswordRequired';
-  else if (password.length < PASSWORD_MIN_LENGTH) errors.password = 'errPasswordShort';
-
-  return errors;
-}
 
 /**
- * Обязателен только телефон. Имя, группа, специальность и остальные поля
- * необязательны — проверяется лишь их максимальная длина.
+ * Проверка форм на устройстве нужна только для быстрых подсказок.
+ * Те же правила повторно проверяет сервер, и его решение окончательное.
  */
-export function validateStudent(draft: StudentDraft): StudentErrors {
-  const errors: StudentErrors = {};
+export const PASSWORD_MIN_LENGTH = 8;
 
-  if (!draft.phone.trim()) errors.phone = 'errPhoneRequired';
-  else if (!isValidPhone(draft.phone)) errors.phone = 'errPhoneInvalid';
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-  if (normalizeText(draft.firstName).length > 40) errors.firstName = 'errFirstNameLong';
-  if (normalizeText(draft.lastName).length > 40) errors.lastName = 'errLastNameLong';
-  if (normalizeText(draft.group).length > 20) errors.group = 'errGroupLong';
-  if (normalizeText(draft.program).length > 80) errors.program = 'errProgramLong';
+export function isValidContact(value: string): boolean {
+  const text = value.trim();
+  if (EMAIL.test(text)) return true;
+  const digits = text.replace(/[\s()+-]/g, '');
+  return /^\d{10,11}$/.test(digits);
+}
 
+export function passwordError(password: string): TranslationKey | undefined {
+  if (!password) return 'errPasswordRequired';
+  if (password.length < PASSWORD_MIN_LENGTH) return 'errPasswordShort';
+  if (!/[A-Za-zА-Яа-яЁё]/.test(password) || !/\d/.test(password)) return 'errPasswordWeak';
+  return undefined;
+}
+
+export type ProfileErrors = Partial<Record<'firstName' | 'lastName' | 'university' | 'faculty' | 'program' | 'group' | 'course', TranslationKey>>;
+
+export function validateProfile(draft: { firstName: string; lastName: string; university: string; faculty: string; program: string; group: string; course: number | string }): ProfileErrors {
+  const errors: ProfileErrors = {};
+  if (!draft.firstName.trim()) errors.firstName = 'errFirstNameRequired';
+  if (!draft.lastName.trim()) errors.lastName = 'errLastNameRequired';
+  if (!draft.university.trim()) errors.university = 'errUniversityRequired';
+  if (!draft.faculty.trim()) errors.faculty = 'errFacultyRequired';
+  if (!draft.program.trim()) errors.program = 'errProgramRequired';
+  if (!draft.group.trim()) errors.group = 'errGroupRequired';
+  if (!Number(draft.course)) errors.course = 'errCourseRequired';
   return errors;
 }
 
-/** Нормализует введённые значения перед сохранением. */
-export function cleanStudentDraft(draft: StudentDraft): StudentDraft {
-  return {
-    firstName: normalizeText(draft.firstName),
-    lastName: normalizeText(draft.lastName),
-    group: normalizeText(draft.group).toUpperCase(),
-    program: normalizeText(draft.program),
-    faculty: normalizeText(draft.faculty),
-    course: normalizeText(draft.course),
-    phone: normalizePhone(draft.phone),
-  };
-}
-
-export function hasErrors(errors: object): boolean {
-  return Object.values(errors).some(Boolean);
-}
+export const hasErrors = (errors: object): boolean => Object.values(errors).some(Boolean);

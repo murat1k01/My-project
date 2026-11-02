@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from './AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useI18n } from '../i18n/LanguageContext';
 import type { TranslationKey } from '../i18n/translations';

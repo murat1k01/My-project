@@ -1,25 +1,25 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { User } from '../api/types';
 import { isServiceId } from '../data/services';
 import type { Language } from '../i18n/translations';
 import type { ThemeMode } from '../theme/colors';
+import type { FontScaleId } from '../theme/FontScaleContext';
 import { CampusState, EMPTY_CAMPUS_STATE } from '../types/Campus';
 import type { ServiceId } from '../types/Service';
-import type { Session } from '../types/Session';
-import type { Student } from '../types/Student';
 
 /**
  * Централизованная работа с AsyncStorage.
- * AsyncStorage НЕ является защищённым хранилищем — пароли здесь не сохраняются.
+ * AsyncStorage НЕ является защищённым хранилищем: токен сессии лежит в tokenStore, пароли не хранятся нигде.
  * Все функции перехватывают ошибки: чтение возвращает значение по умолчанию,
  * запись возвращает false.
  */
 export const STORAGE_KEYS = {
-  session: '@campushub/session',
-  students: '@campushub/students',
   favorites: '@campushub/favorites',
   theme: '@campushub/theme',
   language: '@campushub/language',
   campus: '@campushub/campus',
+  fontScale: '@campushub/font-scale',
+  user: '@campushub/user',
 } as const;
 
 async function readJson(key: string): Promise<unknown> {
@@ -42,72 +42,28 @@ async function writeJson(key: string, value: unknown): Promise<boolean> {
   }
 }
 
-async function removeKey(key: string): Promise<boolean> {
-  try {
-    await AsyncStorage.removeItem(key);
-    return true;
-  } catch (error) {
-    console.warn(`[storage] Не удалось удалить ${key}`, error);
-    return false;
-  }
-}
-
-// ---------- Проверка формы сохранённых данных ----------
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/**
- * Приводит сохранённую запись к текущему типу Student.
- * Записи из прошлой версии приложения (без телефона, факультета и курса) не теряются:
- * недостающие поля становятся пустыми строками.
- */
-function toStudent(value: unknown): Student | null {
-  if (!isRecord(value) || typeof value.id !== 'string' || typeof value.createdAt !== 'string') return null;
-  const text = (field: unknown) => (typeof field === 'string' ? field : '');
-  return {
-    id: value.id,
-    createdAt: value.createdAt,
-    firstName: text(value.firstName),
-    lastName: text(value.lastName),
-    group: text(value.group),
-    program: text(value.program),
-    faculty: text(value.faculty),
-    course: text(value.course),
-    phone: text(value.phone),
-  };
+// ---------- Последний профиль: чтобы показать его без интернета ----------
+
+export async function loadCachedUser(): Promise<User | null> {
+  const value = await readJson(STORAGE_KEYS.user);
+  return isRecord(value) && typeof value.id === 'string' ? (value as User) : null;
 }
 
-function isSession(value: unknown): value is Session {
-  return isRecord(value) && typeof value.login === 'string' && typeof value.signedInAt === 'string';
+export function saveCachedUser(user: User): Promise<boolean> {
+  // Фото может быть большим, а на экране без сети оно не обязательно
+  return writeJson(STORAGE_KEYS.user, { ...user, photo: null });
 }
 
-// ---------- Сессия ----------
-
-export async function loadSession(): Promise<Session | null> {
-  const value = await readJson(STORAGE_KEYS.session);
-  return isSession(value) ? value : null;
-}
-
-export function saveSession(session: Session): Promise<boolean> {
-  return writeJson(STORAGE_KEYS.session, session);
-}
-
-export function clearSession(): Promise<boolean> {
-  return removeKey(STORAGE_KEYS.session);
-}
-
-// ---------- Студенты ----------
-
-export async function loadStudents(): Promise<Student[]> {
-  const value = await readJson(STORAGE_KEYS.students);
-  if (!Array.isArray(value)) return [];
-  return value.map(toStudent).filter((student): student is Student => student !== null);
-}
-
-export function saveStudents(students: Student[]): Promise<boolean> {
-  return writeJson(STORAGE_KEYS.students, students);
+export async function clearCachedUser(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(STORAGE_KEYS.user);
+  } catch (error) {
+    console.warn('[storage] Не удалось удалить профиль', error);
+  }
 }
 
 // ---------- Избранные сервисы ----------
@@ -121,7 +77,7 @@ export function saveFavorites(favorites: ServiceId[]): Promise<boolean> {
   return writeJson(STORAGE_KEYS.favorites, favorites);
 }
 
-// ---------- Тема и язык ----------
+// ---------- Тема, язык и размер текста ----------
 
 export async function loadTheme(): Promise<ThemeMode | null> {
   const value = await readJson(STORAGE_KEYS.theme);
@@ -141,20 +97,26 @@ export function saveLanguage(language: Language): Promise<boolean> {
   return writeJson(STORAGE_KEYS.language, language);
 }
 
-// ---------- Данные сервисов кампуса ----------
+export async function loadFontScale(): Promise<FontScaleId | null> {
+  const value = await readJson(STORAGE_KEYS.fontScale);
+  return value === 'small' || value === 'standard' || value === 'large' || value === 'xlarge' ? value : null;
+}
+
+export function saveFontScale(id: FontScaleId): Promise<boolean> {
+  return writeJson(STORAGE_KEYS.fontScale, id);
+}
+
+// ---------- Личные отметки в сервисах ----------
 
 /**
- * Читает состояние сервисов. Каждое поле проверяется отдельно:
+ * Читает отметки. Каждое поле проверяется отдельно:
  * если оно повреждено, используется значение по умолчанию, а остальные данные сохраняются.
  */
 export async function loadCampus(): Promise<CampusState> {
   const value = await readJson(STORAGE_KEYS.campus);
   if (!isRecord(value)) return EMPTY_CAMPUS_STATE;
 
-  const arrayOf = <T,>(field: unknown, check: (item: unknown) => boolean): T[] =>
-    Array.isArray(field) ? (field.filter(check) as T[]) : [];
-  const recordOrNull = <T,>(field: unknown, keys: string[]): T | null =>
-    isRecord(field) && keys.every((key) => key in field) ? (field as T) : null;
+  const strings = (field: unknown): string[] => (Array.isArray(field) ? field.filter((item): item is string => typeof item === 'string') : []);
 
   const cart: Record<string, number> = {};
   if (isRecord(value.cart)) {
@@ -163,19 +125,12 @@ export async function loadCampus(): Promise<CampusState> {
     }
   }
 
+  const seat = value.seat;
   return {
-    seat: recordOrNull(value.seat, ['seatId', 'date']),
-    myRouteId: typeof value.myRouteId === 'string' ? value.myRouteId : null,
-    doneTasks: arrayOf<string>(value.doneTasks, (item) => typeof item === 'string'),
+    seat: isRecord(seat) && typeof seat.seatId === 'string' && typeof seat.date === 'string' ? { seatId: seat.seatId, date: seat.date } : null,
+    doneTasks: strings(value.doneTasks),
     cart,
-    orders: arrayOf(value.orders, (item) => isRecord(item) && typeof item.id === 'string' && Array.isArray(item.lines)),
-    membership: recordOrNull(value.membership, ['planId', 'startedAt', 'endsAt']),
-    enrolledSections: arrayOf<string>(value.enrolledSections, (item) => typeof item === 'string'),
-    laundry: recordOrNull(value.laundry, ['machine', 'time', 'date']),
-    repairs: arrayOf(value.repairs, (item) => isRecord(item) && typeof item.id === 'string'),
-    guestPasses: arrayOf(value.guestPasses, (item) => isRecord(item) && typeof item.id === 'string'),
-    applications: arrayOf(value.applications, (item) => isRecord(item) && typeof item.id === 'string'),
-    subscription: recordOrNull(value.subscription, ['planId', 'startedAt', 'endsAt']),
+    enrolledSections: strings(value.enrolledSections),
   };
 }
 

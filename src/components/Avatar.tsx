@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
+import { Text } from './AppText';
 import { fonts } from '../theme/typography';
 import { getInitials, pickAvatarColor } from '../utils/format';
 
@@ -8,15 +9,16 @@ type Props = {
   /** Строка для выбора стабильного цвета (обычно id записи) */
   seed: string;
   size?: number;
+  photo?: string | null;
 };
 
-export default function Avatar({ firstName, lastName, seed, size = 48 }: Props) {
+export default function Avatar({ firstName, lastName, seed, size = 48, photo }: Props) {
+  const shape = { width: size, height: size, borderRadius: size / 2 };
+  if (photo) {
+    return <Image source={{ uri: photo }} style={[styles.circle, shape]} accessibilityIgnoresInvertColors />;
+  }
   return (
-    <View
-      style={[styles.circle, { width: size, height: size, borderRadius: size / 2, backgroundColor: pickAvatarColor(seed) }]}
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
-    >
+    <View style={[styles.circle, shape, { backgroundColor: pickAvatarColor(seed) }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       <Text style={[styles.text, { fontSize: size * 0.36 }]}>{getInitials(firstName, lastName)}</Text>
     </View>
   );

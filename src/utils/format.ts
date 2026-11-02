@@ -1,5 +1,4 @@
 import { dateNames, Language } from '../i18n/translations';
-import type { Student } from '../types/Student';
 
 /** Убирает пробелы по краям и схлопывает повторяющиеся пробелы внутри строки. */
 export function normalizeText(value: string): string {
@@ -10,24 +9,9 @@ export function createId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export function getFullName(student: Pick<Student, 'firstName' | 'lastName'>): string {
-  return normalizeText(`${student.firstName} ${student.lastName}`);
-}
-
 export function getInitials(firstName: string, lastName: string): string {
   const initials = `${firstName.trim().charAt(0)}${lastName.trim().charAt(0)}`.toUpperCase();
   return initials || '?';
-}
-
-/** Поиск по имени, фамилии или номеру телефона без учёта регистра и лишних пробелов. */
-export function matchesStudentQuery(student: Student, query: string): boolean {
-  const normalizedQuery = normalizeText(query).toLowerCase();
-  if (!normalizedQuery) return true;
-  const queryDigits = normalizedQuery.replace(/\D/g, '');
-  if (queryDigits.length >= 3 && student.phone.includes(queryDigits)) return true;
-  const direct = getFullName(student).toLowerCase();
-  const reversed = normalizeText(`${student.lastName} ${student.firstName}`).toLowerCase();
-  return direct.includes(normalizedQuery) || reversed.includes(normalizedQuery);
 }
 
 // ---------- Деньги ----------
@@ -51,11 +35,6 @@ export function normalizePhone(value: string): string {
   if (digits.length === 11 && digits.startsWith('8')) digits = `7${digits.slice(1)}`;
   if (digits.length === 10) digits = `7${digits}`;
   return digits;
-}
-
-export function isValidPhone(value: string): boolean {
-  const digits = value.replace(/\D/g, '');
-  return digits.length === 10 || digits.length === 11;
 }
 
 /** 77471543655 → «+7 747 154 36 55» */
