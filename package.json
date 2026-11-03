@@ -41,6 +41,7 @@
     "test:server": "node --test server/tests/api.test.js",
     "data:bus": "node server/tools/fetch-bus-routes.mjs",
     "data:books": "node server/tools/build-books.mjs",
+    "data:covers": "node server/tools/fetch-covers.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint ."
   },

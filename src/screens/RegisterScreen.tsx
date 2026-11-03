@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Keyboard } from 'react-native';
 import { errorMessage } from '../api/client';
 import FormBanner from '../components/FormBanner';
@@ -31,13 +31,6 @@ export default function RegisterScreen({ navigation }: RootStackScreenProps<'Reg
   const [done, setDone] = useState(false);
   const busy = useRef(false);
 
-  // После сообщения об успехе закрываем и регистрацию, и вход: пользователь возвращается в свой раздел
-  useEffect(() => {
-    if (!done) return;
-    const timer = setTimeout(() => navigation.pop(2), SUCCESS_MS);
-    return () => clearTimeout(timer);
-  }, [done, navigation]);
-
   const handleSubmit = async () => {
     if (busy.current || done) return;
     const nextErrors = validateProfile(draft);
@@ -58,8 +51,11 @@ export default function RegisterScreen({ navigation }: RootStackScreenProps<'Reg
     setSubmitting(true);
     setFormError(null);
     try {
-      await register({ ...draft, contact: contact.trim(), password, passwordConfirm: confirm });
-      setDone(true);
+      await register({ ...draft, contact: contact.trim(), password, passwordConfirm: confirm }, async () => {
+        // Сообщение об успехе видно недолго, затем навигатор сам открывает приложение
+        setDone(true);
+        await new Promise((resolve) => setTimeout(resolve, SUCCESS_MS));
+      });
     } catch (e) {
       setFormError(errorMessage(e));
     } finally {

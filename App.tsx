@@ -20,7 +20,7 @@ import { FontScaleProvider, useFontScale } from './src/theme/FontScaleContext';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 
 /** Минимальное время показа логотипа, чтобы анимация успела проиграться */
-const MIN_SPLASH_MS = 900;
+const MIN_SPLASH_MS = 1600;
 
 /**
  * Точка входа Campus Hub.

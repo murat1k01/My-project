@@ -3,7 +3,6 @@ import { StyleSheet, View } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import type { CampusRequest, RequestStatus } from '../api/types';
 import { Text } from '../components/AppText';
-import AuthGate from '../components/AuthGate';
 import GlassCard from '../components/GlassCard';
 import ScreenScroll from '../components/ScreenScroll';
 import SegmentedTabs from '../components/SegmentedTabs';
@@ -26,9 +25,7 @@ export default function RequestsScreen({ navigation }: RootStackScreenProps<'Req
   const { t } = useI18n();
   return (
     <ScreenScroll title={t('requestsTitle')} subtitle={t('requestsSubtitle')} onBack={navigation.goBack}>
-      <AuthGate>
-        <RequestsList />
-      </AuthGate>
+      <RequestsList />
     </ScreenScroll>
   );
 }

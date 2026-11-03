@@ -3,7 +3,6 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { api, errorMessage } from '../../api/client';
 import type { Dorm, LaundryBooking, LaundrySlot, Machine } from '../../api/types';
 import { Text } from '../../components/AppText';
-import AuthGate from '../../components/AuthGate';
 import Chip from '../../components/Chip';
 import FormBanner from '../../components/FormBanner';
 import FormField from '../../components/FormField';
@@ -68,14 +67,10 @@ export default function DormService({ service, onBack, openScreen }: ServiceScre
 
         {dorm && tab === 'info' ? <DormInfo dorm={dorm} /> : null}
         {dorm && tab === 'laundry' ? (
-          <AuthGate>
-            <Laundry key={dorm.id} dorm={dorm} />
-          </AuthGate>
+          <Laundry key={dorm.id} dorm={dorm} />
         ) : null}
         {tab === 'repair' ? (
-          <AuthGate>
-            <RepairForm onOpenRequests={() => openScreen('Requests')} />
-          </AuthGate>
+          <RepairForm onOpenRequests={() => openScreen('Requests')} />
         ) : null}
       </StateView>
     </ServiceLayout>

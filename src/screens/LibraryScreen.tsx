@@ -16,7 +16,7 @@ import { useApi } from '../hooks/useApi';
 import { useDebounced } from '../hooks/useDebounced';
 import { useFavorites } from '../hooks/useFavorites';
 import { useI18n } from '../i18n/LanguageContext';
-import type { MainTabScreenProps } from '../navigation/types';
+import type { RootStackScreenProps } from '../navigation/types';
 import { withAlpha } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, SCREEN_PADDING, spacing } from '../theme/metrics';
@@ -25,7 +25,7 @@ import { type } from '../theme/typography';
 type Sort = 'title' | 'year';
 
 /** Библиотека: каталог с сервера, поиск, категории, сортировка и избранное на фоне книжных полок. */
-export default function LibraryScreen({ navigation }: MainTabScreenProps<'Library'>) {
+export default function LibraryScreen({ navigation }: RootStackScreenProps<'Library'>) {
   const { colors } = useTheme();
   const { t } = useI18n();
   const [query, setQuery] = useState('');
@@ -47,6 +47,7 @@ export default function LibraryScreen({ navigation }: MainTabScreenProps<'Librar
   const header = (
     <View style={styles.header}>
       <View style={styles.titleRow}>
+        <IconButton icon="chevron-back" variant="glass" accessibilityLabel={t('back')} onPress={navigation.goBack} />
         <View style={styles.flex}>
           <Text style={[type.title, { color: colors.text }]} accessibilityRole="header">
             {t('tabLibrary')}
@@ -75,7 +76,7 @@ export default function LibraryScreen({ navigation }: MainTabScreenProps<'Librar
       <Image source={images.serviceLib} style={styles.background} resizeMode="cover" />
       {/* Тёплый оттенок поверх фото библиотеки; текст остаётся читаемым в обеих темах */}
       <View style={[StyleSheet.absoluteFill, { backgroundColor: withAlpha(colors.background, 0.88) }]} />
-      <SafeAreaView edges={['top', 'left', 'right']} style={styles.flex}>
+      <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={styles.flex}>
         <FlatList
           data={data ? books : []}
           keyExtractor={(book) => book.id}

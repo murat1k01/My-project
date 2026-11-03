@@ -101,13 +101,27 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   expires_at TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS tasks (
+-- Студенты, которых пользователь добавил сам. Запись видит только он.
+CREATE TABLE IF NOT EXISTS student_contacts (
+  id TEXT PRIMARY KEY,
+  owner_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  first_name TEXT NOT NULL,
+  last_name TEXT NOT NULL,
+  faculty TEXT,
+  program TEXT,
+  group_name TEXT,
+  course INTEGER,
+  phone TEXT,
+  created_at TEXT NOT NULL
+);
+
+-- Абонементы спорткомплекса: заявка, которую подтверждает администратор после оплаты на месте
+CREATE TABLE IF NOT EXISTS memberships (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  title TEXT NOT NULL,
-  due TEXT,
-  project TEXT,
-  done INTEGER NOT NULL DEFAULT 0,
+  plan_id TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'active', 'canceled')),
+  expires_at TEXT,
   created_at TEXT NOT NULL
 );
 

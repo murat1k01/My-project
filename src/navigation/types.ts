@@ -6,10 +6,10 @@ import type { ServiceId } from '../types/Service';
 /** Вкладки нижней навигации */
 export type MainTabParamList = {
   Home: undefined;
-  Library: undefined;
-  Transport: undefined;
-  Info: undefined;
+  Journal: undefined;
+  Students: undefined;
   Profile: undefined;
+  Settings: undefined;
 };
 
 /**
@@ -21,16 +21,15 @@ export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   Forgot: undefined;
-  ServiceDetails: { serviceId: ServiceId };
+  ServiceDetails: { serviceId: ServiceId; tab?: string };
   BookDetails: { bookId: string };
+  Library: undefined;
+  Transport: undefined;
+  Info: undefined;
   InfoDetail: { slug: string };
-  Students: undefined;
   StudentProfile: { studentId: string };
-  Journal: undefined;
-  Planner: undefined;
   Requests: undefined;
   Subscription: undefined;
-  Settings: undefined;
   ProfileEdit: undefined;
   Admin: undefined;
 };

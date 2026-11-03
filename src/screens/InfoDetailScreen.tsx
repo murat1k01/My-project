@@ -1,3 +1,4 @@
+import { Image, StyleSheet } from 'react-native';
 import type { InfoPage } from '../api/types';
 import { Text } from '../components/AppText';
 import CallButton, { PROJECT_PHONE } from '../components/CallButton';
@@ -5,21 +6,23 @@ import GlassCard from '../components/GlassCard';
 import PrimaryButton from '../components/PrimaryButton';
 import ScreenScroll from '../components/ScreenScroll';
 import StateView from '../components/StateView';
+import { infoImage } from '../data/images';
 import { useApi } from '../hooks/useApi';
 import { useI18n } from '../i18n/LanguageContext';
 import type { TranslationKey } from '../i18n/translations';
 import type { RootStackScreenProps } from '../navigation/types';
 import { useTheme } from '../theme/ThemeContext';
+import { radius } from '../theme/metrics';
 import { type } from '../theme/typography';
 import { formatPhone } from '../utils/format';
 
 /** Со страницы можно перейти в соответствующий раздел приложения. */
 const SECTION_LINKS: Record<string, { label: TranslationKey; go: (navigation: RootStackScreenProps<'InfoDetail'>['navigation']) => void }> = {
   schedule: { label: 'openSection', go: (n) => n.navigate('ServiceDetails', { serviceId: 'cal' }) },
-  library: { label: 'openSection', go: (n) => n.navigate('Main', { screen: 'Library' }) },
+  library: { label: 'openSection', go: (n) => n.navigate('Library') },
   food: { label: 'openSection', go: (n) => n.navigate('ServiceDetails', { serviceId: 'food' }) },
   dormitory: { label: 'openSection', go: (n) => n.navigate('ServiceDetails', { serviceId: 'dorm' }) },
-  transport: { label: 'openSection', go: (n) => n.navigate('Main', { screen: 'Transport' }) },
+  transport: { label: 'openSection', go: (n) => n.navigate('Transport') },
   sport: { label: 'openSection', go: (n) => n.navigate('ServiceDetails', { serviceId: 'sport' }) },
 };
 
@@ -44,6 +47,7 @@ export default function InfoDetailScreen({ navigation, route }: RootStackScreenP
         emptyText={t('infoPageMissing')}
         onRetry={() => void reload()}
       >
+        <Image source={infoImage(slug)} style={styles.photo} resizeMode="cover" accessibilityIgnoresInvertColors />
         <GlassCard>
           <Text style={[type.body, { color: colors.textSecondary }]}>{page?.body}</Text>
         </GlassCard>
@@ -60,3 +64,11 @@ export default function InfoDetailScreen({ navigation, route }: RootStackScreenP
     </ScreenScroll>
   );
 }
+
+const styles = StyleSheet.create({
+  photo: {
+    width: '100%',
+    height: 200,
+    borderRadius: radius.lg,
+  },
+});

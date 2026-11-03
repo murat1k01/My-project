@@ -45,13 +45,15 @@ export type Student = {
   id: string;
   firstName: string;
   lastName: string;
-  university: string;
-  faculty: string;
-  program: string;
-  group: string;
-  course: number;
+  university: string | null;
+  faculty: string | null;
+  program: string | null;
+  group: string | null;
+  course: number | null;
   photo: string | null;
   phone: string | null;
+  /** Запись добавил сам пользователь: её видит только он */
+  addedByMe?: boolean;
 };
 
 export type StudentFilters = {
@@ -165,4 +167,4 @@ export type Vehicle = { routeNumber: string; lat: number; lon: number; updatedAt
 
 export type InfoPage = { slug: string; title: string; body: string; sort: number };
 
-export type PlannerTask = { id: string; title: string; due: string | null; project: string | null; done: boolean };
+export type Membership = { id: string; planId: string; status: 'pending' | 'active' | 'canceled'; expiresAt: string | null; createdAt: string };

@@ -1,6 +1,6 @@
 // HTTP API Campus Hub. Все проверки прав и данных выполняются здесь, на сервере,
 // поэтому их нельзя обойти изменением приложения на телефоне.
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { hashPassword, newId, newResetCode, newToken, sha256, verifyPassword } from './security.js';
 
 const SESSION_DAYS = 30;
@@ -15,9 +15,12 @@ const LAUNDRY_DAYS_AHEAD = 7;
 /** Цены — пример: платёжная система не подключена, поэтому оплатить их пока нельзя. */
 export const PLANS = [
   { id: 'free', name: 'Free', price: 0, period: null, features: ['Все основные разделы Campus Hub', 'До 5 избранных книг', '1 сохранённый маршрут и 1 остановка', '1 активная бронь стирки'] },
-  { id: 'premium', name: 'Premium', price: 1500, period: 'месяц', features: ['Избранные книги без ограничений', 'Сохранённые маршруты и остановки без ограничений', 'Планировщик учебных задач со сроками', 'До 2 активных броней стирки'] },
-  { id: 'plus', name: 'Premium Plus', price: 2500, period: 'месяц', features: ['Всё, что входит в Premium', 'Учебные проекты в планировщике', 'До 3 активных броней стирки'] },
+  { id: 'premium', name: 'Premium', price: 1500, period: 'месяц', features: ['Избранные книги без ограничений', 'Сохранённые маршруты и остановки без ограничений', 'До 2 активных броней стирки'] },
+  { id: 'plus', name: 'Premium Plus', price: 2500, period: 'месяц', features: ['Всё, что входит в Premium', 'До 3 активных броней стирки'] },
 ];
+
+/** Абонементы спорткомплекса: сроки нужны серверу, цены и описание показывает приложение. */
+const MEMBERSHIP_DAYS = { single: 1, month: 30, semester: 120 };
 
 const LIMITS = {
   free: { book: 5, route: 1, stop: 1, dish: null, bookings: 1 },
@@ -112,6 +115,21 @@ const directoryUser = (u) => ({
   phone: u.show_phone ? u.phone : null,
 });
 
+/** Запись, которую добавил сам пользователь: её видит только он. */
+const contactView = (c) => ({
+  id: c.id,
+  firstName: c.first_name,
+  lastName: c.last_name,
+  university: null,
+  faculty: c.faculty,
+  program: c.program,
+  group: c.group_name,
+  course: c.course,
+  photo: null,
+  phone: c.phone,
+  addedByMe: true,
+});
+
 /** Ресурсы, которыми управляет администратор: только перечисленные поля можно изменять. */
 const ADMIN_RESOURCES = {
   books: { table: 'books', pk: 'id', order: 'title', required: ['title', 'category'], fields: { title: 's', author: 's', year: 'i', category: 's', description: 's', isbn: 's', cover_url: 's', source_url: 's', read_url: 's', copies: 'i' } },
@@ -145,6 +163,14 @@ export function createApi(db, options = {}) {
 
   const transport = JSON.parse(readFileSync(new URL('./data/almaty-bus-routes.json', import.meta.url)));
   const attempts = new Map();
+
+  /** Обложка из папки проекта надёжнее внешнего сайта, который может быть недоступен из сети пользователя. */
+  const coverName = (id) => `${id.replace(/[^\w-]/g, '_')}.jpg`;
+  const bookView = (row) => {
+    const book = camel(row);
+    if (existsSync(new URL(`./data/covers/${coverName(book.id)}`, import.meta.url))) book.coverUrl = `/covers/${coverName(book.id)}`;
+    return book;
+  };
 
   /** Ограничение попыток входа и восстановления: 10 за 15 минут с одного адреса на один логин. */
   function throttle(key) {
@@ -191,10 +217,6 @@ export function createApi(db, options = {}) {
     return { plan: row.plan, status: row.canceled ? 'canceled' : 'active', expiresAt: row.expires_at, previousPlan: null };
   }
   const limitsOf = (userId) => LIMITS[subscriptionOf(userId).plan];
-
-  function requirePlan(userId, ...plans) {
-    if (!plans.includes(subscriptionOf(userId).plan)) throw new ApiError(403, 'plan_required', 'Эта функция доступна по подписке Premium');
-  }
 
   function menuItem(row) {
     return { ...camel(row), available: !!row.available };
@@ -309,16 +331,51 @@ export function createApi(db, options = {}) {
     if (query.get('course')) { where.push('course = ?'); args.push(Number(query.get('course'))); }
     const search = clean(query.get('q') ?? '').toLowerCase();
     let rows = db.prepare(`SELECT * FROM users WHERE ${where.join(' AND ')} ORDER BY last_name, first_name`).all(...args);
+    const contacts = db.prepare('SELECT * FROM student_contacts WHERE owner_id = ? ORDER BY last_name, first_name').all(user.id);
+    const matchesFilters = (c) => ['faculty', 'program'].every((k) => !query.get(k) || c[k] === query.get(k)) && (!query.get('group') || c.group_name === query.get('group')) && (!query.get('course') || c.course === Number(query.get('course')));
+    let added = contacts.filter(matchesFilters);
     // Поиск на стороне JS: LOWER() в SQLite не понимает кириллицу
-    if (search) rows = rows.filter((u) => `${u.first_name} ${u.last_name}`.toLowerCase().includes(search) || `${u.last_name} ${u.first_name}`.toLowerCase().includes(search));
-    const options = (column) => db.prepare(`SELECT DISTINCT ${column} AS v FROM users WHERE show_in_directory = 1 ORDER BY v`).all().map((r) => r.v);
+    const matchesSearch = (u) => `${u.first_name} ${u.last_name}`.toLowerCase().includes(search) || `${u.last_name} ${u.first_name}`.toLowerCase().includes(search);
+    if (search) {
+      rows = rows.filter(matchesSearch);
+      added = added.filter(matchesSearch);
+    }
+    const options = (column) => [...new Set([...db.prepare(`SELECT DISTINCT ${column} AS v FROM users WHERE show_in_directory = 1`).all().map((r) => r.v), ...contacts.map((c) => c[column])])].filter((v) => v !== null && v !== '').sort();
     return {
-      students: rows.map(directoryUser),
+      students: [...added.map(contactView), ...rows.map(directoryUser)],
       filters: { faculty: options('faculty'), program: options('program'), group: options('group_name'), course: options('course') },
     };
   }, 'user');
 
-  add('GET', '/api/students/:id', ({ params }) => {
+  add('POST', '/api/students', ({ user, body }) => {
+    const first = clean(body.firstName);
+    const last = clean(body.lastName);
+    if (!first) throw bad('required', 'Укажите имя');
+    if (!last) throw bad('required', 'Укажите фамилию');
+    let phone = null;
+    if (clean(body.phone)) {
+      const contact = parseContact(body.phone);
+      if (!contact || contact.email) throw bad('invalid_contact', 'Укажите корректный номер телефона');
+      phone = contact.phone;
+    }
+    const course = clean(String(body.course ?? '')) ? Number(body.course) : null;
+    if (course !== null && (!Number.isInteger(course) || course < 1 || course > 8)) throw bad('required', 'Курс должен быть от 1 до 8');
+    const id = newId();
+    db.prepare('INSERT INTO student_contacts (id, owner_id, first_name, last_name, faculty, program, group_name, course, phone, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)')
+      .run(id, user.id, first, last, clean(body.faculty) || null, clean(body.program) || null, clean(body.group).toUpperCase() || null, course, phone, nowIso());
+    return { status: 201, data: { student: contactView(db.prepare('SELECT * FROM student_contacts WHERE id = ?').get(id)) } };
+  }, 'user');
+
+  add('DELETE', '/api/students/:id', ({ user, params }) => {
+    // owner_id в условии: удалить можно только свою запись
+    const result = db.prepare('DELETE FROM student_contacts WHERE id = ? AND owner_id = ?').run(params.id, user.id);
+    if (result.changes === 0) throw new ApiError(404, 'not_found', 'Запись не найдена');
+    return { ok: true };
+  }, 'user');
+
+  add('GET', '/api/students/:id', ({ user, params }) => {
+    const contact = db.prepare('SELECT * FROM student_contacts WHERE id = ? AND owner_id = ?').get(params.id, user.id);
+    if (contact) return { student: contactView(contact) };
     const student = q.userById.get(params.id);
     if (!student || !student.show_in_directory) throw new ApiError(404, 'not_found', 'Студент не найден или скрыл свой профиль');
     return { student: directoryUser(student) };
@@ -341,13 +398,13 @@ export function createApi(db, options = {}) {
     if (sort === 'year') rows.sort((a, b) => (b.year ?? 0) - (a.year ?? 0));
     else rows.sort((a, b) => a.title.localeCompare(b.title));
     const categories = db.prepare('SELECT DISTINCT category AS c FROM books ORDER BY c').all().map((r) => r.c);
-    return { books: rows.map(camel), categories };
+    return { books: rows.map(bookView), categories };
   });
 
   add('GET', '/api/books/:id', ({ params }) => {
     const book = db.prepare('SELECT * FROM books WHERE id = ?').get(params.id);
     if (!book) throw new ApiError(404, 'not_found', 'Книга не найдена');
-    return { book: camel(book) };
+    return { book: bookView(book) };
   });
 
   // ---------- Избранное с проверкой лимита тарифа ----------
@@ -574,36 +631,42 @@ export function createApi(db, options = {}) {
     return { subscription: subscriptionOf(user.id) };
   }, 'user');
 
-  // ---------- Планировщик (Premium), проекты (Premium Plus) ----------
-  add('GET', '/api/tasks', ({ user }) => {
-    requirePlan(user.id, 'premium', 'plus');
-    return { tasks: db.prepare('SELECT * FROM tasks WHERE user_id = ? ORDER BY done, due IS NULL, due, created_at').all(user.id).map((t) => ({ ...camel(t), done: !!t.done })) };
+  // ---------- Абонемент спорткомплекса ----------
+  // Оплата проходит на месте, поэтому заявку подтверждает администратор: онлайн деньги не списываются.
+  const membershipOf = (userId) => {
+    const row = db.prepare("SELECT * FROM memberships WHERE user_id = ? AND status <> 'canceled' ORDER BY created_at DESC LIMIT 1").get(userId);
+    if (!row || (row.status === 'active' && row.expires_at <= nowIso())) return null;
+    return camel(row);
+  };
+
+  add('GET', '/api/membership', ({ user }) => ({ membership: membershipOf(user.id) }), 'user');
+
+  add('POST', '/api/membership', ({ user, body }) => {
+    if (!MEMBERSHIP_DAYS[body.planId]) throw bad('invalid_plan', 'Неизвестный абонемент');
+    if (membershipOf(user.id)) throw new ApiError(409, 'membership_exists', 'У вас уже есть абонемент или заявка на него');
+    db.prepare('INSERT INTO memberships (id, user_id, plan_id, created_at) VALUES (?,?,?,?)').run(newId(), user.id, body.planId, nowIso());
+    return { status: 201, data: { membership: membershipOf(user.id) } };
   }, 'user');
 
-  add('POST', '/api/tasks', ({ user, body }) => {
-    requirePlan(user.id, 'premium', 'plus');
-    const title = clean(body.title);
-    if (title.length < 2) throw bad('required', 'Напишите название задачи');
-    if (body.due && !/^\d{4}-\d{2}-\d{2}$/.test(body.due)) throw bad('invalid_date', 'Дата в формате ГГГГ-ММ-ДД');
-    const project = clean(body.project);
-    if (project) requirePlan(user.id, 'plus');
-    const id = newId();
-    db.prepare('INSERT INTO tasks (id, user_id, title, due, project, created_at) VALUES (?,?,?,?,?,?)').run(id, user.id, title, body.due || null, project || null, nowIso());
-    return { status: 201, data: { task: { ...camel(db.prepare('SELECT * FROM tasks WHERE id = ?').get(id)), done: false } } };
-  }, 'user');
-
-  add('PATCH', '/api/tasks/:id', ({ user, params, body }) => {
-    requirePlan(user.id, 'premium', 'plus');
-    const result = db.prepare('UPDATE tasks SET done = ? WHERE id = ? AND user_id = ?').run(body.done ? 1 : 0, params.id, user.id);
-    if (result.changes === 0) throw new ApiError(404, 'not_found', 'Задача не найдена');
+  add('DELETE', '/api/membership', ({ user }) => {
+    const result = db.prepare("UPDATE memberships SET status = 'canceled' WHERE user_id = ? AND status <> 'canceled'").run(user.id);
+    if (result.changes === 0) throw new ApiError(404, 'not_found', 'Абонемента нет');
     return { ok: true };
   }, 'user');
 
-  add('DELETE', '/api/tasks/:id', ({ user, params }) => {
-    requirePlan(user.id, 'premium', 'plus');
-    db.prepare('DELETE FROM tasks WHERE id = ? AND user_id = ?').run(params.id, user.id);
+  add('GET', '/api/admin/memberships', () => ({
+    items: db.prepare(`SELECT m.*, u.first_name AS first_name, u.last_name AS last_name FROM memberships m
+      JOIN users u ON u.id = m.user_id ORDER BY m.created_at DESC LIMIT 100`).all().map(camel),
+  }), 'admin');
+
+  add('PATCH', '/api/admin/memberships/:id', ({ params, body }) => {
+    const row = db.prepare('SELECT * FROM memberships WHERE id = ?').get(params.id);
+    if (!row) throw new ApiError(404, 'not_found', 'Заявка не найдена');
+    if (!['active', 'canceled'].includes(body.status)) throw bad('invalid', 'Неверный статус');
+    const expires = body.status === 'active' ? addDays(MEMBERSHIP_DAYS[row.plan_id]) : null;
+    db.prepare('UPDATE memberships SET status = ?, expires_at = ? WHERE id = ?').run(body.status, expires, params.id);
     return { ok: true };
-  }, 'user');
+  }, 'admin');
 
   // ---------- Администрирование ----------
   const resourceOf = (name) => {
@@ -721,6 +784,15 @@ export function createApi(db, options = {}) {
   return async function handler(req, res) {
     if (req.method === 'OPTIONS') return send(res, 204, {});
     const url = new URL(req.url, 'http://localhost');
+    // Обложки: имя проверяется, поэтому выйти за пределы папки нельзя
+    const cover = req.method === 'GET' && url.pathname.match(/^\/covers\/([\w-]+\.jpg)$/);
+    if (cover) {
+      const file = new URL(`./data/covers/${cover[1]}`, import.meta.url);
+      if (existsSync(file)) {
+        res.writeHead(200, { 'Content-Type': 'image/jpeg', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=604800' });
+        return res.end(readFileSync(file));
+      }
+    }
     try {
       for (const route of routes) {
         if (route.method !== req.method) continue;

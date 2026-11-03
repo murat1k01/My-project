@@ -2,16 +2,25 @@ import { lt } from '../i18n/localized';
 import type { Service, ServiceId } from '../types/Service';
 import { images } from './images';
 
-/** Разделы на главной. Библиотека, транспорт, информация и профиль находятся на нижней панели. */
+/** Разделы на главной. Журнал, студенты, профиль и настройки находятся на нижней панели. */
 export const SERVICES: Service[] = [
   {
-    id: 'students',
-    title: lt('Студенты', 'Студенттер', 'Students'),
-    description: lt('Поиск студентов и контакты', 'Студенттерді іздеу және байланыс', 'Find students and contacts'),
-    icon: 'people-outline',
-    accent: '#60A5FA',
-    image: images.serviceInfo,
-    route: 'Students',
+    id: 'library',
+    title: lt('Библиотека', 'Кітапхана', 'Library'),
+    description: lt('Каталог, обложки и избранное', 'Каталог, мұқабалар және таңдаулы', 'Catalog, covers and favorites'),
+    icon: 'library-outline',
+    accent: '#818CF8',
+    image: images.serviceLib,
+    route: 'Library',
+  },
+  {
+    id: 'transport',
+    title: lt('Транспорт', 'Көлік', 'Transport'),
+    description: lt('Автобусы и остановки Алматы', 'Алматы автобустары мен аялдамалары', 'Almaty buses and stops'),
+    icon: 'bus-outline',
+    accent: '#34D399',
+    image: images.serviceBus,
+    route: 'Transport',
   },
   {
     id: 'food',
@@ -30,6 +39,15 @@ export const SERVICES: Service[] = [
     image: images.serviceDorm,
   },
   {
+    id: 'info',
+    title: lt('Информация', 'Ақпарат', 'Information'),
+    description: lt('Справка, контакты и вопросы', 'Анықтама, байланыс және сұрақтар', 'Reference, contacts and FAQ'),
+    icon: 'information-circle-outline',
+    accent: '#A78BFA',
+    image: images.serviceInfo,
+    route: 'Info',
+  },
+  {
     id: 'subscription',
     title: lt('Подписка', 'Жазылым', 'Subscription'),
     description: lt('Тарифы и возможности', 'Тарифтер мен мүмкіндіктер', 'Plans and features'),
@@ -45,6 +63,7 @@ export const SERVICES: Service[] = [
     icon: 'calendar-outline',
     accent: '#38BDF8',
     image: images.serviceCal,
+    hidden: true,
   },
   {
     id: 'lms',
@@ -55,30 +74,12 @@ export const SERVICES: Service[] = [
     image: images.serviceLms,
   },
   {
-    id: 'journal',
-    title: lt('Журнал', 'Журнал', 'Gradebook'),
-    description: lt('Успеваемость за семестр', 'Семестрдегі үлгерім', 'Semester performance'),
-    icon: 'ribbon-outline',
-    accent: '#34D399',
-    image: images.news3,
-    route: 'Journal',
-  },
-  {
     id: 'sport',
     title: lt('Спорт', 'Спорт', 'Sport'),
     description: lt('Секции и тренировки', 'Секциялар және жаттығулар', 'Sections and training'),
     icon: 'barbell-outline',
     accent: '#FACC15',
     image: images.serviceSport,
-  },
-  {
-    id: 'planner',
-    title: lt('Планировщик', 'Жоспарлағыш', 'Planner'),
-    description: lt('Учебные задачи и проекты', 'Оқу тапсырмалары мен жобалар', 'Study tasks and projects'),
-    icon: 'checkbox-outline',
-    accent: '#A78BFA',
-    image: images.serviceBus,
-    route: 'Planner',
   },
   {
     id: 'lib',

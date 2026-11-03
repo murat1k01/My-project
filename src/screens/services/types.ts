@@ -4,6 +4,8 @@ import type { Service } from '../../types/Service';
 export type ServiceScreenProps = {
   service: Service;
   onBack: () => void;
+  /** Вкладка, которую нужно открыть сразу */
+  initialTab?: string;
   /** Переход на общие экраны приложения из сервиса (заявки, подписка) */
-  openScreen: (screen: 'Requests' | 'Subscription' | 'Login') => void;
+  openScreen: (screen: 'Requests' | 'Subscription') => void;
 };

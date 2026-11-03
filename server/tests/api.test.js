@@ -115,6 +115,30 @@ test('студенты: база без вымышленных людей, пр�
   assert.equal((await call('GET', `/api/students/${hidden.user.id}`, { token: a.token })).status, 404);
 });
 
+test('студенты: свою запись можно добавить, её видит только автор', async () => {
+  const owner = await register({ contact: 'owner@example.com' });
+  const other = await register({ contact: 'stranger@example.com' });
+  assert.equal((await call('POST', '/api/students', { body: { firstName: 'А', lastName: 'Б' } })).status, 401);
+  assert.equal((await call('POST', '/api/students', { token: owner.token, body: { firstName: ' ', lastName: 'Б' } })).status, 400);
+  assert.equal((await call('POST', '/api/students', { token: owner.token, body: { firstName: 'А', lastName: 'Б', phone: '123' } })).data.error.code, 'invalid_contact');
+  const created = await call('POST', '/api/students', { token: owner.token, body: { firstName: 'Новый', lastName: 'Знакомый', group: 'add-1', course: 3, phone: '8 700 000 00 00' } });
+  assert.equal(created.status, 201);
+  const { id } = created.data.student;
+  assert.equal(created.data.student.phone, '77000000000');
+
+  const mine = (await call('GET', '/api/students?group=ADD-1', { token: owner.token })).data;
+  assert.equal(mine.students[0].addedByMe, true);
+  assert.ok(mine.filters.group.includes('ADD-1'));
+  assert.equal((await call('GET', `/api/students/${id}`, { token: owner.token })).data.student.firstName, 'Новый');
+
+  const seen = (await call('GET', '/api/students', { token: other.token })).data;
+  assert.ok(!seen.students.some((s) => s.id === id), 'чужая запись не видна');
+  assert.ok(!seen.filters.group.includes('ADD-1'));
+  assert.equal((await call('GET', `/api/students/${id}`, { token: other.token })).status, 404);
+  assert.equal((await call('DELETE', `/api/students/${id}`, { token: other.token })).status, 404);
+  assert.equal((await call('DELETE', `/api/students/${id}`, { token: owner.token })).status, 200);
+});
+
 test('библиотека: не меньше 50 книг, поиск, фильтр, сортировка', async () => {
   const all = (await call('GET', '/api/books')).data;
   assert.ok(all.books.length >= 50, `книг: ${all.books.length}`);
@@ -125,6 +149,12 @@ test('библиотека: не меньше 50 книг, поиск, филь�
   assert.ok(python.length > 0 && python.every((b) => b.category === 'Python'));
   const byYear = (await call('GET', '/api/books?sort=year')).data.books.map((b) => b.year ?? 0);
   assert.deepEqual(byYear, [...byYear].sort((x, y) => y - x));
+  const local = all.books.find((b) => b.coverUrl?.startsWith('/covers/'));
+  assert.ok(local, 'обложки отдаёт сам сервер');
+  const image = await fetch(base + local.coverUrl);
+  assert.equal(image.status, 200);
+  assert.equal(image.headers.get('content-type'), 'image/jpeg');
+  assert.equal((await fetch(`${base}/covers/..%2F..%2Fapi.js`)).status, 404);
 });
 
 test('избранное: лимит бесплатного тарифа проверяется на сервере', async () => {
@@ -181,26 +211,40 @@ test('столовая: цену считает сервер, статус ме�
   assert.equal((await call('GET', '/api/orders', { token })).data.orders[0].status, 'cooking');
 });
 
-test('подписка: оплата не имитируется, Premium-функции закрыты, истечение учитывается', async () => {
+test('подписка: оплата не имитируется, истечение учитывается', async () => {
   const { token } = await register({ contact: 'sub@example.com' });
   const admin = (await call('POST', '/api/auth/login', { body: { contact: 'admin@example.com', password: 'Passw0rd123' } })).data;
   assert.equal((await call('GET', '/api/subscription', { token })).data.subscription.plan, 'free');
   const pay = await call('POST', '/api/subscription/checkout', { token, body: { plan: 'premium' } });
   assert.equal(pay.status, 501);
   assert.equal((await call('GET', '/api/subscription', { token })).data.subscription.plan, 'free');
-  assert.equal((await call('GET', '/api/tasks', { token })).data.error.code, 'plan_required');
 
   const grant = (body) => call('POST', '/api/admin/subscriptions', { token: admin.token, body: { contact: 'sub@example.com', ...body } });
   assert.equal((await call('POST', '/api/admin/subscriptions', { token, body: { contact: 'sub@example.com', plan: 'plus', days: 30 } })).status, 403, 'выдать себе подписку нельзя');
   await grant({ plan: 'premium', days: 30 });
-  assert.equal((await call('POST', '/api/tasks', { token, body: { title: 'Сдать лабораторную', due: tomorrow() } })).status, 201);
-  assert.equal((await call('POST', '/api/tasks', { token, body: { title: 'С проектом', project: 'Диплом' } })).data.error.code, 'plan_required');
   assert.equal((await call('POST', '/api/subscription/cancel', { token })).data.subscription.status, 'canceled');
   await grant({ plan: 'plus', days: -1 });
   const expired = (await call('GET', '/api/subscription', { token })).data.subscription;
   assert.equal(expired.status, 'expired');
   assert.equal(expired.plan, 'free');
-  assert.equal((await call('GET', '/api/tasks', { token })).status, 403);
+});
+
+test('абонемент: заявка, подтверждение администратором и отмена', async () => {
+  const { token } = await register({ contact: 'gym@example.com' });
+  const admin = await call('POST', '/api/auth/login', { body: { contact: 'admin@example.com', password: 'Passw0rd123' } });
+  assert.equal((await call('GET', '/api/membership', { token })).data.membership, null);
+  assert.equal((await call('POST', '/api/membership', { token, body: { planId: 'nope' } })).status, 400);
+  const created = await call('POST', '/api/membership', { token, body: { planId: 'month' } });
+  assert.equal(created.data.membership.status, 'pending');
+  assert.equal((await call('POST', '/api/membership', { token, body: { planId: 'single' } })).status, 409);
+  const { id } = created.data.membership;
+  assert.equal((await call('PATCH', `/api/admin/memberships/${id}`, { token, body: { status: 'active' } })).status, 403, 'подтвердить себе нельзя');
+  await call('PATCH', `/api/admin/memberships/${id}`, { token: admin.data.token, body: { status: 'active' } });
+  const active = (await call('GET', '/api/membership', { token })).data.membership;
+  assert.equal(active.status, 'active');
+  assert.ok(active.expiresAt > new Date().toISOString());
+  assert.equal((await call('DELETE', '/api/membership', { token })).status, 200);
+  assert.equal((await call('GET', '/api/membership', { token })).data.membership, null);
 });
 
 test('администрирование: права проверяет сервер, контент редактируется', async () => {

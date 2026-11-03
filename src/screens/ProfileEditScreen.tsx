@@ -3,7 +3,6 @@ import { StyleSheet, Switch, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { errorMessage } from '../api/client';
 import { Text } from '../components/AppText';
-import AuthGate from '../components/AuthGate';
 import Avatar from '../components/Avatar';
 import FormBanner from '../components/FormBanner';
 import GlassCard from '../components/GlassCard';
@@ -22,9 +21,7 @@ export default function ProfileEditScreen({ navigation }: RootStackScreenProps<'
   const { t } = useI18n();
   return (
     <ScreenScroll title={t('profileEdit')} onBack={navigation.goBack}>
-      <AuthGate>
-        <EditForm onSaved={navigation.goBack} />
-      </AuthGate>
+      <EditForm onSaved={navigation.goBack} />
     </ScreenScroll>
   );
 }

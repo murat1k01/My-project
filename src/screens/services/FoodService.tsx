@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { api, errorMessage } from '../../api/client';
 import type { MenuItem, Order, OrderStatus } from '../../api/types';
 import { Text } from '../../components/AppText';
-import AuthGate from '../../components/AuthGate';
 import Chip from '../../components/Chip';
 import EmptyState from '../../components/EmptyState';
 import FormBanner from '../../components/FormBanner';
@@ -41,7 +40,7 @@ const STATUS_LABELS: Record<OrderStatus, TranslationKey> = {
 };
 
 /** Столовая: меню и цены с сервера, корзина на устройстве, заказ и его статус на сервере. */
-export default function FoodService({ service, onBack, openScreen }: ServiceScreenProps) {
+export default function FoodService({ service, onBack }: ServiceScreenProps) {
   const { colors } = useTheme();
   const { t } = useI18n();
   const { user } = useAuth();
@@ -85,10 +84,6 @@ export default function FoodService({ service, onBack, openScreen }: ServiceScre
 
   const placeOrder = async () => {
     if (submitting) return;
-    if (!user) {
-      openScreen('Login');
-      return;
-    }
     setSubmitting(true);
     setOrderError(null);
     try {
@@ -180,7 +175,7 @@ export default function FoodService({ service, onBack, openScreen }: ServiceScre
                 {delivery === 'delivery' ? <FormField label={t('foodAddress')} placeholder={t('foodAddressPlaceholder')} value={address} onChangeText={setAddress} /> : null}
                 <Text style={[type.caption, { color: colors.textMuted }]}>{t('foodPayNote')}</Text>
                 {orderError ? <FormBanner text={orderError} /> : null}
-                <PrimaryButton title={user ? t('foodPlaceOrder') : t('foodSignInToOrder')} arrow loading={submitting} onPress={placeOrder} />
+                <PrimaryButton title={t('foodPlaceOrder')} arrow loading={submitting} onPress={placeOrder} />
               </GlassCard>
             </>
           )}
@@ -188,20 +183,18 @@ export default function FoodService({ service, onBack, openScreen }: ServiceScre
       ) : null}
 
       {tab === 'orders' ? (
-        <AuthGate>
-          <StateView
-            loading={orders.loading}
-            error={orders.error}
-            hasData={orders.data !== null}
-            empty={orders.data?.orders.length === 0}
-            emptyIcon="receipt-outline"
-            emptyTitle={t('foodNoOrders')}
-            emptyText={t('foodNoOrdersText')}
-            onRetry={() => void orders.reload()}
-          >
-            {orders.data?.orders.map((order) => <OrderCard key={order.id} order={order} />)}
-          </StateView>
-        </AuthGate>
+        <StateView
+          loading={orders.loading}
+          error={orders.error}
+          hasData={orders.data !== null}
+          empty={orders.data?.orders.length === 0}
+          emptyIcon="receipt-outline"
+          emptyTitle={t('foodNoOrders')}
+          emptyText={t('foodNoOrdersText')}
+          onRetry={() => void orders.reload()}
+        >
+          {orders.data?.orders.map((order) => <OrderCard key={order.id} order={order} />)}
+        </StateView>
       ) : null}
     </ServiceLayout>
   );

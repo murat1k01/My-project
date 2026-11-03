@@ -10,7 +10,6 @@ import { useAuth } from '../context/AuthContext';
 import { useSignOut } from '../hooks/useSignOut';
 import { useI18n } from '../i18n/LanguageContext';
 import { LANGUAGES, TranslationKey } from '../i18n/translations';
-import type { RootStackScreenProps } from '../navigation/types';
 import { FontScaleId, useFontScale } from '../theme/FontScaleContext';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, spacing } from '../theme/metrics';
@@ -24,7 +23,7 @@ const FONT_OPTIONS: { id: FontScaleId; label: TranslationKey }[] = [
   { id: 'xlarge', label: 'fontXLarge' },
 ];
 
-export default function SettingsScreen({ navigation }: RootStackScreenProps<'Settings'>) {
+export default function SettingsScreen() {
   const { colors, isDark, setMode } = useTheme();
   const { t, language, setLanguage } = useI18n();
   const { scaleId, setScaleId } = useFontScale();
@@ -35,7 +34,7 @@ export default function SettingsScreen({ navigation }: RootStackScreenProps<'Set
   const platformName = Platform.OS === 'ios' ? 'iOS' : Platform.OS === 'android' ? 'Android' : t('platformWeb');
 
   return (
-    <ScreenScroll title={t('settingsTitle')} onBack={navigation.goBack}>
+    <ScreenScroll title={t('settingsTitle')}>
       <Section title={t('fontSize')}>
         <View style={styles.chips}>
           {FONT_OPTIONS.map((option) => (

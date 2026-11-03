@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { Keyboard, StyleSheet, Switch, TextInputInstance, View } from 'react-native';
+import AnimatedLogo from '../components/AnimatedLogo';
 import { Text } from '../components/AppText';
 import Chip from '../components/Chip';
 import FormBanner from '../components/FormBanner';
@@ -17,7 +18,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { spacing } from '../theme/metrics';
 import { type } from '../theme/typography';
 
-/** Вход по email или телефону. После входа экран закрывается и пользователь возвращается в раздел, откуда пришёл. */
+/** Первый экран приложения: без входа или регистрации дальше пройти нельзя. После входа навигатор сам открывает главный экран. */
 export default function LoginScreen({ navigation }: RootStackScreenProps<'Login'>) {
   const { colors } = useTheme();
   const { t, language, setLanguage } = useI18n();
@@ -44,7 +45,6 @@ export default function LoginScreen({ navigation }: RootStackScreenProps<'Login'
     setError(null);
     try {
       await signIn(contact.trim(), password, remember);
-      navigation.goBack();
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -57,11 +57,13 @@ export default function LoginScreen({ navigation }: RootStackScreenProps<'Login'
     <ScreenScroll
       title={t('loginTitle')}
       subtitle={t('loginSubtitle')}
-      onBack={navigation.goBack}
       right={LANGUAGES.map((item) => (
         <Chip key={item.code} label={item.short} selected={language === item.code} onPress={() => setLanguage(item.code)} />
       ))}
     >
+      <View style={styles.logo}>
+        <AnimatedLogo size={72} titleColor={colors.text} />
+      </View>
       <GlassCard style={styles.card}>
         {error ? <FormBanner text={error} /> : null}
         <FormField
@@ -98,7 +100,6 @@ export default function LoginScreen({ navigation }: RootStackScreenProps<'Login'
       </GlassCard>
 
       <PrimaryButton title={t('registerOpen')} variant="glass" icon="person-add-outline" onPress={() => navigation.navigate('Register')} />
-      <PrimaryButton title={t('continueAsGuest')} variant="glass" compact onPress={navigation.goBack} />
     </ScreenScroll>
   );
 }
@@ -106,6 +107,10 @@ export default function LoginScreen({ navigation }: RootStackScreenProps<'Login'
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
+  },
+  logo: {
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
   },
   card: {
     gap: spacing.lg,

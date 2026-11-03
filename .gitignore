@@ -40,6 +40,7 @@ yarn-error.*
 /ios
 /android
 
-# база данных сервера
+# пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 server/data/campus.db*
 .claude/launch.json
+artifact/dist/

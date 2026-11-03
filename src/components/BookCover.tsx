@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { API_URL } from '../api/client';
 import { Text } from './AppText';
 import { useI18n } from '../i18n/LanguageContext';
 import { useTheme } from '../theme/ThemeContext';
@@ -29,7 +30,9 @@ export default function BookCover({ uri, width }: Props) {
       </View>
     );
   }
-  return <Image source={{ uri }} style={[styles.cover, size, { backgroundColor: colors.surfaceAlt }]} resizeMode="cover" onError={() => setFailed(true)} accessibilityIgnoresInvertColors />;
+  // Обложки из папки сервера приходят с относительным адресом
+  const source = { uri: uri.startsWith('/') ? `${API_URL}${uri}` : uri };
+  return <Image source={source} style={[styles.cover, size, { backgroundColor: colors.surfaceAlt }]} resizeMode="cover" onError={() => setFailed(true)} accessibilityIgnoresInvertColors />;
 }
 
 const styles = StyleSheet.create({

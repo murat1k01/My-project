@@ -15,7 +15,8 @@ type AuthContextValue = {
   subscription: SubscriptionInfo;
   isAdmin: boolean;
   signIn: (contact: string, password: string, remember: boolean) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
+  /** onCreated вызывается, когда аккаунт создан, но приложение ещё не открылось: чтобы показать сообщение об успехе */
+  register: (data: RegisterData, onCreated?: () => Promise<void>) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (draft: ProfileDraft) => Promise<void>;
   /** Заново запрашивает профиль и подписку с сервера */
@@ -103,8 +104,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const register = useCallback(
-    async (data: RegisterData) => {
+    async (data: RegisterData, onCreated?: () => Promise<void>) => {
       const response = await api<AuthResponse>('POST', '/api/auth/register', data);
+      await onCreated?.();
       await accept(response, true);
     },
     [accept],

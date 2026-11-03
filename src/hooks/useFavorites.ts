@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useIsFocused, useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useIsFocused } from '@react-navigation/native';
 import { api, errorMessage } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n/LanguageContext';
-import type { RootStackParamList } from '../navigation/types';
 import { notify } from '../utils/dialogs';
 
 export type FavoriteKind = 'book' | 'dish' | 'route' | 'stop';
@@ -13,7 +11,6 @@ export type FavoriteKind = 'book' | 'dish' | 'route' | 'stop';
 export function useFavorites(kind: FavoriteKind) {
   const { user } = useAuth();
   const { t } = useI18n();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [stored, setItems] = useState<string[]>([]);
   const items = user ? stored : [];
   // При возврате на экран обновляем список: отметку могли изменить на экране подробностей
@@ -34,10 +31,6 @@ export function useFavorites(kind: FavoriteKind) {
 
   const toggle = useCallback(
     async (id: string) => {
-      if (!user) {
-        navigation.navigate('Login');
-        return;
-      }
       const path = `/api/favorites/${kind}/${encodeURIComponent(id)}`;
       const isFavorite = stored.includes(id);
       try {
@@ -47,7 +40,7 @@ export function useFavorites(kind: FavoriteKind) {
         notify(t('errorTitle'), errorMessage(e));
       }
     },
-    [stored, kind, navigation, t, user],
+    [stored, kind, t],
   );
 
   return { items, isFavorite: (id: string) => items.includes(id), toggle };

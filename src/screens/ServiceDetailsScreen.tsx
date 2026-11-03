@@ -42,7 +42,7 @@ export default function ServiceDetailsScreen({ navigation, route }: RootStackScr
     );
   }
 
-  return <Screen service={service} onBack={navigation.goBack} openScreen={(screen) => navigation.navigate(screen)} />;
+  return <Screen service={service} onBack={navigation.goBack} initialTab={route.params.tab} openScreen={(screen) => navigation.navigate(screen)} />;
 }
 
 const styles = StyleSheet.create({

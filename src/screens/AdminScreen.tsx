@@ -3,7 +3,6 @@ import { ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { api, errorMessage } from '../api/client';
 import type { Order, OrderStatus, RequestStatus } from '../api/types';
 import { Text } from '../components/AppText';
-import AuthGate from '../components/AuthGate';
 import Chip from '../components/Chip';
 import EmptyState from '../components/EmptyState';
 import FormBanner from '../components/FormBanner';
@@ -13,6 +12,7 @@ import PrimaryButton from '../components/PrimaryButton';
 import ScreenScroll from '../components/ScreenScroll';
 import StateView from '../components/StateView';
 import { useAuth } from '../context/AuthContext';
+import { MEMBERSHIP_PLANS } from '../data/sport';
 import { useApi } from '../hooks/useApi';
 import { useI18n } from '../i18n/LanguageContext';
 import type { TranslationKey } from '../i18n/translations';
@@ -88,28 +88,28 @@ export default function AdminScreen({ navigation }: RootStackScreenProps<'Admin'
     { id: 'requests', label: 'adminRequests' },
     { id: 'bookings', label: 'adminBookings' },
     { id: 'subscriptions', label: 'adminSubscriptions' },
+    { id: 'memberships', label: 'adminMemberships' },
   ];
 
   return (
     <ScreenScroll title={t('adminTitle')} onBack={navigation.goBack}>
-      <AuthGate>
-        {!isAdmin ? (
-          <EmptyState icon="shield-outline" title={t('adminForbiddenTitle')} message={t('adminForbiddenText')} />
-        ) : (
-          <View style={styles.content}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-              {sections.map((item) => (
-                <Chip key={item.id} label={t(item.label)} selected={item.id === section} onPress={() => setSection(item.id)} />
-              ))}
-            </ScrollView>
-            {resource ? <ResourceEditor key={resource.id} resource={resource} /> : null}
-            {section === 'orders' ? <OrdersAdmin /> : null}
-            {section === 'requests' ? <RequestsAdmin /> : null}
-            {section === 'bookings' ? <BookingsAdmin /> : null}
-            {section === 'subscriptions' ? <SubscriptionsAdmin /> : null}
-          </View>
-        )}
-      </AuthGate>
+      {!isAdmin ? (
+        <EmptyState icon="shield-outline" title={t('adminForbiddenTitle')} message={t('adminForbiddenText')} />
+      ) : (
+        <View style={styles.content}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+            {sections.map((item) => (
+              <Chip key={item.id} label={t(item.label)} selected={item.id === section} onPress={() => setSection(item.id)} />
+            ))}
+          </ScrollView>
+          {resource ? <ResourceEditor key={resource.id} resource={resource} /> : null}
+          {section === 'orders' ? <OrdersAdmin /> : null}
+          {section === 'requests' ? <RequestsAdmin /> : null}
+          {section === 'bookings' ? <BookingsAdmin /> : null}
+          {section === 'subscriptions' ? <SubscriptionsAdmin /> : null}
+          {section === 'memberships' ? <MembershipsAdmin /> : null}
+        </View>
+      )}
     </ScreenScroll>
   );
 }
@@ -299,6 +299,41 @@ function BookingsAdmin() {
           </Text>
         </GlassCard>
       ))}
+    </StateView>
+  );
+}
+
+function MembershipsAdmin() {
+  const { colors } = useTheme();
+  const { t, tr, language } = useI18n();
+  const { data, loading, error, reload } = useApi<{ items: { id: string; planId: string; status: 'pending' | 'active' | 'canceled'; firstName: string; lastName: string; createdAt: string }[] }>('/api/admin/memberships');
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const setStatus = (id: string, status: 'active' | 'canceled') => {
+    setActionError(null);
+    void api('PATCH', `/api/admin/memberships/${id}`, { status })
+      .then(() => reload())
+      .catch((e) => setActionError(errorMessage(e)));
+  };
+
+  return (
+    <StateView loading={loading} error={error} hasData={data !== null} empty={data?.items.length === 0} emptyTitle={t('adminEmpty')} onRetry={() => void reload()}>
+      {actionError ? <FormBanner text={actionError} /> : null}
+      {data?.items.map((item) => {
+        const plan = MEMBERSHIP_PLANS.find((p) => p.id === item.planId);
+        return (
+          <GlassCard key={item.id}>
+            <Text style={[type.bodyMedium, { color: colors.text }]}>{plan ? tr(plan.name) : item.planId}</Text>
+            <Text style={[type.caption, { color: colors.textMuted }]}>
+              {item.firstName} {item.lastName} · {formatDateTime(item.createdAt, language)}
+            </Text>
+            <View style={styles.actions}>
+              <Chip label={t('adminMembershipActivate')} selected={item.status === 'active'} onPress={() => setStatus(item.id, 'active')} />
+              <Chip label={t('orderCanceled')} selected={item.status === 'canceled'} onPress={() => setStatus(item.id, 'canceled')} />
+            </View>
+          </GlassCard>
+        );
+      })}
     </StateView>
   );
 }

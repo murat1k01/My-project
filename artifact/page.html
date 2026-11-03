@@ -1,0 +1,49 @@
+<title>Campus Hub</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Веб-сборка приложения Campus Hub. Приложение само управляет темой: здесь фон до загрузки, сброс стилей react-native-web и всплывающие сообщения демо-режима. */
+  :root { --bg: #04060F; --fg: #FFFFFF; --muted: rgba(255, 255, 255, 0.65); --panel: #16204A; --line: rgba(255, 255, 255, 0.2); color-scheme: dark; }
+  html, body { height: 100%; }
+  body { overflow: hidden; background: var(--bg); color: var(--fg); }
+  #root { display: flex; height: 100%; flex: 1; }
+  .boot {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font: 500 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--muted);
+    padding-block: 16px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    text-align: center;
+  }
+  .boot strong { font-size: 28px; font-weight: 500; letter-spacing: -0.5px; color: var(--fg); }
+  .demo-toast {
+    position: fixed;
+    z-index: 1000;
+    left: max(16px, env(safe-area-inset-left, 0px));
+    right: max(16px, env(safe-area-inset-right, 0px));
+    bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+    max-width: 560px;
+    margin-inline: auto;
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--fg);
+    font: 500 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    cursor: pointer;
+  }
+</style>
+<div id="root">
+  <div class="boot">
+    <strong>Campus Hub</strong>
+    <span>Загрузка приложения…</span>
+  </div>
+</div>
+<script src="js/demo-data.js"></script>
+<script src="js/demo-api.js"></script>
+<script src="js/campus-app.js" defer></script>

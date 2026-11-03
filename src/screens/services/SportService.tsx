@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '../../components/AppText';
 import { Ionicons } from '@expo/vector-icons';
+import { api, errorMessage } from '../../api/client';
+import type { Membership } from '../../api/types';
+import FormBanner from '../../components/FormBanner';
 import GlassCard from '../../components/GlassCard';
 import PrimaryButton from '../../components/PrimaryButton';
 import SectionHeader from '../../components/SectionHeader';
@@ -9,24 +12,47 @@ import SegmentedTabs from '../../components/SegmentedTabs';
 import ServiceLayout from '../../components/ServiceLayout';
 import { useCampus } from '../../context/CampusContext';
 import { MEMBERSHIP_PLANS, SPORT_HOURS, SPORT_SECTIONS, TRAINING_PLAN } from '../../data/sport';
+import { useApi } from '../../hooks/useApi';
 import { useNow } from '../../hooks/useNow';
 import { useI18n } from '../../i18n/LanguageContext';
 import { dateNames } from '../../i18n/translations';
 import { useTheme } from '../../theme/ThemeContext';
 import { radius, spacing } from '../../theme/metrics';
 import { fonts, type } from '../../theme/typography';
-import { formatMoney } from '../../utils/format';
+import { formatDate, formatMoney } from '../../utils/format';
 import type { ServiceScreenProps } from './types';
 
 type Tab = 'membership' | 'training';
 
-/** Спорт: примеры абонементов (купить в приложении нельзя), режим работы, секции и недельный план тренировок. */
+/** Спорт: оформление абонемента (оплата на месте, подтверждает администратор), режим работы, секции и план тренировок. */
 export default function SportService({ service, onBack }: ServiceScreenProps) {
   const { colors } = useTheme();
   const { t, tr, language } = useI18n();
   const { campus, updateCampus } = useCampus();
   const now = useNow();
   const [tab, setTab] = useState<Tab>('membership');
+  const membership = useApi<{ membership: Membership | null }>('/api/membership');
+  const current = membership.data?.membership ?? null;
+  const currentPlan = MEMBERSHIP_PLANS.find((plan) => plan.id === current?.planId);
+  const [confirmPlanId, setConfirmPlanId] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<{ kind: 'error' | 'success'; text: string } | null>(null);
+
+  const changeMembership = async (action: () => Promise<unknown>, success: string) => {
+    if (busy) return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      await action();
+      setConfirmPlanId(null);
+      setMessage({ kind: 'success', text: success });
+    } catch (e) {
+      setMessage({ kind: 'error', text: errorMessage(e) });
+    } finally {
+      setBusy(false);
+      await membership.reload();
+    }
+  };
 
   const toggleSection = (id: string) =>
     updateCampus((prev) => ({
@@ -49,6 +75,17 @@ export default function SportService({ service, onBack }: ServiceScreenProps) {
 
       {tab === 'membership' ? (
         <>
+          {message ? <FormBanner kind={message.kind} text={message.text} /> : null}
+          {current && currentPlan ? (
+            <GlassCard style={{ borderColor: colors.primary }}>
+              <Text style={[type.label, { color: colors.primary }]}>{current.status === 'active' ? t('sportActive') : t('sportPending')}</Text>
+              <Text style={[type.heading, { color: colors.text }]}>{tr(currentPlan.name)}</Text>
+              <Text style={[type.body, { color: colors.textSecondary }]}>
+                {current.status === 'active' && current.expiresAt ? t('sportValidUntil', { date: formatDate(current.expiresAt, language) }) : t('sportPendingText', { price: formatMoney(currentPlan.price, t('currency')) })}
+              </Text>
+              <PrimaryButton title={t('sportCancel')} variant="danger" compact loading={busy} onPress={() => void changeMembership(() => api('DELETE', '/api/membership'), t('sportCanceled'))} />
+            </GlassCard>
+          ) : null}
           {MEMBERSHIP_PLANS.map((plan) => (
             <GlassCard key={plan.id}>
               <View style={styles.planHeader}>
@@ -64,6 +101,17 @@ export default function SportService({ service, onBack }: ServiceScreenProps) {
                   <Text style={[type.body, styles.flex, { color: colors.textSecondary }]}>{tr(feature)}</Text>
                 </View>
               ))}
+              {!current ? (
+                confirmPlanId === plan.id ? (
+                  <>
+                    <Text style={[type.body, { color: colors.text }]}>{t('sportConfirmText', { price: formatMoney(plan.price, t('currency')) })}</Text>
+                    <PrimaryButton title={t('sportConfirm')} arrow loading={busy} onPress={() => void changeMembership(() => api('POST', '/api/membership', { planId: plan.id }), t('sportRequested'))} />
+                    <PrimaryButton title={t('cancel')} variant="glass" compact onPress={() => setConfirmPlanId(null)} />
+                  </>
+                ) : (
+                  <PrimaryButton title={t('sportBuy')} arrow compact onPress={() => setConfirmPlanId(plan.id)} />
+                )
+              ) : null}
             </GlassCard>
           ))}
           <Text style={[type.caption, { color: colors.textMuted }]}>{t('sportPayNote')}</Text>

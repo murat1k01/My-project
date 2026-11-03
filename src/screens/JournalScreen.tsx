@@ -10,7 +10,6 @@ import ScreenContainer from '../components/ScreenContainer';
 import TopBar from '../components/TopBar';
 import { JOURNAL, JournalEntry } from '../data/academic';
 import { useI18n } from '../i18n/LanguageContext';
-import type { RootStackScreenProps } from '../navigation/types';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, SCREEN_PADDING, spacing } from '../theme/metrics';
 import { fonts, type } from '../theme/typography';
@@ -26,7 +25,7 @@ import {
 } from '../utils/grades';
 
 /** Журнал успеваемости: РК1, РК2, рейтинг, экзамен, итог, буквенная оценка, GPA и посещаемость. */
-export default function JournalScreen({ navigation }: RootStackScreenProps<'Journal'>) {
+export default function JournalScreen() {
   const { colors } = useTheme();
   const { t } = useI18n();
 
@@ -42,7 +41,7 @@ export default function JournalScreen({ navigation }: RootStackScreenProps<'Jour
 
   const header = (
     <View style={styles.header}>
-      <TopBar onBack={navigation.goBack} />
+      <TopBar label={t('appName')} />
       <View style={styles.titleBlock}>
         <Text style={[type.display, { color: colors.text }]} accessibilityRole="header">
           {t('journalTitle')}

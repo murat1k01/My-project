@@ -19,7 +19,7 @@ import { useApi } from '../hooks/useApi';
 import { useDebounced } from '../hooks/useDebounced';
 import { useFavorites } from '../hooks/useFavorites';
 import { useI18n } from '../i18n/LanguageContext';
-import type { MainTabScreenProps } from '../navigation/types';
+import type { RootStackScreenProps } from '../navigation/types';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, spacing } from '../theme/metrics';
 import { fonts, type } from '../theme/typography';
@@ -34,7 +34,7 @@ type RoutesResponse = { routes: BusRouteSummary[]; source: string; updatedAt: st
 type VehiclesResponse = { available: boolean; vehicles: Vehicle[]; reason?: string; updatedAt?: string };
 
 /** Almaty Bus: настоящие маршруты из OpenStreetMap. Движение автобусов показывается только при подключённом источнике. */
-export default function TransportScreen(_props: MainTabScreenProps<'Transport'>) {
+export default function TransportScreen({ navigation }: RootStackScreenProps<'Transport'>) {
   const { colors } = useTheme();
   const { t, language } = useI18n();
   const [tab, setTab] = useState<Tab>('routes');
@@ -100,7 +100,7 @@ export default function TransportScreen(_props: MainTabScreenProps<'Transport'>)
   );
 
   return (
-    <ScreenScroll title={t('transportTitle')} subtitle={t('transportSubtitle')} scrollRef={scroll}>
+    <ScreenScroll title={t('transportTitle')} subtitle={t('transportSubtitle')} onBack={navigation.goBack} scrollRef={scroll}>
       <RouteMap route={route} vehicles={liveAvailable ? (vehicles.data?.vehicles ?? []) : []} showUser={showUser} showTraffic={showTraffic} focusStop={focusStop} />
 
       {Platform.OS !== 'web' ? (

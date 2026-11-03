@@ -80,10 +80,6 @@ export default function SubscriptionScreen({ navigation }: RootStackScreenProps<
   };
 
   const choose = (plan: Plan) => {
-    if (!user) {
-      navigation.navigate('Login');
-      return;
-    }
     setMessage(null);
     setCheckoutPlan(plan);
   };

@@ -19,7 +19,7 @@ const crc32 = (buf) => {
 };
 function chunk(type, data) {
   const body = Buffer.concat([Buffer.from(type, 'ascii'), data]);
-  const out = Buffer.alloc(8 + body.length + 4);
+  const out = Buffer.alloc(8 + body.length);
   out.writeUInt32BE(data.length, 0);
   body.copy(out, 4);
   out.writeUInt32BE(crc32(body), out.length - 4);

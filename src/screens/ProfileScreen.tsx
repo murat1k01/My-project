@@ -1,5 +1,4 @@
 import { StyleSheet, View } from 'react-native';
-import AuthGate from '../components/AuthGate';
 import PrimaryButton from '../components/PrimaryButton';
 import ProfileCard from '../components/ProfileCard';
 import ScreenScroll from '../components/ScreenScroll';
@@ -19,35 +18,32 @@ export default function ProfileScreen({ navigation }: MainTabScreenProps<'Profil
 
   return (
     <ScreenScroll title={t('profileTitle')}>
-      <AuthGate>
-        {user ? (
-          <View style={styles.content}>
-            <ProfileCard
-              firstName={user.firstName}
-              lastName={user.lastName}
-              seed={user.id}
-              photo={user.photo}
-              badge={user.group}
-              rows={[
-                { icon: 'school-outline', label: t('university'), value: user.university },
-                { icon: 'business-outline', label: t('faculty'), value: user.faculty },
-                { icon: 'book-outline', label: t('program'), value: user.program },
-                { icon: 'people-outline', label: t('group'), value: user.group },
-                { icon: 'ribbon-outline', label: t('course'), value: String(user.course) },
-                ...(user.email ? [{ icon: 'mail-outline' as const, label: t('profileEmail'), value: user.email }] : []),
-                ...(user.phone ? [{ icon: 'call-outline' as const, label: t('phone'), value: formatPhone(user.phone) }] : []),
-                { icon: 'calendar-outline', label: t('registeredAt'), value: formatDate(user.createdAt, language) },
-              ]}
-            />
-            <PrimaryButton title={t('profileEdit')} arrow onPress={() => navigation.navigate('ProfileEdit')} />
-            <SubscriptionBanner onPress={() => navigation.navigate('Subscription')} />
-            <PrimaryButton title={t('requestsTitle')} variant="glass" icon="document-text-outline" onPress={() => navigation.navigate('Requests')} />
-            <PrimaryButton title={t('settingsTitle')} variant="glass" icon="settings-outline" onPress={() => navigation.navigate('Settings')} />
-            {isAdmin ? <PrimaryButton title={t('adminTitle')} variant="glass" icon="shield-checkmark-outline" onPress={() => navigation.navigate('Admin')} /> : null}
-            <PrimaryButton title={t('signOut')} variant="danger" icon="log-out-outline" onPress={signOut} />
-          </View>
-        ) : null}
-      </AuthGate>
+      {user ? (
+        <View style={styles.content}>
+          <ProfileCard
+            firstName={user.firstName}
+            lastName={user.lastName}
+            seed={user.id}
+            photo={user.photo}
+            badge={user.group}
+            rows={[
+              { icon: 'school-outline', label: t('university'), value: user.university },
+              { icon: 'business-outline', label: t('faculty'), value: user.faculty },
+              { icon: 'book-outline', label: t('program'), value: user.program },
+              { icon: 'people-outline', label: t('group'), value: user.group },
+              { icon: 'ribbon-outline', label: t('course'), value: String(user.course) },
+              ...(user.email ? [{ icon: 'mail-outline' as const, label: t('profileEmail'), value: user.email }] : []),
+              ...(user.phone ? [{ icon: 'call-outline' as const, label: t('phone'), value: formatPhone(user.phone) }] : []),
+              { icon: 'calendar-outline', label: t('registeredAt'), value: formatDate(user.createdAt, language) },
+            ]}
+          />
+          <PrimaryButton title={t('profileEdit')} arrow onPress={() => navigation.navigate('ProfileEdit')} />
+          <SubscriptionBanner onPress={() => navigation.navigate('Subscription')} />
+          <PrimaryButton title={t('requestsTitle')} variant="glass" icon="document-text-outline" onPress={() => navigation.navigate('Requests')} />
+          {isAdmin ? <PrimaryButton title={t('adminTitle')} variant="glass" icon="shield-checkmark-outline" onPress={() => navigation.navigate('Admin')} /> : null}
+          <PrimaryButton title={t('signOut')} variant="danger" icon="log-out-outline" onPress={signOut} />
+        </View>
+      ) : null}
     </ScreenScroll>
   );
 }

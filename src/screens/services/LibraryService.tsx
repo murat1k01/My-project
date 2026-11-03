@@ -25,12 +25,12 @@ type SeatState = 'free' | 'busy' | 'mine';
  * Читальный зал: пример схемы мест и плана этажей. Занятость мест не связана с настоящим залом,
  * об этом говорит пометка на экране. Каталог книг находится на вкладке «Библиотека».
  */
-export default function LibraryService({ service, onBack }: ServiceScreenProps) {
+export default function LibraryService({ service, onBack, initialTab }: ServiceScreenProps) {
   const { colors } = useTheme();
   const { t } = useI18n();
   const { campus, updateCampus } = useCampus();
   const now = useNow();
-  const [tab, setTab] = useState<Tab>('seats');
+  const [tab, setTab] = useState<Tab>(initialTab === 'plan' ? 'plan' : 'seats');
   const [floor, setFloor] = useState(1);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
 

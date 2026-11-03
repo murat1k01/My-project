@@ -1,6 +1,6 @@
 /**
  * Фотографии хранятся в assets/images, поэтому приложение работает без интернета.
- * Источник: Unsplash (бесплатная лицензия Unsplash License).
+ * Источник: Unsplash (бесплатная лицензия Unsplash License); фото блюд — Wikimedia Commons, авторы в assets/images/CREDITS.md.
  */
 export const images = {
   heroEarth: require('../../assets/images/hero_earth.jpg'),
@@ -26,4 +26,47 @@ export const images = {
   foodTea: require('../../assets/images/food_tea.jpg'),
   foodCroissant: require('../../assets/images/food_croissant.jpg'),
   foodPancakes: require('../../assets/images/food_pancakes.jpg'),
+  foodOatmeal: require('../../assets/images/food_oatmeal.jpg'),
+  foodOmelette: require('../../assets/images/food_omelette.jpg'),
+  foodRice: require('../../assets/images/food_rice.jpg'),
+  foodMash: require('../../assets/images/food_mash.jpg'),
+  foodVegsalad: require('../../assets/images/food_vegsalad.jpg'),
+  foodSamsa: require('../../assets/images/food_samsa.jpg'),
+  foodCheesecake: require('../../assets/images/food_cheesecake.jpg'),
+  foodCocoa: require('../../assets/images/food_cocoa.jpg'),
+  foodAmericano: require('../../assets/images/food_americano.jpg'),
+  foodOrangejuice: require('../../assets/images/food_orangejuice.jpg'),
+  foodApplejuice: require('../../assets/images/food_applejuice.jpg'),
+  foodWater: require('../../assets/images/food_water.jpg'),
+  foodSparkling: require('../../assets/images/food_sparkling.jpg'),
+  foodLemonade: require('../../assets/images/food_lemonade.jpg'),
+  foodAyran: require('../../assets/images/food_ayran.jpg'),
+  foodMilkshake: require('../../assets/images/food_milkshake.jpg'),
+  foodIcedtea: require('../../assets/images/food_icedtea.jpg'),
 };
+
+/** Фото для страниц раздела «Информация». Это иллюстрации к теме, а не снимки конкретного университета. */
+const INFO_IMAGES: Record<string, keyof typeof images> = {
+  about: 'heroEarth',
+  university: 'serviceInfo',
+  faculties: 'serviceLms',
+  programs: 'news3',
+  groups: 'news2',
+  study: 'serviceLms',
+  schedule: 'serviceCal',
+  library: 'serviceLib',
+  food: 'serviceFood',
+  dormitory: 'serviceDorm',
+  transport: 'serviceBus',
+  sport: 'serviceSport',
+  events: 'news2',
+  contacts: 'serviceInfo',
+  faq: 'news3',
+  terms: 'serviceCal',
+  privacy: 'heroEarth',
+  support: 'serviceBus',
+};
+
+export function infoImage(slug: string) {
+  return images[INFO_IMAGES[slug] ?? 'serviceInfo'];
+}
