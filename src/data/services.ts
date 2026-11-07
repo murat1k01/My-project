@@ -66,6 +66,15 @@ export const SERVICES: Service[] = [
     hidden: true,
   },
   {
+    id: 'events',
+    title: lt('Регистрация на мероприятие', 'Іс-шараға тіркелу', 'Event registration'),
+    description: lt('Хакатон, семинар, мастер-класс', 'Хакатон, семинар, шеберлік сабағы', 'Hackathon, seminar, workshop'),
+    icon: 'create-outline',
+    accent: '#22D3EE',
+    image: images.news3,
+    route: 'EventRegistration',
+  },
+  {
     id: 'lms',
     title: lt('Planonus ALT', 'Planonus ALT', 'Planonus ALT'),
     description: lt('Курсы, задания и оценки', 'Курстар, тапсырмалар және бағалар', 'Courses, tasks and grades'),

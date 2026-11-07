@@ -7,6 +7,8 @@ import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n/LanguageContext';
 import AdminScreen from '../screens/AdminScreen';
 import BookDetailsScreen from '../screens/BookDetailsScreen';
+import EventRegistrationScreen from '../screens/EventRegistrationScreen';
+import FavoritesScreen from '../screens/FavoritesScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import HomeScreen from '../screens/HomeScreen';
 import InfoDetailScreen from '../screens/InfoDetailScreen';
@@ -38,6 +40,7 @@ const TAB_ICONS: Record<keyof MainTabParamList, [IoniconName, IoniconName]> = {
   Home: ['home', 'home-outline'],
   Journal: ['ribbon', 'ribbon-outline'],
   Students: ['people', 'people-outline'],
+  Favorites: ['bookmark', 'bookmark-outline'],
   Profile: ['person-circle', 'person-circle-outline'],
   Settings: ['settings', 'settings-outline'],
 };
@@ -57,8 +60,8 @@ function MainTabs() {
           backgroundColor: colors.tabBar,
           borderTopColor: colors.border,
         },
-        // Подписи следуют настройке размера текста, но ограничены, чтобы пять вкладок помещались в ряд
-        tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: Math.min(11 * scale, 13) },
+        // Подписи следуют настройке размера текста, но ограничены, чтобы шесть вкладок помещались в ряд
+        tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: Math.min(10 * scale, 11) },
         tabBarIcon: ({ focused, color, size }) => {
           const [active, inactive] = TAB_ICONS[route.name];
           return <Ionicons name={focused ? active : inactive} size={size} color={color} />;
@@ -68,6 +71,7 @@ function MainTabs() {
       <Tab.Screen name="Home" component={HomeScreen} options={{ title: t('tabHome') }} />
       <Tab.Screen name="Journal" component={JournalScreen} options={{ title: t('tabJournal') }} />
       <Tab.Screen name="Students" component={StudentsScreen} options={{ title: t('tabStudents') }} />
+      <Tab.Screen name="Favorites" component={FavoritesScreen} options={{ title: t('tabFavorites') }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: t('tabProfile') }} />
       <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: t('tabSettings') }} />
     </Tab.Navigator>
@@ -114,6 +118,7 @@ export default function AppNavigator() {
             <Stack.Screen name="Subscription" component={SubscriptionScreen} />
             <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} />
             <Stack.Screen name="Admin" component={AdminScreen} />
+            <Stack.Screen name="EventRegistration" component={EventRegistrationScreen} />
           </>
         ) : (
           <>

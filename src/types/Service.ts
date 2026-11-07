@@ -6,7 +6,7 @@ import type { LocalizedText } from '../i18n/localized';
 /** Имя иконки из набора Ionicons (проверяется TypeScript). */
 export type IoniconName = ComponentProps<typeof Ionicons>['name'];
 
-export type ServiceId = 'library' | 'transport' | 'food' | 'dorm' | 'info' | 'subscription' | 'cal' | 'lms' | 'sport' | 'lib';
+export type ServiceId = 'library' | 'transport' | 'food' | 'dorm' | 'info' | 'subscription' | 'cal' | 'lms' | 'sport' | 'events' | 'lib';
 
 export type Service = {
   id: ServiceId;
@@ -18,7 +18,7 @@ export type Service = {
   accent: string;
   image: ImageSourcePropType;
   /** Сервис со своим экраном; без этого поля он открывается в общем экране сервисов */
-  route?: 'Library' | 'Transport' | 'Info' | 'Subscription';
+  route?: 'Library' | 'Transport' | 'Info' | 'Subscription' | 'EventRegistration';
   /** Показывать ли карточку на главной */
   hidden?: boolean;
 };
