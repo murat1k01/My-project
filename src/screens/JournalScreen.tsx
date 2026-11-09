@@ -49,7 +49,7 @@ export default function JournalScreen() {
         <Text style={[type.caption, { color: colors.textSecondary }]}>{t('journalSubtitle')}</Text>
       </View>
 
-      <ExampleNotice />
+      <ExampleNotice textKey="journalNote" />
 
       <LinearGradient colors={[colors.cardStart, colors.cardEnd] as const} style={styles.summary}>
         <Text style={styles.summaryLabel}>{t('journalGpa')}</Text>

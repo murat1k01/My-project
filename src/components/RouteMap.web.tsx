@@ -18,6 +18,8 @@ const PADDING = 60;
 export default function RouteMap({ route, vehicles, focusStop }: RouteMapProps) {
   const { colors } = useTheme();
   const { t } = useI18n();
+  // Пока маршрут не выбран, пустую схему не показываем
+  if (!route) return null;
 
   const points = route ? [...route.line, ...route.stops.map((s): [number, number] => [s.lat, s.lon])] : [];
   const lats = points.map((p) => p[0]);

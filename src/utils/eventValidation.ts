@@ -11,7 +11,6 @@ export type EventForm = {
   group: string;
   eventType: EventType | null;
   date: string;
-  participants: string;
   description: string;
   agreed: boolean;
 };
@@ -26,11 +25,17 @@ export function todayKey(now = new Date()): string {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
-/** true, если такой день есть в календаре: 2026-02-31 не пройдёт */
+/** ДД.ММ.ГГГГ → ГГГГ-ММ-ДД, чтобы даты можно было сравнивать как строки */
+export function toDateKey(value: string): string | null {
+  const match = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value);
+  return match ? `${match[3]}-${match[2]}-${match[1]}` : null;
+}
+
+/** true, если такой день есть в календаре: 31.02.2026 не пройдёт */
 export function isRealDate(value: string): boolean {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (!match) return false;
-  const [year, month, day] = [Number(match[1]), Number(match[2]), Number(match[3])];
+  const key = toDateKey(value);
+  if (!key) return false;
+  const [year, month, day] = key.split('-').map(Number);
   const date = new Date(Date.UTC(year, month - 1, day));
   return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
 }
@@ -42,13 +47,10 @@ export function validateEventForm(form: EventForm, now = new Date()): EventError
   if (!form.eventType) errors.eventType = 'evErrType';
 
   const date = form.date.trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) errors.date = 'evErrDateFormat';
+  if (!toDateKey(date)) errors.date = 'evErrDateFormat';
   else if (!isRealDate(date)) errors.date = 'evErrDateInvalid';
-  // Строки ГГГГ-ММ-ДД сравниваются как даты
-  else if (date < todayKey(now)) errors.date = 'evErrDatePast';
-
-  const count = form.participants.trim();
-  if (!/^\d+$/.test(count) || Number(count) < 1 || Number(count) > 5) errors.participants = 'evErrParticipants';
+  // Ключи ГГГГ-ММ-ДД сравниваются как даты
+  else if (toDateKey(date)! < todayKey(now)) errors.date = 'evErrDatePast';
 
   const description = form.description.trim();
   if (description.length < 10) errors.description = 'evErrDescription';

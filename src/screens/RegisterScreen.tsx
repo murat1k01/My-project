@@ -5,10 +5,12 @@ import FormBanner from '../components/FormBanner';
 import FormField from '../components/FormField';
 import GlassCard from '../components/GlassCard';
 import PasswordField from '../components/PasswordField';
+import PasswordRules from '../components/PasswordRules';
 import PrimaryButton from '../components/PrimaryButton';
 import ProfileFields, { EMPTY_STUDY_DRAFT, StudyDraft } from '../components/ProfileFields';
 import ScreenScroll from '../components/ScreenScroll';
 import { useAuth } from '../context/AuthContext';
+import { useFieldFocus } from '../hooks/useFieldFocus';
 import { useI18n } from '../i18n/LanguageContext';
 import type { RootStackScreenProps } from '../navigation/types';
 import { hasErrors, isValidContact, passwordError, PASSWORD_MIN_LENGTH, ProfileErrors, validateProfile } from '../utils/validation';
@@ -30,6 +32,8 @@ export default function RegisterScreen({ navigation }: RootStackScreenProps<'Reg
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const busy = useRef(false);
+  // Требования к паролю видны, пока фокус в поле пароля или его повтора
+  const passwordFocus = useFieldFocus();
 
   const handleSubmit = async () => {
     if (busy.current || done) return;
@@ -81,8 +85,9 @@ export default function RegisterScreen({ navigation }: RootStackScreenProps<'Reg
           keyboardType="email-address"
           error={accountErrors.contact}
         />
-        <PasswordField label={t('passwordLabel')} placeholder={t('passwordHint', { min: PASSWORD_MIN_LENGTH })} value={password} onChangeText={setPassword} autoComplete="new-password" textContentType="newPassword" error={accountErrors.password} />
-        <PasswordField label={t('passwordConfirmLabel')} value={confirm} onChangeText={setConfirm} autoComplete="new-password" textContentType="newPassword" error={accountErrors.confirm} />
+        <PasswordField label={t('passwordLabel')} value={password} onChangeText={setPassword} onFocus={passwordFocus.onFocus} onBlur={passwordFocus.onBlur} autoComplete="new-password" textContentType="newPassword" error={accountErrors.password} />
+        <PasswordField label={t('passwordConfirmLabel')} value={confirm} onChangeText={setConfirm} onFocus={passwordFocus.onFocus} onBlur={passwordFocus.onBlur} autoComplete="new-password" textContentType="newPassword" error={accountErrors.confirm} />
+        {passwordFocus.focused ? <PasswordRules password={password} confirm={confirm} /> : null}
       </GlassCard>
       {done ? <FormBanner kind="success" text={t('registerDone')} /> : null}
       {formError ? <FormBanner text={formError} /> : null}

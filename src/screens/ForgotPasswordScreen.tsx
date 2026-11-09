@@ -4,6 +4,8 @@ import FormBanner from '../components/FormBanner';
 import FormField from '../components/FormField';
 import GlassCard from '../components/GlassCard';
 import PasswordField from '../components/PasswordField';
+import PasswordRules from '../components/PasswordRules';
+import { useFieldFocus } from '../hooks/useFieldFocus';
 import PrimaryButton from '../components/PrimaryButton';
 import ScreenScroll from '../components/ScreenScroll';
 import { useI18n } from '../i18n/LanguageContext';
@@ -22,6 +24,7 @@ export default function ForgotPasswordScreen({ navigation }: RootStackScreenProp
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const passwordFocus = useFieldFocus();
 
   const run = async (action: () => Promise<void>) => {
     if (submitting) return;
@@ -76,8 +79,9 @@ export default function ForgotPasswordScreen({ navigation }: RootStackScreenProp
         <GlassCard>
           <FormBanner kind="info" text={t('forgotCodeNote')} />
           <FormField label={t('forgotCode')} icon="keypad-outline" value={code} onChangeText={setCode} keyboardType="number-pad" />
-          <PasswordField label={t('newPassword')} placeholder={t('passwordHint', { min: PASSWORD_MIN_LENGTH })} value={password} onChangeText={setPassword} autoComplete="new-password" />
-          <PasswordField label={t('passwordConfirmLabel')} value={confirm} onChangeText={setConfirm} autoComplete="new-password" />
+          <PasswordField label={t('newPassword')} value={password} onChangeText={setPassword} onFocus={passwordFocus.onFocus} onBlur={passwordFocus.onBlur} autoComplete="new-password" />
+          <PasswordField label={t('passwordConfirmLabel')} value={confirm} onChangeText={setConfirm} onFocus={passwordFocus.onFocus} onBlur={passwordFocus.onBlur} autoComplete="new-password" />
+          {passwordFocus.focused ? <PasswordRules password={password} confirm={confirm} /> : null}
           <PrimaryButton title={t('forgotSave')} arrow loading={submitting} onPress={resetPassword} />
         </GlassCard>
       ) : null}

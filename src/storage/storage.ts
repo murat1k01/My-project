@@ -3,7 +3,6 @@ import type { User } from '../api/types';
 import { isServiceId } from '../data/services';
 import type { Language } from '../i18n/translations';
 import type { ThemeMode } from '../theme/colors';
-import type { FontScaleId } from '../theme/FontScaleContext';
 import { CampusState, EMPTY_CAMPUS_STATE } from '../types/Campus';
 import type { ServiceId } from '../types/Service';
 
@@ -97,13 +96,40 @@ export function saveLanguage(language: Language): Promise<boolean> {
   return writeJson(STORAGE_KEYS.language, language);
 }
 
-export async function loadFontScale(): Promise<FontScaleId | null> {
+/** Прежние версии хранили размер словом: переводим его в число */
+const LEGACY_FONT_SCALES: Record<string, number> = { small: 0.88, standard: 1, large: 1.15, xlarge: 1.3 };
+
+export async function loadFontScale(): Promise<number | null> {
   const value = await readJson(STORAGE_KEYS.fontScale);
-  return value === 'small' || value === 'standard' || value === 'large' || value === 'xlarge' ? value : null;
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  return typeof value === 'string' ? (LEGACY_FONT_SCALES[value] ?? null) : null;
 }
 
-export function saveFontScale(id: FontScaleId): Promise<boolean> {
-  return writeJson(STORAGE_KEYS.fontScale, id);
+export function saveFontScale(scale: number): Promise<boolean> {
+  return writeJson(STORAGE_KEYS.fontScale, scale);
+}
+
+// ---------- Последний логин: только email или телефон, пароль не хранится ----------
+
+const LAST_LOGIN_KEY = '@campushub/last-login';
+
+export async function loadLastLogin(): Promise<string | null> {
+  const value = await readJson(LAST_LOGIN_KEY);
+  return typeof value === 'string' ? value : null;
+}
+
+export function saveLastLogin(contact: string | null): Promise<boolean> {
+  return contact ? writeJson(LAST_LOGIN_KEY, contact) : removeKey(LAST_LOGIN_KEY);
+}
+
+async function removeKey(key: string): Promise<boolean> {
+  try {
+    await AsyncStorage.removeItem(key);
+    return true;
+  } catch (error) {
+    console.warn(`[storage] Не удалось удалить ${key}`, error);
+    return false;
+  }
 }
 
 // ---------- Личные отметки в сервисах ----------
@@ -131,6 +157,7 @@ export async function loadCampus(): Promise<CampusState> {
     doneTasks: strings(value.doneTasks),
     cart,
     enrolledSections: strings(value.enrolledSections),
+    health: value.health === 'healthy' || value.health === 'limited' || value.health === 'exempt' ? value.health : null,
   };
 }
 

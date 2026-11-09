@@ -54,29 +54,28 @@ export function phoneHref(value: string): string {
 
 const pad = (value: number) => String(value).padStart(2, '0');
 
-/** «30 октября» / «30 қазан» / «30 October» */
-export function formatDayMonth(date: Date, language: Language): string {
-  const month = dateNames[language].months[date.getMonth()];
-  return language === 'en' ? `${month} ${date.getDate()}` : `${date.getDate()} ${month}`;
+/** Единый формат даты в приложении: «30.10.2026» */
+export function formatDayMonth(date: Date, _language?: Language): string {
+  return `${pad(date.getDate())}.${pad(date.getMonth() + 1)}.${date.getFullYear()}`;
 }
 
-/** «Пятница, 30 октября» */
+/** «Пятница, 30.10.2026» */
 export function formatToday(date: Date, language: Language): string {
   return `${dateNames[language].weekdays[date.getDay()]}, ${formatDayMonth(date, language)}`;
 }
 
-/** «30 октября 2026» */
-export function formatDate(iso: string, language: Language): string {
+/** «30.10.2026» */
+export function formatDate(iso: string, _language?: Language): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return '—';
-  return `${formatDayMonth(date, language)} ${date.getFullYear()}`;
+  return formatDayMonth(date);
 }
 
-/** «30 октября, 21:43» */
-export function formatDateTime(iso: string, language: Language): string {
+/** «30.10.2026, 21:43» */
+export function formatDateTime(iso: string, _language?: Language): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return '—';
-  return `${formatDayMonth(date, language)}, ${formatClock(date)}`;
+  return `${formatDayMonth(date)}, ${formatClock(date)}`;
 }
 
 export function formatClock(date: Date): string {

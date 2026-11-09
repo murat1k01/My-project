@@ -51,14 +51,10 @@ const INFO_IMAGES: Record<string, keyof typeof images> = {
   university: 'serviceInfo',
   faculties: 'serviceLms',
   programs: 'news3',
-  groups: 'news2',
+  opportunities: 'heroEarth',
+  'student-life': 'news2',
+  groups: 'serviceCal',
   study: 'serviceLms',
-  schedule: 'serviceCal',
-  library: 'serviceLib',
-  food: 'serviceFood',
-  dormitory: 'serviceDorm',
-  transport: 'serviceBus',
-  sport: 'serviceSport',
   events: 'news2',
   contacts: 'serviceInfo',
   faq: 'news3',
@@ -69,4 +65,9 @@ const INFO_IMAGES: Record<string, keyof typeof images> = {
 
 export function infoImage(slug: string) {
   return images[INFO_IMAGES[slug] ?? 'serviceInfo'];
+}
+
+/** Фото страницы: ссылка, которую указал администратор (например, официальное фото ALT), иначе иллюстрация по теме. */
+export function infoImageSource(page: { slug: string; imageUrl?: string | null }) {
+  return page.imageUrl ? { uri: page.imageUrl } : infoImage(page.slug);
 }

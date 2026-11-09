@@ -48,15 +48,6 @@ export const SERVICES: Service[] = [
     route: 'Info',
   },
   {
-    id: 'subscription',
-    title: lt('Подписка', 'Жазылым', 'Subscription'),
-    description: lt('Тарифы и возможности', 'Тарифтер мен мүмкіндіктер', 'Plans and features'),
-    icon: 'sparkles-outline',
-    accent: '#FBBF24',
-    image: images.news2,
-    route: 'Subscription',
-  },
-  {
     id: 'cal',
     title: lt('Расписание', 'Сабақ кестесі', 'Schedule'),
     description: lt('Пары и аудитории', 'Сабақтар мен аудиториялар', 'Classes and rooms'),

@@ -12,11 +12,16 @@ export type CampusState = {
   /** Корзина столовой: id блюда → количество */
   cart: Record<string, number>;
   enrolledSections: string[];
+  /** Состояние здоровья, которое студент указал сам в разделе «Спорт» */
+  health: HealthStatus | null;
 };
+
+export type HealthStatus = 'healthy' | 'limited' | 'exempt';
 
 export const EMPTY_CAMPUS_STATE: CampusState = {
   seat: null,
   doneTasks: [],
   cart: {},
   enrolledSections: [],
+  health: null,
 };

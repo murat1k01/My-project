@@ -28,7 +28,7 @@ type Props = {
  * Общий макет экранов сервисов: большое фото с плавным переходом в фон,
  * кнопки «назад» и «избранное», заголовок и содержимое.
  */
-export default function ServiceLayout({ service, onBack, children, footer, notice = 'exampleNotice' }: Props) {
+export default function ServiceLayout({ service, onBack, children, footer, notice = 'sectionNote' }: Props) {
   const { colors } = useTheme();
   const { t, tr } = useI18n();
   const { isFavorite, toggleFavorite } = useAppData();

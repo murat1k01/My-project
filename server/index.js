@@ -1,4 +1,4 @@
-// Запуск сервера Campus Hub: npm run server
+// Запуск сервера ALTushki: npm run server
 // Настройка через переменные окружения (см. server/.env.example). Секреты не хранятся в коде.
 import { createServer } from 'node:http';
 import { networkInterfaces } from 'node:os';
@@ -23,7 +23,7 @@ if (adminArg !== -1) {
 const handler = createApi(db, { adminEmail: process.env.ADMIN_EMAIL ?? null, positionsUrl: process.env.BUS_POSITIONS_URL ?? null });
 
 createServer(handler).listen(PORT, '0.0.0.0', () => {
-  console.log(`Сервер Campus Hub запущен: http://localhost:${PORT}/api/health`);
+  console.log(`Сервер ALTushki запущен: http://localhost:${PORT}/api/health`);
   for (const list of Object.values(networkInterfaces())) {
     for (const net of list ?? []) {
       if (net.family === 'IPv4' && !net.internal) console.log(`С телефона в той же Wi-Fi: http://${net.address}:${PORT}`);

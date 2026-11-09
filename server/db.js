@@ -129,7 +129,22 @@ CREATE TABLE IF NOT EXISTS info_pages (
   slug TEXT PRIMARY KEY,
   title TEXT NOT NULL,
   body TEXT NOT NULL,
-  sort INTEGER NOT NULL DEFAULT 0
+  sort INTEGER NOT NULL DEFAULT 0,
+  image_url TEXT
+);
+
+-- Привязанные карты: только токен провайдера и последние 4 цифры. Номер карты и CVV сюда не попадают.
+CREATE TABLE IF NOT EXISTS payment_methods (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  provider TEXT NOT NULL,
+  token TEXT NOT NULL,
+  brand TEXT NOT NULL,
+  last4 TEXT NOT NULL,
+  exp_month TEXT NOT NULL,
+  exp_year TEXT NOT NULL,
+  holder TEXT NOT NULL,
+  created_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS dorms (
@@ -180,6 +195,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS bookings_no_conflict ON bookings (machine_id, 
 export function openDatabase(path, options) {
   const db = new DatabaseSync(path);
   db.exec(SCHEMA);
+  // Базы, созданные до появления фото страниц, получают новый столбец
+  if (!db.prepare('PRAGMA table_info(info_pages)').all().some((c) => c.name === 'image_url')) db.exec('ALTER TABLE info_pages ADD COLUMN image_url TEXT');
   seed(db, options);
   return db;
 }

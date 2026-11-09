@@ -5,13 +5,13 @@ import { DatabaseSync } from 'node:sqlite';
 import { test } from 'node:test';
 import { CREATE_FAVORITES_TABLE, DELETE_FAVORITE, INSERT_FAVORITE, SELECT_FAVORITES, TOGGLE_READ } from '../../src/database/favoritesSql.ts';
 import { isRealDate, validateEventForm } from '../../src/utils/eventValidation.ts';
+import { luhnValid, validateCard } from '../../src/utils/card.ts';
 
 const valid = {
   fullName: 'Айдана Серікова',
   group: 'ИС-21',
   eventType: 'hackathon',
-  date: '2026-12-01',
-  participants: '3',
+  date: '01.12.2026',
   description: 'Хочу участвовать с командой',
   agreed: true,
 };
@@ -26,16 +26,14 @@ test('№9: каждое правило проверяется отдельно'
   assert.equal(check({ fullName: '  Ай  ' }).fullName, 'evErrName');
   assert.equal(check({ group: '   ' }).group, 'evErrGroup');
   assert.equal(check({ eventType: null }).eventType, 'evErrType');
-  assert.equal(check({ date: '01.12.2026' }).date, 'evErrDateFormat');
-  assert.equal(check({ date: '2026-02-31' }).date, 'evErrDateInvalid');
-  assert.equal(check({ date: '2026-11-06' }).date, 'evErrDatePast');
-  assert.equal(check({ date: '2026-11-07' }).date, undefined, 'сегодня можно');
-  for (const bad of ['0', '6', '2.5', 'два', '']) assert.equal(check({ participants: bad }).participants, 'evErrParticipants', bad);
-  assert.equal(check({ participants: '5' }).participants, undefined);
+  assert.equal(check({ date: '2026-12-01' }).date, 'evErrDateFormat');
+  assert.equal(check({ date: '31.02.2026' }).date, 'evErrDateInvalid');
+  assert.equal(check({ date: '06.11.2026' }).date, 'evErrDatePast');
+  assert.equal(check({ date: '07.11.2026' }).date, undefined, 'сегодня можно');
   assert.equal(check({ description: '   короткий   ' }).description, 'evErrDescription');
   assert.equal(check({ description: 'а'.repeat(201) }).description, 'evErrDescriptionLong');
   assert.equal(check({ agreed: false }).agreed, 'evErrAgree');
-  assert.ok(isRealDate('2028-02-29') && !isRealDate('2027-02-29'));
+  assert.ok(isRealDate('29.02.2028') && !isRealDate('29.02.2027'));
 });
 
 test('№10: сохранение без повторов, порядок, смена статуса и удаление', () => {
@@ -56,4 +54,17 @@ test('№10: сохранение без повторов, порядок, см�
 
   db.prepare(DELETE_FAVORITE).run('b');
   assert.deepEqual(db.prepare(SELECT_FAVORITES).all().map((r) => r.id).sort(), ['a', 'c']);
+});
+
+test('оплата: проверка карты Visa на устройстве', () => {
+  const now = new Date(2026, 10, 9);
+  const card = { number: '4111 1111 1111 1111', month: '12', year: '2028', holder: 'IVAN PETROV', cvv: '123' };
+  assert.deepEqual(validateCard(card, now), {});
+  assert.ok(luhnValid('4111111111111111') && !luhnValid('4111111111111112'));
+  assert.equal(validateCard({ ...card, number: '5500 0000 0000 0004' }, now).number, 'payErrNumber', 'только Visa');
+  assert.equal(validateCard({ ...card, month: '13' }, now).month, 'payErrMonth');
+  assert.equal(validateCard({ ...card, month: '10', year: '2026' }, now).year, 'payErrExpired');
+  assert.equal(validateCard({ ...card, month: '11', year: '2026' }, now).year, undefined, 'действует до конца месяца');
+  assert.equal(validateCard({ ...card, holder: 'Иван' }, now).holder, 'payErrHolder');
+  assert.equal(validateCard({ ...card, cvv: '12' }, now).cvv, 'payErrCvv');
 });

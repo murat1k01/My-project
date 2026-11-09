@@ -8,7 +8,6 @@ export type MainTabParamList = {
   Home: undefined;
   Journal: undefined;
   Students: undefined;
-  Favorites: undefined;
   Profile: undefined;
   Settings: undefined;
 };
@@ -34,6 +33,7 @@ export type RootStackParamList = {
   ProfileEdit: undefined;
   Admin: undefined;
   EventRegistration: undefined;
+  Payment: undefined;
 };
 
 export type RootStackScreenProps<T extends keyof RootStackParamList> = NativeStackScreenProps<RootStackParamList, T>;

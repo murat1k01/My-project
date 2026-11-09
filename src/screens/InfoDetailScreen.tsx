@@ -6,7 +6,7 @@ import GlassCard from '../components/GlassCard';
 import PrimaryButton from '../components/PrimaryButton';
 import ScreenScroll from '../components/ScreenScroll';
 import StateView from '../components/StateView';
-import { infoImage } from '../data/images';
+import { infoImageSource } from '../data/images';
 import { useApi } from '../hooks/useApi';
 import { useI18n } from '../i18n/LanguageContext';
 import type { TranslationKey } from '../i18n/translations';
@@ -47,7 +47,7 @@ export default function InfoDetailScreen({ navigation, route }: RootStackScreenP
         emptyText={t('infoPageMissing')}
         onRetry={() => void reload()}
       >
-        <Image source={infoImage(slug)} style={styles.photo} resizeMode="cover" accessibilityIgnoresInvertColors />
+        <Image source={infoImageSource(page ?? { slug })} style={styles.photo} resizeMode="cover" accessibilityIgnoresInvertColors />
         <GlassCard>
           <Text style={[type.body, { color: colors.textSecondary }]}>{page?.body}</Text>
         </GlassCard>

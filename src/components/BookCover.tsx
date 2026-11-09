@@ -22,7 +22,7 @@ export default function BookCover({ uri, width }: Props) {
 
   if (!uri || failed) {
     return (
-      <View style={[styles.cover, styles.placeholder, size, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }]}>
+      <View style={[styles.cover, styles.placeholder, size, { backgroundColor: colors.glass, borderColor: colors.border }]}>
         <Ionicons name="book-outline" size={width * 0.3} color={colors.textMuted} />
         <Text style={[type.caption, styles.center, { color: colors.textMuted }]} numberOfLines={2}>
           {t('bookNoCover')}

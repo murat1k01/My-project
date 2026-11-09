@@ -169,7 +169,7 @@
       && (!query.get('program') || u.program === query.get('program'))
       && (!query.get('group') || u.group === query.get('group'))
       && (!query.get('course') || u.course === Number(query.get('course')))
-      && (!search || `${u.firstName} ${u.lastName}`.toLowerCase().includes(search) || `${u.lastName} ${u.firstName}`.toLowerCase().includes(search)));
+      && (!search || [`${u.firstName} ${u.lastName}`, `${u.lastName} ${u.firstName}`, u.group, u.program, u.faculty].some((v) => (v || '').toLowerCase().includes(search))));
     const values = (key) => [...new Set(all.map((u) => u[key]))].filter((v) => v !== null && v !== '').sort();
     return { students, filters: { faculty: values('faculty'), program: values('program'), group: values('group'), course: values('course') } };
   }, true);
@@ -338,6 +338,12 @@
   add('POST', '/api/subscription/cancel', () => {
     throw new HttpError(404, 'not_found', 'Активной подписки нет');
   }, true);
+  // Платёжного провайдера в демо нет: привязать карту нельзя, данные карты никуда не отправляются
+  add('GET', '/api/payment-methods', () => ({ configured: false, cards: [] }), true);
+  add('POST', '/api/payment-methods', () => {
+    throw new HttpError(501, 'payments_not_configured', 'Платёжный провайдер не подключён. Карта не привязана.');
+  }, true);
+
   add('GET', '/api/membership', ({ user }) => ({ membership: load().memberships.find((m) => m.userId === user.id) || null }), true);
   add('POST', '/api/membership', ({ user, body }) => {
     if (load().memberships.some((m) => m.userId === user.id)) throw new HttpError(409, 'membership_exists', 'У вас уже есть абонемент или заявка на него');

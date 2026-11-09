@@ -17,7 +17,7 @@ import { DESCRIPTION_MAX, EVENT_TYPES, EventErrors, EventField, EventForm, Event
 
 const TYPE_LABELS: Record<EventType, TranslationKey> = { hackathon: 'evTypeHackathon', seminar: 'evTypeSeminar', masterclass: 'evTypeMasterclass' };
 
-const EMPTY_FORM: EventForm = { fullName: '', group: '', eventType: null, date: '', participants: '', description: '', agreed: false };
+const EMPTY_FORM: EventForm = { fullName: '', group: '', eventType: null, date: '', description: '', agreed: false };
 
 /** Лабораторная работа №9: регистрация на мероприятие с проверкой каждого поля. */
 export default function EventRegistrationScreen({ navigation }: RootStackScreenProps<'EventRegistration'>) {
@@ -82,7 +82,6 @@ export default function EventRegistrationScreen({ navigation }: RootStackScreenP
         </View>
 
         <FormField label={t('evDate')} placeholder={t('evDateHint')} value={form.date} onChangeText={(v) => update('date', v)} keyboardType="numbers-and-punctuation" maxLength={10} error={error('date')} />
-        <FormField label={t('evParticipants')} placeholder="1–5" value={form.participants} onChangeText={(v) => update('participants', v)} keyboardType="number-pad" maxLength={2} error={error('participants')} />
 
         <View style={styles.block}>
           <FormField

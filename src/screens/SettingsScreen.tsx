@@ -1,6 +1,7 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { Platform, StyleSheet, Switch, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Slider from '@react-native-community/slider';
 import Constants from 'expo-constants';
 import { Text } from '../components/AppText';
 import Chip from '../components/Chip';
@@ -9,39 +10,57 @@ import ScreenScroll from '../components/ScreenScroll';
 import { useAuth } from '../context/AuthContext';
 import { useSignOut } from '../hooks/useSignOut';
 import { useI18n } from '../i18n/LanguageContext';
-import { LANGUAGES, TranslationKey } from '../i18n/translations';
-import { FontScaleId, useFontScale } from '../theme/FontScaleContext';
+import { LANGUAGES } from '../i18n/translations';
+import type { MainTabScreenProps } from '../navigation/types';
+import { FONT_SCALE_MAX, FONT_SCALE_MIN, FONT_SCALE_STEP, useFontScale } from '../theme/FontScaleContext';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, spacing } from '../theme/metrics';
 import { type } from '../theme/typography';
 import type { IoniconName } from '../types/Service';
 
-const FONT_OPTIONS: { id: FontScaleId; label: TranslationKey }[] = [
-  { id: 'small', label: 'fontSmall' },
-  { id: 'standard', label: 'fontStandard' },
-  { id: 'large', label: 'fontLarge' },
-  { id: 'xlarge', label: 'fontXLarge' },
-];
-
-export default function SettingsScreen() {
+export default function SettingsScreen({ navigation }: MainTabScreenProps<'Settings'>) {
   const { colors, isDark, setMode } = useTheme();
   const { t, language, setLanguage } = useI18n();
-  const { scaleId, setScaleId } = useFontScale();
+  const { scale, setScale } = useFontScale();
   const { user } = useAuth();
   const signOut = useSignOut();
+  // Пока ползунок двигают, меняется только подпись; размер всего приложения применяется, когда его отпустили
+  const [dragging, setDragging] = useState<number | null>(null);
+  const draftScale = dragging ?? scale;
 
   const appVersion = Constants.expoConfig?.version ?? t('notSpecified');
   const platformName = Platform.OS === 'ios' ? 'iOS' : Platform.OS === 'android' ? 'Android' : t('platformWeb');
+  const percent = Math.round(draftScale * 100);
 
   return (
     <ScreenScroll title={t('settingsTitle')}>
       <Section title={t('fontSize')}>
-        <View style={styles.chips}>
-          {FONT_OPTIONS.map((option) => (
-            <Chip key={option.id} label={t(option.label)} selected={scaleId === option.id} onPress={() => setScaleId(option.id)} />
-          ))}
+        <View style={styles.sliderRow}>
+          <Text style={[styles.small, { color: colors.textMuted }]} accessibilityElementsHidden>
+            A
+          </Text>
+          <Slider
+            style={styles.slider}
+            minimumValue={FONT_SCALE_MIN}
+            maximumValue={FONT_SCALE_MAX}
+            step={FONT_SCALE_STEP}
+            value={scale}
+            onValueChange={setDragging}
+            onSlidingComplete={(value) => {
+              setScale(value);
+              setDragging(null);
+            }}
+            minimumTrackTintColor={colors.primary}
+            maximumTrackTintColor={colors.border}
+            thumbTintColor={Platform.OS === 'android' ? colors.primary : undefined}
+            accessibilityLabel={t('fontSize')}
+          />
+          <Text style={[styles.large, { color: colors.textMuted }]} accessibilityElementsHidden>
+            A
+          </Text>
         </View>
-        <Text style={[type.body, styles.note, { color: colors.textSecondary }]}>{t('fontPreview')}</Text>
+        <Text style={[type.caption, { color: colors.textMuted }]}>{t('fontScaleValue', { percent })}</Text>
+        <Text style={[type.body, styles.note, { color: colors.textSecondary, fontSize: (15 * draftScale) / scale, lineHeight: (21 * draftScale) / scale }]}>{t('fontPreview')}</Text>
       </Section>
 
       <Section title={t('appearance')}>
@@ -62,6 +81,11 @@ export default function SettingsScreen() {
             <Chip key={item.code} label={item.name} selected={language === item.code} onPress={() => setLanguage(item.code)} />
           ))}
         </View>
+      </Section>
+
+      <Section title={t('payTitle')}>
+        <Text style={[type.body, styles.note, { color: colors.textSecondary }]}>{t('paySettingsText')}</Text>
+        <PrimaryButton title={t('payOpen')} icon="card-outline" variant="glass" compact style={styles.button} onPress={() => navigation.navigate('Payment')} />
       </Section>
 
       <Section title={t('about')}>
@@ -128,6 +152,23 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingVertical: spacing.sm,
   },
+  sliderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingTop: spacing.sm,
+  },
+  slider: {
+    flex: 1,
+    height: 44,
+  },
+  // Буквы по краям ползунка показывают направление; их размер не масштабируется
+  small: {
+    fontSize: 13,
+  },
+  large: {
+    fontSize: 22,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -142,5 +183,8 @@ const styles = StyleSheet.create({
   },
   note: {
     paddingVertical: spacing.sm,
+  },
+  button: {
+    marginBottom: spacing.sm,
   },
 });

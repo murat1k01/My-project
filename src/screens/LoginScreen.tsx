@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Keyboard, StyleSheet, Switch, TextInputInstance, View } from 'react-native';
 import AnimatedLogo from '../components/AnimatedLogo';
 import { Text } from '../components/AppText';
@@ -13,6 +13,7 @@ import { errorMessage } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n/LanguageContext';
 import { LANGUAGES } from '../i18n/translations';
+import { loadLastLogin, saveLastLogin } from '../storage/storage';
 import type { RootStackScreenProps } from '../navigation/types';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing } from '../theme/metrics';
@@ -27,6 +28,18 @@ export default function LoginScreen({ navigation }: RootStackScreenProps<'Login'
   const [contact, setContact] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(true);
+
+  // Подставляем email или телефон с прошлого входа. Пароль приложение не хранит:
+  // вход сохраняется токеном в защищённом хранилище системы, а пароль может запомнить менеджер паролей телефона
+  useEffect(() => {
+    let cancelled = false;
+    void loadLastLogin().then((saved) => {
+      if (!cancelled && saved) setContact((prev) => prev || saved);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const passwordRef = useRef<TextInputInstance>(null);
@@ -44,6 +57,7 @@ export default function LoginScreen({ navigation }: RootStackScreenProps<'Login'
     setSubmitting(true);
     setError(null);
     try {
+      await saveLastLogin(remember ? contact.trim() : null);
       await signIn(contact.trim(), password, remember);
     } catch (e) {
       setError(errorMessage(e));
@@ -62,7 +76,7 @@ export default function LoginScreen({ navigation }: RootStackScreenProps<'Login'
       ))}
     >
       <View style={styles.logo}>
-        <AnimatedLogo size={72} titleColor={colors.text} />
+        <AnimatedLogo size={72} color={colors.text} />
       </View>
       <GlassCard style={styles.card}>
         {error ? <FormBanner text={error} /> : null}

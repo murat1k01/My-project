@@ -5,13 +5,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { api, errorMessage } from '../../api/client';
 import type { Membership } from '../../api/types';
 import FormBanner from '../../components/FormBanner';
+import Chip from '../../components/Chip';
 import GlassCard from '../../components/GlassCard';
 import PrimaryButton from '../../components/PrimaryButton';
 import SectionHeader from '../../components/SectionHeader';
 import SegmentedTabs from '../../components/SegmentedTabs';
 import ServiceLayout from '../../components/ServiceLayout';
 import { useCampus } from '../../context/CampusContext';
-import { MEMBERSHIP_PLANS, SPORT_HOURS, SPORT_SECTIONS, TRAINING_PLAN } from '../../data/sport';
+import { MEMBERSHIP_PLANS, SPORT_HOURS, SPORT_SECTIONS, SPORT_SESSIONS, TRAINING_PLAN } from '../../data/sport';
+import type { HealthStatus } from '../../types/Campus';
+import type { TranslationKey } from '../../i18n/translations';
 import { useApi } from '../../hooks/useApi';
 import { useNow } from '../../hooks/useNow';
 import { useI18n } from '../../i18n/LanguageContext';
@@ -24,7 +27,15 @@ import type { ServiceScreenProps } from './types';
 
 type Tab = 'membership' | 'training';
 
-/** Спорт: оформление абонемента (оплата на месте, подтверждает администратор), режим работы, секции и план тренировок. */
+const HEALTH: { id: HealthStatus; label: TranslationKey; icon: 'heart-circle' | 'alert-circle' | 'close-circle' }[] = [
+  { id: 'healthy', label: 'healthHealthy', icon: 'heart-circle' },
+  { id: 'limited', label: 'healthLimited', icon: 'alert-circle' },
+  { id: 'exempt', label: 'healthExempt', icon: 'close-circle' },
+];
+
+const WEEK = [1, 2, 3, 4, 5, 6, 0];
+
+/** Спорт: состояние здоровья, расписание по каждому виду спорта и залу, секции и абонемент (оплата на месте, подтверждает администратор). */
 export default function SportService({ service, onBack }: ServiceScreenProps) {
   const { colors } = useTheme();
   const { t, tr, language } = useI18n();
@@ -118,6 +129,7 @@ export default function SportService({ service, onBack }: ServiceScreenProps) {
         </>
       ) : (
         <>
+          <HealthCard status={campus.health} onChange={(health) => updateCampus((prev) => ({ ...prev, health }))} />
           <GlassCard>
             <Text style={[type.subheading, { color: colors.text }]}>{t('sportHours')}</Text>
             {SPORT_HOURS.map((item) => (
@@ -154,10 +166,9 @@ export default function SportService({ service, onBack }: ServiceScreenProps) {
                   </View>
                   <View style={styles.flex}>
                     <Text style={[type.subheading, { color: colors.text }]}>{tr(section.name)}</Text>
-                    <Text style={[type.caption, { color: colors.textSecondary }]}>{tr(section.schedule)}</Text>
-                    <Text style={[type.caption, { color: colors.textMuted }]}>{t('sportCoach', { name: section.coach })}</Text>
                   </View>
                 </View>
+                <WeekSchedule sessions={SPORT_SESSIONS[section.id] ?? {}} today={now.getDay()} />
                 <PrimaryButton
                   title={enrolled ? t('sportEnrolled') : t('sportEnroll')}
                   icon={enrolled ? 'checkmark-circle' : undefined}
@@ -175,7 +186,67 @@ export default function SportService({ service, onBack }: ServiceScreenProps) {
   );
 }
 
+function HealthCard({ status, onChange }: { status: HealthStatus | null; onChange: (status: HealthStatus) => void }) {
+  const { colors } = useTheme();
+  const { t } = useI18n();
+  const current = HEALTH.find((item) => item.id === status);
+  const tone = status === 'healthy' ? colors.success : status === 'limited' ? colors.warning : status === 'exempt' ? colors.danger : colors.textMuted;
+  return (
+    <GlassCard>
+      <View style={styles.row}>
+        <Ionicons name={current?.icon ?? 'help-circle-outline'} size={28} color={tone} />
+        <View style={styles.flex}>
+          <Text style={[type.caption, { color: colors.textMuted }]}>{t('healthTitle')}</Text>
+          <Text style={[type.heading, { color: tone }]}>{current ? t(current.label) : t('healthUnknown')}</Text>
+        </View>
+      </View>
+      <View style={styles.chips}>
+        {HEALTH.map((item) => (
+          <Chip key={item.id} label={t(item.label)} selected={item.id === status} onPress={() => onChange(item.id)} />
+        ))}
+      </View>
+      <Text style={[type.caption, { color: colors.textMuted }]}>{t('healthNote')}</Text>
+    </GlassCard>
+  );
+}
+
+/** Неделя по дням: время занятия или прочерк, сегодняшний день выделен */
+function WeekSchedule({ sessions, today }: { sessions: Partial<Record<number, string>>; today: number }) {
+  const { colors } = useTheme();
+  const { language } = useI18n();
+  return (
+    <View style={styles.week}>
+      {WEEK.map((day) => {
+        const time = sessions[day];
+        const isToday = day === today;
+        return (
+          <View key={day} style={[styles.weekRow, isToday && { backgroundColor: colors.primarySoft }]}>
+            <Text style={[styles.planDay, { color: isToday ? colors.primary : colors.textMuted }]}>{dateNames[language].weekdaysShort[day]}</Text>
+            <Text style={[type.body, styles.flex, { color: time ? colors.text : colors.textMuted }]}>{time ?? '—'}</Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  chips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  week: {
+    gap: 2,
+  },
+  weekRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: 6,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.sm,
+  },
   flex: {
     flex: 1,
   },

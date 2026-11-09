@@ -21,7 +21,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { spacing } from '../theme/metrics';
 import { type } from '../theme/typography';
 import { confirmAction } from '../utils/dialogs';
-import { formatDateTime, formatMoney } from '../utils/format';
+import { formatDate, formatDateTime, formatMoney } from '../utils/format';
 
 type FieldKind = 'text' | 'long' | 'number' | 'bool';
 type Field = { key: string; label: TranslationKey; kind?: FieldKind };
@@ -46,7 +46,7 @@ const RESOURCES: Resource[] = [
   },
   {
     id: 'pages', label: 'adminPages', pk: 'slug', titleKey: 'title',
-    fields: [{ key: 'slug', label: 'adminFSlug' }, { key: 'title', label: 'adminFTitle' }, { key: 'body', label: 'adminFBody', kind: 'long' }, { key: 'sort', label: 'adminFSort', kind: 'number' }],
+    fields: [{ key: 'slug', label: 'adminFSlug' }, { key: 'title', label: 'adminFTitle' }, { key: 'body', label: 'adminFBody', kind: 'long' }, { key: 'imageUrl', label: 'adminFImageUrl' }, { key: 'sort', label: 'adminFSort', kind: 'number' }],
   },
   {
     id: 'dorms', label: 'adminDorms', pk: 'id', titleKey: 'name', subtitleKey: 'address',
@@ -292,7 +292,7 @@ function BookingsAdmin() {
       {data?.bookings.map((item) => (
         <GlassCard key={item.id}>
           <Text style={[type.bodyMedium, { color: colors.text }]}>
-            {item.date}, {item.slot} · {item.machine}
+            {formatDate(`${item.date}T00:00:00`, 'ru')}, {item.slot} · {item.machine}
           </Text>
           <Text style={[type.caption, { color: colors.textMuted }]}>
             {item.dorm} · {item.firstName} {item.lastName}

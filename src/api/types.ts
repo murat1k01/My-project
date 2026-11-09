@@ -165,6 +165,6 @@ export type FoundStop = BusStop & { routes: { id: string; number: string }[] };
 
 export type Vehicle = { routeNumber: string; lat: number; lon: number; updatedAt?: string };
 
-export type InfoPage = { slug: string; title: string; body: string; sort: number };
+export type InfoPage = { slug: string; title: string; body: string; sort: number; imageUrl?: string | null };
 
 export type Membership = { id: string; planId: string; status: 'pending' | 'active' | 'canceled'; expiresAt: string | null; createdAt: string };

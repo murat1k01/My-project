@@ -8,7 +8,7 @@ import { fonts } from '../theme/typography';
 import IconButton from './IconButton';
 
 type Props = {
-  /** Небольшая подпись слева (например, «Campus Hub»), если нет кнопки «Назад» */
+  /** Небольшая подпись слева (например, «ALTushki»), если нет кнопки «Назад» */
   label?: string;
   onBack?: () => void;
   /** Кнопки действий текущего экрана справа (профиль и настройки — только в нижней навигации) */

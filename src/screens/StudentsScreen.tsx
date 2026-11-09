@@ -1,12 +1,11 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useIsFocused } from '@react-navigation/native';
 import { api, errorMessage } from '../api/client';
-import type { Student, StudentFilters } from '../api/types';
+import type { Student } from '../api/types';
 import { Text } from '../components/AppText';
 import Avatar from '../components/Avatar';
-import Chip from '../components/Chip';
 import FormBanner from '../components/FormBanner';
 import FormField from '../components/FormField';
 import GlassCard from '../components/GlassCard';
@@ -22,9 +21,6 @@ import { useTheme } from '../theme/ThemeContext';
 import { radius, spacing } from '../theme/metrics';
 import { type } from '../theme/typography';
 
-type FilterKey = 'faculty' | 'program' | 'course' | 'group';
-type Selected = Partial<Record<FilterKey, string>>;
-
 export default function StudentsScreen({ navigation }: MainTabScreenProps<'Students'>) {
   const { t } = useI18n();
   return (
@@ -38,7 +34,6 @@ function StudentsList({ onOpen }: { onOpen: (id: string) => void }) {
   const { colors } = useTheme();
   const { t } = useI18n();
   const [query, setQuery] = useState('');
-  const [selected, setSelected] = useState<Selected>({});
   const search = useDebounced(query.trim());
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
@@ -48,24 +43,11 @@ function StudentsList({ onOpen }: { onOpen: (id: string) => void }) {
 
   const params = new URLSearchParams();
   if (search) params.set('q', search);
-  for (const [key, value] of Object.entries(selected)) if (value) params.set(key, value);
   const suffix = params.toString();
-  const { data, loading, error, reload } = useApi<{ students: Student[]; filters: StudentFilters }>(focused ? `/api/students${suffix ? `?${suffix}` : ''}` : null);
+  const { data, loading, error, reload } = useApi<{ students: Student[] }>(focused ? `/api/students${suffix ? `?${suffix}` : ''}` : null);
 
-  const hasFilters = search !== '' || Object.values(selected).some(Boolean);
-  const toggle = (key: FilterKey, value: string) => setSelected((prev) => ({ ...prev, [key]: prev[key] === value ? undefined : value }));
+  const hasFilters = search !== '';
 
-  const filterRow = (key: FilterKey, label: string, values: (string | number)[] | undefined) =>
-    values && values.length > 0 ? (
-      <View style={styles.filter}>
-        <Text style={[type.label, { color: colors.textSecondary }]}>{label}</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-          {values.map((value) => (
-            <Chip key={value} label={String(value)} selected={selected[key] === String(value)} onPress={() => toggle(key, String(value))} />
-          ))}
-        </ScrollView>
-      </View>
-    ) : null;
 
   return (
     <View style={styles.content}>
@@ -89,10 +71,6 @@ function StudentsList({ onOpen }: { onOpen: (id: string) => void }) {
       ) : null}
       {added ? <FormBanner kind="success" text={t('studentAdded')} /> : null}
       <SearchField value={query} onChangeText={setQuery} placeholder={t('searchPlaceholder')} />
-      {filterRow('faculty', t('faculty'), data?.filters.faculty)}
-      {filterRow('program', t('program'), data?.filters.program)}
-      {filterRow('course', t('course'), data?.filters.course)}
-      {filterRow('group', t('group'), data?.filters.group)}
 
       <StateView
         loading={loading}
@@ -181,12 +159,6 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: spacing.md,
-  },
-  filter: {
-    gap: spacing.xs,
-  },
-  chips: {
-    gap: spacing.sm,
   },
   card: {
     flexDirection: 'row',

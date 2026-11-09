@@ -27,7 +27,7 @@ export default function ScreenScroll({ title, subtitle, onBack, right, children,
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <View style={styles.content}>
-            <TopBar label="Campus Hub" onBack={onBack} right={right} />
+            <TopBar label="ALTushki" onBack={onBack} right={right} />
             <View style={styles.titleBlock}>
               <Text style={[type.title, { color: colors.text }]} accessibilityRole="header">
                 {title}

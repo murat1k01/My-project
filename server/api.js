@@ -1,4 +1,4 @@
-// HTTP API Campus Hub. Все проверки прав и данных выполняются здесь, на сервере,
+// HTTP API ALTushki. Все проверки прав и данных выполняются здесь, на сервере,
 // поэтому их нельзя обойти изменением приложения на телефоне.
 import { existsSync, readFileSync } from 'node:fs';
 import { hashPassword, newId, newResetCode, newToken, sha256, verifyPassword } from './security.js';
@@ -14,7 +14,7 @@ const LAUNDRY_DAYS_AHEAD = 7;
 
 /** Цены — пример: платёжная система не подключена, поэтому оплатить их пока нельзя. */
 export const PLANS = [
-  { id: 'free', name: 'Free', price: 0, period: null, features: ['Все основные разделы Campus Hub', 'До 5 избранных книг', '1 сохранённый маршрут и 1 остановка', '1 активная бронь стирки'] },
+  { id: 'free', name: 'Free', price: 0, period: null, features: ['Все основные разделы ALTushki', 'До 5 избранных книг', '1 сохранённый маршрут и 1 остановка', '1 активная бронь стирки'] },
   { id: 'premium', name: 'Premium', price: 1500, period: 'месяц', features: ['Избранные книги без ограничений', 'Сохранённые маршруты и остановки без ограничений', 'До 2 активных броней стирки'] },
   { id: 'plus', name: 'Premium Plus', price: 2500, period: 'месяц', features: ['Всё, что входит в Premium', 'До 3 активных броней стирки'] },
 ];
@@ -134,7 +134,7 @@ const contactView = (c) => ({
 const ADMIN_RESOURCES = {
   books: { table: 'books', pk: 'id', order: 'title', required: ['title', 'category'], fields: { title: 's', author: 's', year: 'i', category: 's', description: 's', isbn: 's', cover_url: 's', source_url: 's', read_url: 's', copies: 'i' } },
   menu: { table: 'menu_items', pk: 'id', order: 'category, name', required: ['name', 'price', 'category'], fields: { name: 's', description: 's', price: 'i', category: 's', available: 'b', allergens: 's', image_key: 's' } },
-  pages: { table: 'info_pages', pk: 'slug', order: 'sort', required: ['slug', 'title', 'body'], fields: { slug: 's', title: 's', body: 's', sort: 'i' } },
+  pages: { table: 'info_pages', pk: 'slug', order: 'sort', required: ['slug', 'title', 'body'], fields: { slug: 's', title: 's', body: 's', sort: 'i', image_url: 's' } },
   dorms: { table: 'dorms', pk: 'id', order: 'name', required: ['name'], fields: { name: 's', address: 's', contacts: 's', services: 's', rules: 's', hours: 's' } },
   machines: { table: 'machines', pk: 'id', order: 'dorm_id, name', required: ['dorm_id', 'name'], fields: { dorm_id: 's', floor: 'i', name: 's', status: 's' } },
   catalog: { table: 'catalog', pk: 'id', order: 'kind, name', required: ['kind', 'name'], fields: { kind: 's', name: 's' } },
@@ -159,7 +159,7 @@ function readAdminFields(resource, body, partial) {
 }
 
 export function createApi(db, options = {}) {
-  const { onResetCode = (contact, code) => console.log(`[восстановление пароля] ${contact}: код ${code} (действует ${RESET_MINUTES} мин)`), adminEmail = null, positionsUrl = null, fetchImpl = fetch } = options;
+  const { cloudPayments = { publicId: process.env.CLOUDPAYMENTS_PUBLIC_ID ?? null, apiSecret: process.env.CLOUDPAYMENTS_API_SECRET ?? null }, onResetCode = (contact, code) => console.log(`[восстановление пароля] ${contact}: код ${code} (действует ${RESET_MINUTES} мин)`), adminEmail = null, positionsUrl = null, fetchImpl = fetch } = options;
 
   const transport = JSON.parse(readFileSync(new URL('./data/almaty-bus-routes.json', import.meta.url)));
   const attempts = new Map();
@@ -335,7 +335,8 @@ export function createApi(db, options = {}) {
     const matchesFilters = (c) => ['faculty', 'program'].every((k) => !query.get(k) || c[k] === query.get(k)) && (!query.get('group') || c.group_name === query.get('group')) && (!query.get('course') || c.course === Number(query.get('course')));
     let added = contacts.filter(matchesFilters);
     // Поиск на стороне JS: LOWER() в SQLite не понимает кириллицу
-    const matchesSearch = (u) => `${u.first_name} ${u.last_name}`.toLowerCase().includes(search) || `${u.last_name} ${u.first_name}`.toLowerCase().includes(search);
+    const matchesSearch = (u) =>
+      [`${u.first_name} ${u.last_name}`, `${u.last_name} ${u.first_name}`, u.group_name, u.program, u.faculty].some((v) => (v ?? '').toLowerCase().includes(search));
     if (search) {
       rows = rows.filter(matchesSearch);
       added = added.filter(matchesSearch);
@@ -612,7 +613,7 @@ export function createApi(db, options = {}) {
     const search = clean(query.get('q') ?? '').toLowerCase();
     let rows = db.prepare('SELECT * FROM info_pages ORDER BY sort').all();
     if (search) rows = rows.filter((p) => p.title.toLowerCase().includes(search) || p.body.toLowerCase().includes(search));
-    return { pages: rows };
+    return { pages: rows.map(camel) };
   });
 
   // ---------- Подписка ----------
@@ -629,6 +630,47 @@ export function createApi(db, options = {}) {
     const result = db.prepare('UPDATE subscriptions SET canceled = 1 WHERE user_id = ?').run(user.id);
     if (result.changes === 0) throw new ApiError(404, 'not_found', 'Активной подписки нет');
     return { subscription: subscriptionOf(user.id) };
+  }, 'user');
+
+  // ---------- Оплата через Visa: привязка карты у платёжного провайдера CloudPayments ----------
+  // Сервер получает только криптограмму, зашифрованную скриптом провайдера, и хранит токен карты.
+  // Номер карты и CVV сюда не передаются: запрос с такими полями отклоняется.
+  add('GET', '/api/payment-methods', ({ user }) => ({
+    configured: !!(cloudPayments.publicId && cloudPayments.apiSecret),
+    cards: db.prepare('SELECT id, brand, last4, exp_month, exp_year, holder FROM payment_methods WHERE user_id = ? ORDER BY created_at DESC').all(user.id).map(camel),
+  }), 'user');
+
+  add('POST', '/api/payment-methods', async ({ user, body }) => {
+    if (['cardNumber', 'number', 'cvv', 'cvc', 'pan'].some((key) => key in body)) throw bad('raw_card', 'Данные карты нельзя отправлять на сервер приложения');
+    if (!cloudPayments.publicId || !cloudPayments.apiSecret) throw new ApiError(501, 'payments_not_configured', 'Платёжный провайдер не подключён. Карта не привязана.');
+    const holder = clean(body.holder).toUpperCase();
+    if (typeof body.cryptogram !== 'string' || body.cryptogram.length < 20) throw bad('invalid', 'Нет данных от платёжного провайдера');
+    if (!/^\d{4}$/.test(String(body.last4)) || !/^\d{2}$/.test(String(body.expMonth)) || !/^\d{4}$/.test(String(body.expYear)) || holder.length < 3) throw bad('invalid', 'Проверьте данные карты');
+    // Проверочная авторизация на 1 тенге: провайдер возвращает токен карты, затем авторизация отменяется
+    const auth = 'Basic ' + Buffer.from(`${cloudPayments.publicId}:${cloudPayments.apiSecret}`).toString('base64');
+    const call = async (path, payload) => {
+      const res = await fetchImpl(`https://api.cloudpayments.ru${path}`, { method: 'POST', headers: { Authorization: auth, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      return res.json();
+    };
+    let result;
+    try {
+      result = await call('/payments/cards/auth', { Amount: 1, Currency: 'KZT', Name: holder, CardCryptogramPacket: body.cryptogram, AccountId: user.id, Description: 'Привязка карты ALTushki' });
+    } catch {
+      throw new ApiError(502, 'provider_unavailable', 'Платёжный провайдер не отвечает. Попробуйте позже.');
+    }
+    if (result?.Model?.AcsUrl) throw new ApiError(409, 'three_ds_required', 'Банк требует подтверждение 3-D Secure. Эта проверка пока не подключена, карта не привязана.');
+    if (!result?.Success || !result?.Model?.Token) throw new ApiError(402, 'card_declined', result?.Model?.CardHolderMessage ?? 'Банк отклонил привязку карты');
+    await call('/payments/void', { TransactionId: result.Model.TransactionId }).catch(() => undefined);
+    const id = newId();
+    db.prepare('INSERT INTO payment_methods (id, user_id, provider, token, brand, last4, exp_month, exp_year, holder, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)')
+      .run(id, user.id, 'cloudpayments', result.Model.Token, 'Visa', String(body.last4), String(body.expMonth), String(body.expYear), holder, nowIso());
+    return { status: 201, data: { ok: true } };
+  }, 'user');
+
+  add('DELETE', '/api/payment-methods/:id', ({ user, params }) => {
+    const result = db.prepare('DELETE FROM payment_methods WHERE id = ? AND user_id = ?').run(params.id, user.id);
+    if (result.changes === 0) throw new ApiError(404, 'not_found', 'Карта не найдена');
+    return { ok: true };
   }, 'user');
 
   // ---------- Абонемент спорткомплекса ----------

@@ -41,7 +41,7 @@ const tomorrow = () => {
 
 before(async () => {
   db = openDatabase(':memory:');
-  const handler = createApi(db, { adminEmail: 'admin@example.com', onResetCode: (contact, code) => resetCodes.set(contact, code) });
+  const handler = createApi(db, { adminEmail: 'admin@example.com', cloudPayments: {}, onResetCode: (contact, code) => resetCodes.set(contact, code) });
   server = createServer(handler);
   await new Promise((resolve) => server.listen(0, resolve));
   base = `http://127.0.0.1:${server.address().port}`;
@@ -137,6 +137,37 @@ test('студенты: свою запись можно добавить, её 
   assert.equal((await call('GET', `/api/students/${id}`, { token: other.token })).status, 404);
   assert.equal((await call('DELETE', `/api/students/${id}`, { token: other.token })).status, 404);
   assert.equal((await call('DELETE', `/api/students/${id}`, { token: owner.token })).status, 200);
+});
+
+test('студенты: один общий поиск по имени, группе и специальности', async () => {
+  const me = await register({ contact: 'finder@example.com' });
+  await register({ contact: 'target@example.com', firstName: 'Жансая', lastName: 'Поиск', group: 'srch-7', program: 'Цифровая логистика' });
+  const find = async (q) => (await call('GET', `/api/students?q=${encodeURIComponent(q)}`, { token: me.token })).data.students.map((s) => s.firstName);
+  assert.ok((await find('жансая')).includes('Жансая'));
+  assert.ok((await find('SRCH-7')).includes('Жансая'));
+  assert.ok((await find('цифровая лог')).includes('Жансая'));
+  assert.deepEqual(await find('нет-такого'), []);
+});
+
+test('оплата: данные карты не принимаются, без провайдера привязки нет', async () => {
+  const { token } = await register({ contact: 'pay@example.com' });
+  assert.equal((await call('GET', '/api/payment-methods', { token })).data.configured, false);
+  const raw = await call('POST', '/api/payment-methods', { token, body: { cardNumber: '4111111111111111', cvv: '123' } });
+  assert.equal(raw.data.error.code, 'raw_card');
+  const noProvider = await call('POST', '/api/payment-methods', { token, body: { cryptogram: 'x'.repeat(40), last4: '1111', expMonth: '12', expYear: '2030', holder: 'IVAN PETROV' } });
+  assert.equal(noProvider.status, 501);
+  assert.deepEqual((await call('GET', '/api/payment-methods', { token })).data.cards, []);
+  assert.equal((await call('GET', '/api/payment-methods')).status, 401);
+});
+
+test('информация: страницы ALT есть, дубли главной убраны, общежитие заполнено', async () => {
+  const pages = (await call('GET', '/api/info')).data.pages.map((p) => p.slug);
+  for (const slug of ['university', 'opportunities', 'student-life']) assert.ok(pages.includes(slug), slug);
+  for (const slug of ['library', 'food', 'transport', 'sport', 'dormitory', 'schedule']) assert.ok(!pages.includes(slug), slug);
+  const dorm = (await call('GET', '/api/dorms')).data.dorms[0];
+  assert.equal(dorm.address, 'Алматы, ул. Масанчи, 88');
+  assert.equal(dorm.contacts, '6969');
+  assert.equal(dorm.hours, '06:00–23:00');
 });
 
 test('библиотека: не меньше 50 книг, поиск, фильтр, сортировка', async () => {

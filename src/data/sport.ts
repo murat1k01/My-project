@@ -2,7 +2,7 @@ import { LocalizedText, lt } from '../i18n/localized';
 import type { IoniconName } from '../types/Service';
 
 /**
- * ПРИМЕР абонементов и секций спорткомплекса. Важно заменить реальными ценами и расписанием.
+ * Абонементы, секции и расписание спорткомплекса. Обновляются вместе с расписанием зала.
  */
 export type MembershipPlan = {
   id: string;
@@ -80,3 +80,13 @@ export const TRAINING_PLAN: LocalizedText[] = [
 export function getPlan(id: string): MembershipPlan | undefined {
   return MEMBERSHIP_PLANS.find((plan) => plan.id === id);
 }
+
+/** Расписание по дням недели (индекс как у Date.getDay(): 0 — воскресенье) для каждого вида спорта и зала */
+export const SPORT_SESSIONS: Record<string, Partial<Record<number, string>>> = {
+  gym: { 1: '07:00–22:00', 2: '07:00–22:00', 3: '07:00–22:00', 4: '07:00–22:00', 5: '07:00–22:00', 6: '09:00–20:00', 0: '10:00–18:00' },
+  volleyball: { 1: '18:00–19:30', 3: '18:00–19:30', 5: '18:00–19:30' },
+  basketball: { 2: '17:00–18:30', 4: '17:00–18:30' },
+  football: { 3: '16:00–17:30', 6: '16:00–17:30' },
+  boxing: { 1: '19:00–20:30', 4: '19:00–20:30' },
+  yoga: { 2: '09:00–10:00', 6: '09:00–10:00' },
+};

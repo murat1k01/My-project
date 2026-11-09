@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Campus Hub",
+    "name": "ALTushki",
     "slug": "MyFirstApp",
     "version": "1.0.0",
     "orientation": "default",
@@ -28,14 +28,14 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Campus Hub показывает ваше местоположение на карте автобусов, только когда вы об этом просите."
+          "locationWhenInUsePermission": "ALTushki показывает ваше местоположение на карте автобусов, только когда вы об этом просите."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Campus Hub использует выбранное вами фото для профиля.",
-          "cameraPermission": false,
+          "photosPermission": "ALTushki использует выбранное вами фото для профиля.",
+          "cameraPermission": "ALTushki использует камеру, только чтобы вы сделали фото для профиля.",
           "microphonePermission": false
         }
       ],
