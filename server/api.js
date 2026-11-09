@@ -159,7 +159,7 @@ function readAdminFields(resource, body, partial) {
 }
 
 export function createApi(db, options = {}) {
-  const { cloudPayments = { publicId: process.env.CLOUDPAYMENTS_PUBLIC_ID ?? null, apiSecret: process.env.CLOUDPAYMENTS_API_SECRET ?? null }, onResetCode = (contact, code) => console.log(`[восстановление пароля] ${contact}: код ${code} (действует ${RESET_MINUTES} мин)`), adminEmail = null, positionsUrl = null, fetchImpl = fetch } = options;
+  const { onResetCode = (contact, code) => console.log(`[восстановление пароля] ${contact}: код ${code} (действует ${RESET_MINUTES} мин)`), adminEmail = null, positionsUrl = null, fetchImpl = fetch } = options;
 
   const transport = JSON.parse(readFileSync(new URL('./data/almaty-bus-routes.json', import.meta.url)));
   const attempts = new Map();
@@ -632,38 +632,22 @@ export function createApi(db, options = {}) {
     return { subscription: subscriptionOf(user.id) };
   }, 'user');
 
-  // ---------- Оплата через Visa: привязка карты у платёжного провайдера CloudPayments ----------
-  // Сервер получает только криптограмму, зашифрованную скриптом провайдера, и хранит токен карты.
-  // Номер карты и CVV сюда не передаются: запрос с такими полями отклоняется.
+  // ---------- Оплата через Visa: тестовая привязка карты ----------
+  // Платёжный провайдер не подключён, поэтому привязка учебная: деньги не списываются.
+  // Сервер хранит только последние 4 цифры, срок и имя. Полный номер и CVV он не принимает.
   add('GET', '/api/payment-methods', ({ user }) => ({
-    configured: !!(cloudPayments.publicId && cloudPayments.apiSecret),
     cards: db.prepare('SELECT id, brand, last4, exp_month, exp_year, holder FROM payment_methods WHERE user_id = ? ORDER BY created_at DESC').all(user.id).map(camel),
   }), 'user');
 
-  add('POST', '/api/payment-methods', async ({ user, body }) => {
-    if (['cardNumber', 'number', 'cvv', 'cvc', 'pan'].some((key) => key in body)) throw bad('raw_card', 'Данные карты нельзя отправлять на сервер приложения');
-    if (!cloudPayments.publicId || !cloudPayments.apiSecret) throw new ApiError(501, 'payments_not_configured', 'Платёжный провайдер не подключён. Карта не привязана.');
+  add('POST', '/api/payment-methods', ({ user, body }) => {
+    if (['cardNumber', 'number', 'cvv', 'cvc', 'pan'].some((key) => key in body)) throw bad('raw_card', 'Полный номер карты и CVV нельзя отправлять на сервер приложения');
+    if (body.mode !== 'test') throw bad('invalid', 'Сейчас доступна только тестовая привязка карты');
     const holder = clean(body.holder).toUpperCase();
-    if (typeof body.cryptogram !== 'string' || body.cryptogram.length < 20) throw bad('invalid', 'Нет данных от платёжного провайдера');
     if (!/^\d{4}$/.test(String(body.last4)) || !/^\d{2}$/.test(String(body.expMonth)) || !/^\d{4}$/.test(String(body.expYear)) || holder.length < 3) throw bad('invalid', 'Проверьте данные карты');
-    // Проверочная авторизация на 1 тенге: провайдер возвращает токен карты, затем авторизация отменяется
-    const auth = 'Basic ' + Buffer.from(`${cloudPayments.publicId}:${cloudPayments.apiSecret}`).toString('base64');
-    const call = async (path, payload) => {
-      const res = await fetchImpl(`https://api.cloudpayments.ru${path}`, { method: 'POST', headers: { Authorization: auth, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      return res.json();
-    };
-    let result;
-    try {
-      result = await call('/payments/cards/auth', { Amount: 1, Currency: 'KZT', Name: holder, CardCryptogramPacket: body.cryptogram, AccountId: user.id, Description: 'Привязка карты ALTushki' });
-    } catch {
-      throw new ApiError(502, 'provider_unavailable', 'Платёжный провайдер не отвечает. Попробуйте позже.');
-    }
-    if (result?.Model?.AcsUrl) throw new ApiError(409, 'three_ds_required', 'Банк требует подтверждение 3-D Secure. Эта проверка пока не подключена, карта не привязана.');
-    if (!result?.Success || !result?.Model?.Token) throw new ApiError(402, 'card_declined', result?.Model?.CardHolderMessage ?? 'Банк отклонил привязку карты');
-    await call('/payments/void', { TransactionId: result.Model.TransactionId }).catch(() => undefined);
-    const id = newId();
+    const count = db.prepare('SELECT COUNT(*) AS n FROM payment_methods WHERE user_id = ?').get(user.id).n;
+    if (count >= 5) throw bad('too_many_cards', 'Можно привязать не больше 5 карт');
     db.prepare('INSERT INTO payment_methods (id, user_id, provider, token, brand, last4, exp_month, exp_year, holder, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)')
-      .run(id, user.id, 'cloudpayments', result.Model.Token, 'Visa', String(body.last4), String(body.expMonth), String(body.expYear), holder, nowIso());
+      .run(newId(), user.id, 'test', `test_${newId()}`, 'test', String(body.last4), String(body.expMonth), String(body.expYear), holder, nowIso());
     return { status: 201, data: { ok: true } };
   }, 'user');
 

@@ -133,7 +133,7 @@ CREATE TABLE IF NOT EXISTS info_pages (
   image_url TEXT
 );
 
--- Привязанные карты: только токен провайдера и последние 4 цифры. Номер карты и CVV сюда не попадают.
+-- Привязанные карты: только последние 4 цифры, срок и имя. Номер карты и CVV сюда не попадают.
 CREATE TABLE IF NOT EXISTS payment_methods (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,

@@ -41,7 +41,7 @@ const tomorrow = () => {
 
 before(async () => {
   db = openDatabase(':memory:');
-  const handler = createApi(db, { adminEmail: 'admin@example.com', cloudPayments: {}, onResetCode: (contact, code) => resetCodes.set(contact, code) });
+  const handler = createApi(db, { adminEmail: 'admin@example.com', onResetCode: (contact, code) => resetCodes.set(contact, code) });
   server = createServer(handler);
   await new Promise((resolve) => server.listen(0, resolve));
   base = `http://127.0.0.1:${server.address().port}`;
@@ -149,14 +149,22 @@ test('студенты: один общий поиск по имени, груп
   assert.deepEqual(await find('нет-такого'), []);
 });
 
-test('оплата: данные карты не принимаются, без провайдера привязки нет', async () => {
+test('оплата: тестовая привязка хранит только последние 4 цифры', async () => {
   const { token } = await register({ contact: 'pay@example.com' });
-  assert.equal((await call('GET', '/api/payment-methods', { token })).data.configured, false);
-  const raw = await call('POST', '/api/payment-methods', { token, body: { cardNumber: '4111111111111111', cvv: '123' } });
+  const other = await register({ contact: 'pay2@example.com' });
+  const raw = await call('POST', '/api/payment-methods', { token, body: { cardNumber: '1234567812345678', cvv: '123' } });
   assert.equal(raw.data.error.code, 'raw_card');
-  const noProvider = await call('POST', '/api/payment-methods', { token, body: { cryptogram: 'x'.repeat(40), last4: '1111', expMonth: '12', expYear: '2030', holder: 'IVAN PETROV' } });
-  assert.equal(noProvider.status, 501);
-  assert.deepEqual((await call('GET', '/api/payment-methods', { token })).data.cards, []);
+  assert.equal((await call('POST', '/api/payment-methods', { token, body: { last4: '5678', expMonth: '12', expYear: '2030', holder: 'AIDANA' } })).status, 400, 'без тестового режима');
+  const bound = await call('POST', '/api/payment-methods', { token, body: { mode: 'test', last4: '5678', expMonth: '12', expYear: '2030', holder: 'aidana serikova' } });
+  assert.equal(bound.status, 201);
+  const cards = (await call('GET', '/api/payment-methods', { token })).data.cards;
+  assert.equal(cards.length, 1);
+  assert.equal(cards[0].last4, '5678');
+  assert.equal(cards[0].holder, 'AIDANA SERIKOVA');
+  const stored = JSON.stringify(db.prepare('SELECT * FROM payment_methods').all());
+  assert.ok(!stored.includes('1234567812345678') && !stored.includes('"123"'));
+  assert.equal((await call('DELETE', `/api/payment-methods/${cards[0].id}`, { token: other.token })).status, 404, 'чужую карту отвязать нельзя');
+  assert.equal((await call('DELETE', `/api/payment-methods/${cards[0].id}`, { token })).status, 200);
   assert.equal((await call('GET', '/api/payment-methods')).status, 401);
 });
 

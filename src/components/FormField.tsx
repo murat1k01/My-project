@@ -73,6 +73,8 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
+    // Без этого поле в браузере не сжимается и при крупном шрифте выталкивает кнопку справа за край
+    minWidth: 0,
     fontFamily: fonts.regular,
     fontSize: 15,
     paddingVertical: spacing.md,

@@ -2,23 +2,22 @@ import { useEffect, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from './AppText';
-import { withAlpha } from '../theme/colors';
 import { fonts } from '../theme/typography';
 
 type Props = {
   size?: number;
-  /** Цвет значка, кольца и названия */
+  /** Цвет названия под значком */
   color?: string;
 };
 
 const APPEAR_MS = 900;
 
 /**
- * Логотип ALTushki: значок в тонком кольце и название.
- * При входе всё один раз мягко проявляется и чуть приближается, без пружин и поворотов.
+ * Логотип ALTushki: синий квадрат со скруглёнными углами и белой шапочкой, под ним название.
+ * При входе он один раз мягко проявляется и чуть приближается, затем проявляется название.
  * При системной настройке «уменьшить движение» логотип показывается сразу.
  */
-export default function AnimatedLogo({ size = 88, color = '#FFFFFF' }: Props) {
+export default function AnimatedLogo({ size = 80, color = '#FFFFFF' }: Props) {
   const [appear] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
@@ -46,17 +45,16 @@ export default function AnimatedLogo({ size = 88, color = '#FFFFFF' }: Props) {
           {
             width: size,
             height: size,
-            borderRadius: size / 2,
-            borderColor: withAlpha(color, 0.35),
+            borderRadius: size * 0.32,
             opacity: appear,
-            transform: [{ scale: appear.interpolate({ inputRange: [0, 1], outputRange: [0.94, 1] }) }],
+            transform: [{ scale: appear.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) }],
           },
         ]}
       >
-        <Ionicons name="school-outline" size={size * 0.48} color={color} />
+        <Ionicons name="school" size={size * 0.48} color="#FFFFFF" />
       </Animated.View>
-      <Animated.View style={{ opacity: titleOpacity }}>
-        <Text style={[styles.title, { color, fontSize: size * 0.36 }]}>ALTushki</Text>
+      <Animated.View style={{ opacity: titleOpacity, transform: [{ translateY: titleOpacity.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] }}>
+        <Text style={[styles.title, { color, fontSize: size * 0.42 }]}>ALTushki</Text>
       </Animated.View>
     </View>
   );
@@ -65,15 +63,15 @@ export default function AnimatedLogo({ size = 88, color = '#FFFFFF' }: Props) {
 const styles = StyleSheet.create({
   wrap: {
     alignItems: 'center',
-    gap: 14,
+    gap: 16,
   },
   mark: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
+    backgroundColor: '#2F6BFF',
   },
   title: {
     fontFamily: fonts.regular,
-    letterSpacing: -0.8,
+    letterSpacing: -1,
   },
 });

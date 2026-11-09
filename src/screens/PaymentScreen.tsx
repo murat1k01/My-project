@@ -12,7 +12,6 @@ import StateView from '../components/StateView';
 import { useApi } from '../hooks/useApi';
 import { useI18n } from '../i18n/LanguageContext';
 import type { RootStackScreenProps } from '../navigation/types';
-import { createCardCryptogram, paymentsConfigured, PaymentsNotConfigured } from '../payments/provider';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing } from '../theme/metrics';
 import { type } from '../theme/typography';
@@ -24,18 +23,17 @@ type SavedCard = { id: string; brand: string; last4: string; expMonth: string; e
 const EMPTY: CardForm = { number: '', month: '', year: '', holder: '', cvv: '' };
 
 /**
- * «Оплата через Visa»: привязка карты через платёжного провайдера.
- * CVV хранится только в памяти этого экрана и стирается сразу после отправки; номер карты не сохраняется.
+ * «Оплата через Visa» в тестовом режиме: подходит любой номер из 16 цифр, деньги не списываются.
+ * На сервер уходят только последние 4 цифры, срок и имя. CVV живёт только в памяти экрана и стирается после отправки.
  */
 export default function PaymentScreen({ navigation }: RootStackScreenProps<'Payment'>) {
   const { colors } = useTheme();
   const { t } = useI18n();
-  const cards = useApi<{ cards: SavedCard[]; configured: boolean }>('/api/payment-methods');
+  const cards = useApi<{ cards: SavedCard[] }>('/api/payment-methods');
   const [form, setForm] = useState<CardForm>(EMPTY);
   const [errors, setErrors] = useState<CardErrors>({});
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ kind: 'error' | 'success' | 'info'; text: string } | null>(null);
-  const ready = paymentsConfigured() && cards.data?.configured === true;
 
   const update = (field: keyof CardForm, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -52,14 +50,13 @@ export default function PaymentScreen({ navigation }: RootStackScreenProps<'Paym
     setBusy(true);
     setMessage(null);
     try {
-      const cryptogram = await createCardCryptogram(form);
       const digits = cardDigits(form.number);
-      await api('POST', '/api/payment-methods', { cryptogram, holder: form.holder.trim(), last4: digits.slice(-4), expMonth: form.month, expYear: form.year });
+      await api('POST', '/api/payment-methods', { mode: 'test', holder: form.holder.trim(), last4: digits.slice(-4), expMonth: form.month, expYear: form.year });
       setForm(EMPTY);
       setMessage({ kind: 'success', text: t('payBound') });
       await cards.reload();
     } catch (e) {
-      setMessage(e instanceof PaymentsNotConfigured ? { kind: 'info', text: t('payNotConfigured') } : { kind: 'error', text: errorMessage(e) });
+      setMessage({ kind: 'error', text: errorMessage(e) });
     } finally {
       // CVV не остаётся даже в памяти экрана
       setForm((prev) => ({ ...prev, cvv: '' }));
@@ -91,7 +88,7 @@ export default function PaymentScreen({ navigation }: RootStackScreenProps<'Paym
           <GlassCard key={card.id} style={styles.saved}>
             <Ionicons name="card" size={28} color={colors.primary} />
             <View style={styles.flex}>
-              <Text style={[type.subheading, { color: colors.text }]}>Visa •••• {card.last4}</Text>
+              <Text style={[type.subheading, { color: colors.text }]}>{t('payTestCard')} •••• {card.last4}</Text>
               <Text style={[type.caption, { color: colors.textMuted }]}>
                 {card.holder} · {card.expMonth}/{card.expYear}
               </Text>
@@ -101,7 +98,7 @@ export default function PaymentScreen({ navigation }: RootStackScreenProps<'Paym
         ))}
       </StateView>
 
-      {!ready ? <FormBanner kind="info" text={t('payNotConfigured')} /> : null}
+      <FormBanner kind="info" text={t('payTestMode')} />
 
       <GlassCard>
         <FormField
@@ -123,7 +120,7 @@ export default function PaymentScreen({ navigation }: RootStackScreenProps<'Paym
             <FormField label={t('payYear')} placeholder="ГГГГ" value={form.year} onChangeText={(v) => update('year', v.replace(/\D/g, '').slice(0, 4))} keyboardType="number-pad" autoComplete="cc-exp-year" maxLength={4} error={error('year')} />
           </View>
         </View>
-        <FormField label={t('payHolder')} placeholder="IVAN PETROV" value={form.holder} onChangeText={(v) => update('holder', v.toUpperCase())} autoCapitalize="characters" autoComplete="cc-name" error={error('holder')} />
+        <FormField label={t('payHolder')} placeholder="AIDANA SERIKOVA" value={form.holder} onChangeText={(v) => update('holder', v.toUpperCase())} autoCapitalize="characters" autoComplete="cc-name" error={error('holder')} />
         <FormField label="CVV" value={form.cvv} onChangeText={(v) => update('cvv', v.replace(/\D/g, '').slice(0, 3))} keyboardType="number-pad" secureTextEntry autoComplete="cc-csc" maxLength={3} error={error('cvv')} />
         <Text style={[type.caption, { color: colors.textMuted }]}>{t('paySecurityNote')}</Text>
         {message ? <FormBanner kind={message.kind} text={message.text} /> : null}

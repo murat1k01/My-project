@@ -338,10 +338,19 @@
   add('POST', '/api/subscription/cancel', () => {
     throw new HttpError(404, 'not_found', 'Активной подписки нет');
   }, true);
-  // Платёжного провайдера в демо нет: привязать карту нельзя, данные карты никуда не отправляются
-  add('GET', '/api/payment-methods', () => ({ configured: false, cards: [] }), true);
-  add('POST', '/api/payment-methods', () => {
-    throw new HttpError(501, 'payments_not_configured', 'Платёжный провайдер не подключён. Карта не привязана.');
+  // Тестовая привязка карты: в браузере хранятся только последние 4 цифры, срок и имя
+  add('GET', '/api/payment-methods', ({ user }) => ({ cards: (load().cards || []).filter((c) => c.userId === user.id) }), true);
+  add('POST', '/api/payment-methods', ({ user, body }) => {
+    if (['cardNumber', 'number', 'cvv', 'cvc', 'pan'].some((key) => key in body)) throw bad('raw_card', 'Полный номер карты и CVV нельзя отправлять на сервер приложения');
+    const store = load();
+    store.cards = store.cards || [];
+    store.cards.unshift({ id: newId(), userId: user.id, brand: 'test', last4: String(body.last4), expMonth: String(body.expMonth), expYear: String(body.expYear), holder: clean(body.holder).toUpperCase() });
+    return { status: 201, data: { ok: true } };
+  }, true);
+  add('DELETE', '/api/payment-methods/:id', ({ user, params }) => {
+    const store = load();
+    store.cards = (store.cards || []).filter((c) => !(c.id === params.id && c.userId === user.id));
+    return { ok: true };
   }, true);
 
   add('GET', '/api/membership', ({ user }) => ({ membership: load().memberships.find((m) => m.userId === user.id) || null }), true);

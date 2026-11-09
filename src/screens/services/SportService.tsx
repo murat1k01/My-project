@@ -6,6 +6,7 @@ import { api, errorMessage } from '../../api/client';
 import type { Membership } from '../../api/types';
 import FormBanner from '../../components/FormBanner';
 import Chip from '../../components/Chip';
+import VitalsRings from '../../components/VitalsRings';
 import GlassCard from '../../components/GlassCard';
 import PrimaryButton from '../../components/PrimaryButton';
 import SectionHeader from '../../components/SectionHeader';
@@ -129,6 +130,7 @@ export default function SportService({ service, onBack }: ServiceScreenProps) {
         </>
       ) : (
         <>
+          <VitalsRings vitals={campus.vitals} onChange={(vitals) => updateCampus((prev) => ({ ...prev, vitals }))} />
           <HealthCard status={campus.health} onChange={(health) => updateCampus((prev) => ({ ...prev, health }))} />
           <GlassCard>
             <Text style={[type.subheading, { color: colors.text }]}>{t('sportHours')}</Text>

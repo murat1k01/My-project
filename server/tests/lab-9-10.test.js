@@ -5,7 +5,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { test } from 'node:test';
 import { CREATE_FAVORITES_TABLE, DELETE_FAVORITE, INSERT_FAVORITE, SELECT_FAVORITES, TOGGLE_READ } from '../../src/database/favoritesSql.ts';
 import { isRealDate, validateEventForm } from '../../src/utils/eventValidation.ts';
-import { luhnValid, validateCard } from '../../src/utils/card.ts';
+import { validateCard } from '../../src/utils/card.ts';
 
 const valid = {
   fullName: 'Айдана Серікова',
@@ -56,15 +56,14 @@ test('№10: сохранение без повторов, порядок, см�
   assert.deepEqual(db.prepare(SELECT_FAVORITES).all().map((r) => r.id).sort(), ['a', 'c']);
 });
 
-test('оплата: проверка карты Visa на устройстве', () => {
+test('оплата: тестовая карта — любые 16 цифр', () => {
   const now = new Date(2026, 10, 9);
-  const card = { number: '4111 1111 1111 1111', month: '12', year: '2028', holder: 'IVAN PETROV', cvv: '123' };
+  const card = { number: '1234 5678 1234 5678', month: '12', year: '2028', holder: 'Айдана Серикова', cvv: '123' };
   assert.deepEqual(validateCard(card, now), {});
-  assert.ok(luhnValid('4111111111111111') && !luhnValid('4111111111111112'));
-  assert.equal(validateCard({ ...card, number: '5500 0000 0000 0004' }, now).number, 'payErrNumber', 'только Visa');
+  assert.equal(validateCard({ ...card, number: '1234 5678 1234 567' }, now).number, 'payErrNumber', '15 цифр');
   assert.equal(validateCard({ ...card, month: '13' }, now).month, 'payErrMonth');
   assert.equal(validateCard({ ...card, month: '10', year: '2026' }, now).year, 'payErrExpired');
   assert.equal(validateCard({ ...card, month: '11', year: '2026' }, now).year, undefined, 'действует до конца месяца');
-  assert.equal(validateCard({ ...card, holder: 'Иван' }, now).holder, 'payErrHolder');
+  assert.equal(validateCard({ ...card, holder: 'А' }, now).holder, 'payErrHolder');
   assert.equal(validateCard({ ...card, cvv: '12' }, now).cvv, 'payErrCvv');
 });

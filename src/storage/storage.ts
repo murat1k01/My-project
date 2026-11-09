@@ -3,6 +3,7 @@ import type { User } from '../api/types';
 import { isServiceId } from '../data/services';
 import type { Language } from '../i18n/translations';
 import type { ThemeMode } from '../theme/colors';
+import type { Vitals } from '../data/vitals';
 import { CampusState, EMPTY_CAMPUS_STATE } from '../types/Campus';
 import type { ServiceId } from '../types/Service';
 
@@ -157,8 +158,20 @@ export async function loadCampus(): Promise<CampusState> {
     doneTasks: strings(value.doneTasks),
     cart,
     enrolledSections: strings(value.enrolledSections),
+    vitals: readVitals(value.vitals),
     health: value.health === 'healthy' || value.health === 'limited' || value.health === 'exempt' ? value.health : null,
   };
+}
+
+/** Показатели здоровья: берём только известные числовые поля */
+function readVitals(value: unknown): Vitals {
+  if (!isRecord(value)) return {};
+  const vitals: Vitals = {};
+  for (const key of ['pulse', 'sleep', 'steps', 'water', 'activity'] as const) {
+    if (typeof value[key] === 'number' && Number.isFinite(value[key])) vitals[key] = value[key] as number;
+  }
+  if (typeof value.updatedAt === 'string') vitals.updatedAt = value.updatedAt;
+  return vitals;
 }
 
 export function saveCampus(state: CampusState): Promise<boolean> {

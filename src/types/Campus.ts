@@ -1,3 +1,5 @@
+import type { Vitals } from '../data/vitals';
+
 /** Личные отметки, которые хранятся только на устройстве. Всё важное (заказы, брони, заявки) лежит на сервере. */
 
 export type SeatReservation = {
@@ -14,6 +16,8 @@ export type CampusState = {
   enrolledSections: string[];
   /** Состояние здоровья, которое студент указал сам в разделе «Спорт» */
   health: HealthStatus | null;
+  /** Показатели здоровья, которые студент вводит сам: пульс, сон, шаги, активность, вода */
+  vitals: Vitals;
 };
 
 export type HealthStatus = 'healthy' | 'limited' | 'exempt';
@@ -24,4 +28,5 @@ export const EMPTY_CAMPUS_STATE: CampusState = {
   cart: {},
   enrolledSections: [],
   health: null,
+  vitals: {},
 };
