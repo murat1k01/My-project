@@ -15,7 +15,8 @@ import type { ServiceId } from '../types/Service';
  */
 export const STORAGE_KEYS = {
   favorites: '@campushub/favorites',
-  theme: '@campushub/theme',
+  // Новый ключ: после перехода на светлый дизайн все начинают со светлой темы, тёмная остаётся в настройках
+  theme: '@campushub/theme-v2',
   language: '@campushub/language',
   campus: '@campushub/campus',
   fontScale: '@campushub/font-scale',

@@ -1,11 +1,13 @@
-import { ImageBackground, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from './AppText';
-import { Feather, Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { useAppear } from '../hooks/useAppear';
 import { useI18n } from '../i18n/LanguageContext';
+import { withAlpha } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { radius, spacing } from '../theme/metrics';
 import { fonts } from '../theme/typography';
-import type { Service } from '../types/Service';
+import type { Service, ServiceId } from '../types/Service';
 
 type Props = {
   service: Service;
@@ -16,43 +18,53 @@ type Props = {
   onToggleFavorite: () => void;
 };
 
-/** Фото-карточка сервиса в стиле «Popular destination» из референса. */
+/** Пастельный фон плитки и цвет значка: у каждого сервиса свой (светлый минимал) */
+const TILE: Partial<Record<ServiceId, { background: string; tone: string }>> = {
+  library: { background: '#E8EEFF', tone: '#1F5CFF' },
+  transport: { background: '#E5F7EC', tone: '#15803D' },
+  food: { background: '#FFF0E3', tone: '#C2410C' },
+  dorm: { background: '#F3E8FF', tone: '#7E22CE' },
+  info: { background: '#FFF7D6', tone: '#A16207' },
+  cal: { background: '#E0F2FE', tone: '#0369A1' },
+  events: { background: '#FCE7F3', tone: '#BE185D' },
+  lms: { background: '#E0F7F4', tone: '#0F766E' },
+  sport: { background: '#FDE8E8', tone: '#B91C1C' },
+  lib: { background: '#E8EEFF', tone: '#1F5CFF' },
+};
+const DEFAULT_TILE = { background: '#EEF0F4', tone: '#3D4350' };
+
+/** Плитка сервиса: пастельный фон, значок, название и короткое описание. */
 export default function ServiceCard({ service, width, isFavorite, onPress, onToggleFavorite }: Props) {
   const { t, tr } = useI18n();
+  const { colors, isDark } = useTheme();
+  const appear = useAppear();
   const title = tr(service.title);
+  const tile = TILE[service.id] ?? DEFAULT_TILE;
+  // В тёмной теме плитка — тот же цвет, но полупрозрачный
+  const background = isDark ? withAlpha(tile.tone, 0.22) : tile.background;
+  const tone = isDark ? '#FFFFFF' : tile.tone;
 
   // Кнопка «избранное» лежит рядом с карточкой, а не внутри неё:
   // так два нажимаемых элемента не вложены друг в друга (важно для экранного диктора).
   return (
-    <View style={{ width }}>
+    <Animated.View style={[{ width }, appear]}>
       <Pressable
         onPress={onPress}
         accessibilityRole="button"
         accessibilityLabel={`${title}. ${tr(service.description)}`}
-        style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+        style={({ pressed }) => [styles.card, { backgroundColor: background }, pressed && styles.pressed]}
       >
-        <ImageBackground source={service.image} style={[styles.image, { height: Math.max(190, width * 1.22) }]} imageStyle={styles.imageRadius}>
-          <LinearGradient
-            colors={['rgba(4, 6, 15, 0.05)', 'rgba(4, 6, 15, 0.35)', 'rgba(4, 6, 15, 0.92)'] as const}
-            style={[StyleSheet.absoluteFill, styles.imageRadius]}
-          />
-          <View style={styles.codeChip}>
-            <Ionicons name={service.icon} size={16} color="#FFFFFF" />
-          </View>
-          <View>
-            <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
-              {title}
-            </Text>
-            <View style={styles.bottom}>
-              <Text style={[styles.description, styles.texts]} numberOfLines={2}>
-                {tr(service.description)}
-              </Text>
-              <View style={styles.arrow}>
-                <Feather name="arrow-up-right" size={16} color="#0A0F24" />
-              </View>
-            </View>
-          </View>
-        </ImageBackground>
+        <View style={[styles.iconChip, { backgroundColor: isDark ? withAlpha('#FFFFFF', 0.12) : '#FFFFFF' }]}>
+          <Ionicons name={service.icon} size={22} color={tone} />
+        </View>
+        <View style={styles.texts}>
+          <Text style={[styles.title, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
+            {title}
+          </Text>
+          <Text style={[styles.description, { color: colors.textSecondary }]} numberOfLines={2}>
+            {tr(service.description)}
+          </Text>
+        </View>
       </Pressable>
 
       <Pressable
@@ -63,73 +75,51 @@ export default function ServiceCard({ service, width, isFavorite, onPress, onTog
         accessibilityState={{ selected: isFavorite }}
         style={({ pressed }) => [styles.favorite, pressed && styles.pressed]}
       >
-        <Ionicons name={isFavorite ? 'star' : 'star-outline'} size={18} color={isFavorite ? '#FBBF24' : '#FFFFFF'} />
+        <Ionicons name={isFavorite ? 'star' : 'star-outline'} size={18} color={tone} />
       </Pressable>
-    </View>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
+    minHeight: 138,
     borderRadius: radius.lg,
-    overflow: 'hidden',
+    padding: spacing.md,
+    justifyContent: 'space-between',
+    gap: spacing.md,
   },
   pressed: {
     opacity: 0.9,
     transform: [{ scale: 0.97 }],
   },
-  image: {
-    width: '100%',
-    justifyContent: 'space-between',
-    padding: spacing.md,
-  },
-  imageRadius: {
-    borderRadius: radius.lg,
-  },
-  codeChip: {
-    alignSelf: 'flex-start',
-    padding: 8,
-    borderRadius: radius.pill,
-    backgroundColor: 'rgba(4, 6, 15, 0.55)',
-  },
-  bottom: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: spacing.sm,
+  iconChip: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   texts: {
-    flex: 1,
+    gap: 2,
   },
   title: {
-    fontFamily: fonts.medium,
+    fontFamily: fonts.bold,
     fontSize: 16,
-    letterSpacing: -0.3,
-    color: '#FFFFFF',
+    letterSpacing: -0.2,
   },
   description: {
-    marginTop: 2,
     fontFamily: fonts.regular,
     fontSize: 12,
     lineHeight: 16,
-    color: 'rgba(255, 255, 255, 0.78)',
-  },
-  arrow: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
   },
   favorite: {
     position: 'absolute',
-    top: spacing.sm,
-    right: spacing.sm,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    top: spacing.xs,
+    right: spacing.xs,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(4, 6, 15, 0.55)',
   },
 });

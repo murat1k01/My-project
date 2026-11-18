@@ -11,11 +11,15 @@ type Props = {
   animated?: boolean;
 };
 
-/** Полупрозрачная «стеклянная» карточка со скруглёнными углами. Плавно появляется при открытии раздела. */
+/**
+ * Карточка раздела. В светлой теме — белая с мягкой тенью, в тёмной — полупрозрачная «стеклянная».
+ * Плавно появляется при открытии раздела.
+ */
 export default function GlassCard({ children, style, animated = true }: Props) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const appear = useAppear();
-  return <Animated.View style={[styles.card, { backgroundColor: colors.glass, borderColor: colors.border }, style, animated && appear]}>{children}</Animated.View>;
+  const look = isDark ? { backgroundColor: colors.glass, borderColor: colors.border } : [styles.soft, { backgroundColor: colors.surface, borderColor: 'transparent', shadowColor: colors.shadow }];
+  return <Animated.View style={[styles.card, look, style, animated && appear]}>{children}</Animated.View>;
 }
 
 const styles = StyleSheet.create({
@@ -24,5 +28,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     gap: spacing.md,
+  },
+  soft: {
+    shadowOpacity: 0.06,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 2,
   },
 });
