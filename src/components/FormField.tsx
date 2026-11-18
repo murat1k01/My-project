@@ -27,7 +27,7 @@ export default function FormField({ label, error, icon, rightAccessory, ref, onF
   return (
     <View style={styles.wrapper}>
       {label ? <Text style={[type.label, { color: colors.textSecondary }]}>{label}</Text> : null}
-      <View style={[styles.field, { borderColor, backgroundColor: isDark ? colors.glass : colors.surfaceAlt }]}>
+      <View style={[styles.field, { borderColor, backgroundColor: colors.glass }]}>
         {icon ? <Ionicons name={icon} size={20} color={focused ? colors.primary : colors.textMuted} /> : null}
         <TextInput
           ref={ref}

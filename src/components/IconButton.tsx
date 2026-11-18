@@ -6,7 +6,7 @@ import { TOUCH_SIZE } from '../theme/metrics';
 import { fonts } from '../theme/typography';
 import type { IoniconName } from '../types/Service';
 
-export type RoundVariant = 'light' | 'glass' | 'primary' | 'dark' | 'danger' | 'overlay';
+export type RoundVariant = 'light' | 'glass' | 'primary' | 'dark' | 'danger';
 
 type Props = {
   icon: IoniconName;
@@ -34,8 +34,6 @@ export default function IconButton({ icon, onPress, accessibilityLabel, variant 
     primary: contrast,
     dark: { background: colors.round, color: colors.onRound, border: colors.round },
     danger: { background: colors.dangerSoft, color: colors.danger, border: colors.dangerSoft },
-    // Поверх фотографии: тёмная полупрозрачная подложка в любой теме
-    overlay: { background: 'rgba(4, 6, 15, 0.5)', color: '#FFFFFF', border: 'rgba(255, 255, 255, 0.2)' },
   };
   const current = palette[variant];
 

@@ -15,8 +15,8 @@ type ThemeContextValue = {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  // По умолчанию — светлый минимал; сохранённый выбор пользователя загружается ниже.
-  const [mode, setModeState] = useState<ThemeMode>('light');
+  // По умолчанию — фирменная тёмная тема; сохранённый выбор пользователя загружается ниже.
+  const [mode, setModeState] = useState<ThemeMode>('dark');
   const [ready, setReady] = useState(false);
 
   useEffect(() => {

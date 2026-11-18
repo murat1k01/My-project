@@ -12,11 +12,11 @@ export const fonts = {
   bold: 'Inter_700Bold',
 } as const;
 
-/** Готовые стили текста: крупные жирные заголовки (светлый минимал). */
+/** Готовые стили текста: крупные тонкие заголовки, как в референсе. */
 export const type = {
-  display: { fontFamily: fonts.bold, fontSize: 32, lineHeight: 37, letterSpacing: -0.8 },
-  title: { fontFamily: fonts.bold, fontSize: 26, lineHeight: 31, letterSpacing: -0.6 },
-  heading: { fontFamily: fonts.semibold, fontSize: 19, lineHeight: 24, letterSpacing: -0.3 },
+  display: { fontFamily: fonts.regular, fontSize: 36, lineHeight: 40, letterSpacing: -1.2 },
+  title: { fontFamily: fonts.regular, fontSize: 28, lineHeight: 33, letterSpacing: -0.8 },
+  heading: { fontFamily: fonts.medium, fontSize: 20, lineHeight: 25, letterSpacing: -0.4 },
   subheading: { fontFamily: fonts.semibold, fontSize: 16, lineHeight: 21 },
   body: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 21 },
   bodyMedium: { fontFamily: fonts.medium, fontSize: 15, lineHeight: 21 },

@@ -48,11 +48,11 @@ export default function ServiceLayout({ service, onBack, children, footer, notic
             style={StyleSheet.absoluteFill}
           />
           <View style={styles.heroButtons}>
-            <IconButton icon="chevron-back" variant="overlay" accessibilityLabel={t('back')} onPress={onBack} />
+            <IconButton icon="chevron-back" variant="glass" iconColor="#FFFFFF" accessibilityLabel={t('back')} onPress={onBack} />
             <IconButton
               icon={favorite ? 'star' : 'star-outline'}
-              variant="overlay"
-              iconColor={favorite ? '#FBBF24' : undefined}
+              variant="glass"
+              iconColor={favorite ? '#FBBF24' : '#FFFFFF'}
               accessibilityLabel={favorite ? t('removeFavoriteA11y', { name: tr(service.title) }) : t('addFavoriteA11y', { name: tr(service.title) })}
               onPress={() => toggleFavorite(service.id)}
             />
