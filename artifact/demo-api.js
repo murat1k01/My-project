@@ -353,16 +353,18 @@
     return { ok: true };
   }, true);
 
-  add('GET', '/api/membership', ({ user }) => ({ membership: load().memberships.find((m) => m.userId === user.id) || null }), true);
+  const currentMembership = (userId) => load().memberships.find((m) => m.userId === userId && m.status !== 'canceled') || null;
+  add('GET', '/api/membership', ({ user }) => ({ membership: currentMembership(user.id) }), true);
+  // История хранит и отменённые заявки
+  add('GET', '/api/membership/history', ({ user }) => ({ items: load().memberships.filter((m) => m.userId === user.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt)) }), true);
   add('POST', '/api/membership', ({ user, body }) => {
-    if (load().memberships.some((m) => m.userId === user.id)) throw new HttpError(409, 'membership_exists', 'У вас уже есть абонемент или заявка на него');
+    if (currentMembership(user.id)) throw new HttpError(409, 'membership_exists', 'У вас уже есть абонемент или заявка на него');
     const membership = { id: newId(), userId: user.id, planId: body.planId, status: 'pending', expiresAt: null, createdAt: nowIso() };
     load().memberships.push(membership);
     return { status: 201, data: { membership } };
   }, true);
   add('DELETE', '/api/membership', ({ user }) => {
-    const store = load();
-    store.memberships = store.memberships.filter((m) => m.userId !== user.id);
+    for (const m of load().memberships) if (m.userId === user.id && m.status !== 'canceled') m.status = 'canceled';
     return { ok: true };
   }, true);
 

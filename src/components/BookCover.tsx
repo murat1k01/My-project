@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { API_URL } from '../api/client';
+import { BOOK_COVERS } from '../data/bookCovers';
 import { Text } from './AppText';
 import { useI18n } from '../i18n/LanguageContext';
 import { useTheme } from '../theme/ThemeContext';
@@ -30,8 +31,9 @@ export default function BookCover({ uri, width }: Props) {
       </View>
     );
   }
-  // Обложки из папки сервера приходят с относительным адресом
-  const source = { uri: uri.startsWith('/') ? `${API_URL}${uri}` : uri };
+  // Обложки из папки сервера встроены в приложение, поэтому видны и без сети
+  const bundled = uri.startsWith('/covers/') ? BOOK_COVERS[uri.slice('/covers/'.length)] : undefined;
+  const source = bundled ?? { uri: uri.startsWith('/') ? `${API_URL}${uri}` : uri };
   return <Image source={source} style={[styles.cover, size, { backgroundColor: colors.surfaceAlt }]} resizeMode="cover" onError={() => setFailed(true)} accessibilityIgnoresInvertColors />;
 }
 

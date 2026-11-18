@@ -284,6 +284,10 @@ test('абонемент: заявка, подтверждение админи�
   assert.ok(active.expiresAt > new Date().toISOString());
   assert.equal((await call('DELETE', '/api/membership', { token })).status, 200);
   assert.equal((await call('GET', '/api/membership', { token })).data.membership, null);
+  // История хранит и отменённую заявку
+  const history = (await call('GET', '/api/membership/history', { token })).data.items;
+  assert.equal(history.length, 1);
+  assert.equal(history[0].status, 'canceled');
 });
 
 test('администрирование: права проверяет сервер, контент редактируется', async () => {

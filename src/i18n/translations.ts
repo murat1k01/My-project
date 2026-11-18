@@ -12,6 +12,17 @@ export const LANGUAGES: { code: Language; short: string; name: string }[] = [
 ];
 
 const ru = {
+  forgotLocalCode: 'Код восстановления на этом телефоне: {code}',
+  payExpires: 'Срок',
+  sportStatusCanceled: 'Отменена',
+  reqSport: 'Абонементы',
+  reqKindMembership: 'Абонемент',
+  sportHistory: 'История заявок',
+  sportHistoryEmpty: 'Заявок на абонемент пока нет',
+  sportClubs: 'Кружки и секции',
+  sportClubsHint: 'Нажмите на кружок, чтобы увидеть расписание тренировок',
+  sportShowSchedule: 'Показать расписание',
+  sportHideSchedule: 'Скрыть расписание',
   vitalsTitle: 'Показатели здоровья',
   vitalsSummary: 'В норме: {good} из {total}',
   vitalsUpdated: 'Обновлено: {date}',
@@ -570,6 +581,17 @@ export type TranslationKey = keyof typeof ru;
 type Dictionary = Record<TranslationKey, string>;
 
 const kk: Dictionary = {
+  forgotLocalCode: 'Осы телефондағы қалпына келтіру коды: {code}',
+  payExpires: 'Мерзімі',
+  sportStatusCanceled: 'Бас тартылды',
+  reqSport: 'Абонементтер',
+  reqKindMembership: 'Абонемент',
+  sportHistory: 'Өтінімдер тарихы',
+  sportHistoryEmpty: 'Абонементке өтінім әлі жоқ',
+  sportClubs: 'Үйірмелер мен секциялар',
+  sportClubsHint: 'Жаттығу кестесін көру үшін үйірмені басыңыз',
+  sportShowSchedule: 'Кестені көрсету',
+  sportHideSchedule: 'Кестені жасыру',
   vitalsTitle: 'Денсаулық көрсеткіштері',
   vitalsSummary: 'Қалыпты: {good} / {total}',
   vitalsUpdated: 'Жаңартылды: {date}',
@@ -1101,6 +1123,17 @@ const kk: Dictionary = {
 };
 
 const en: Dictionary = {
+  forgotLocalCode: 'Recovery code on this phone: {code}',
+  payExpires: 'Expires',
+  sportStatusCanceled: 'Canceled',
+  reqSport: 'Memberships',
+  reqKindMembership: 'Membership',
+  sportHistory: 'Request history',
+  sportHistoryEmpty: 'No membership requests yet',
+  sportClubs: 'Clubs and sections',
+  sportClubsHint: 'Tap a club to see its training schedule',
+  sportShowSchedule: 'Show schedule',
+  sportHideSchedule: 'Hide schedule',
   vitalsTitle: 'Health metrics',
   vitalsSummary: 'In range: {good} of {total}',
   vitalsUpdated: 'Updated: {date}',

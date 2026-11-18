@@ -1,7 +1,5 @@
 // Начальное наполнение базы. Выполняется только для пустых таблиц.
 // Пользователей здесь нет намеренно: список студентов наполняется только настоящими регистрациями.
-import { readFileSync } from 'node:fs';
-import { newId } from './security.js';
 
 /** Начальное меню столовой. Цены и наличие администратор столовой меняет в разделе «Администрирование». */
 const MENU = [
@@ -75,11 +73,11 @@ const LEGACY_TEXT = (body) =>
 
 const DORM = { name: 'Общежитие ALT', address: 'Алматы, ул. Масанчи, 88', contacts: '6969', services: 'Прачечная', rules: 'Поддерживайте чистоту в комнате и соблюдайте тишину в комендантский час.', hours: '06:00–23:00' };
 
-export function seed(db, { demoDorm = true } = {}) {
+/** books — список книг из server/data/books.json, newId — генератор идентификаторов. */
+export function seed(db, { demoDorm = true, books = [], newId }) {
   const count = (table) => db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get().n;
 
   if (count('books') === 0) {
-    const { books } = JSON.parse(readFileSync(new URL('./data/books.json', import.meta.url)));
     const insert = db.prepare('INSERT INTO books (id, isbn, title, author, year, category, description, cover_url, source_url) VALUES (?,?,?,?,?,?,?,?,?)');
     for (const b of books) insert.run(b.id, b.isbn, b.title, b.author, b.year, b.category, b.description, b.coverUrl, b.sourceUrl);
     // Книги, которые авторы сами бесплатно публикуют на своих сайтах

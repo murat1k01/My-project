@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { LayoutAnimation, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../components/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { api, errorMessage } from '../../api/client';
@@ -13,7 +13,7 @@ import SectionHeader from '../../components/SectionHeader';
 import SegmentedTabs from '../../components/SegmentedTabs';
 import ServiceLayout from '../../components/ServiceLayout';
 import { useCampus } from '../../context/CampusContext';
-import { MEMBERSHIP_PLANS, SPORT_HOURS, SPORT_SECTIONS, SPORT_SESSIONS, TRAINING_PLAN } from '../../data/sport';
+import { MEMBERSHIP_PLANS, SPORT_HOURS, SPORT_SECTIONS, SPORT_SESSIONS } from '../../data/sport';
 import type { HealthStatus } from '../../types/Campus';
 import type { TranslationKey } from '../../i18n/translations';
 import { useApi } from '../../hooks/useApi';
@@ -23,7 +23,7 @@ import { dateNames } from '../../i18n/translations';
 import { useTheme } from '../../theme/ThemeContext';
 import { radius, spacing } from '../../theme/metrics';
 import { fonts, type } from '../../theme/typography';
-import { formatDate, formatMoney } from '../../utils/format';
+import { formatDate, formatDateTime, formatMoney } from '../../utils/format';
 import type { ServiceScreenProps } from './types';
 
 type Tab = 'membership' | 'training';
@@ -44,6 +44,8 @@ export default function SportService({ service, onBack }: ServiceScreenProps) {
   const now = useNow();
   const [tab, setTab] = useState<Tab>('membership');
   const membership = useApi<{ membership: Membership | null }>('/api/membership');
+  const history = useApi<{ items: Membership[] }>(tab === 'membership' ? '/api/membership/history' : null);
+  const [openSection, setOpenSection] = useState<string | null>(null);
   const current = membership.data?.membership ?? null;
   const currentPlan = MEMBERSHIP_PLANS.find((plan) => plan.id === current?.planId);
   const [confirmPlanId, setConfirmPlanId] = useState<string | null>(null);
@@ -62,7 +64,7 @@ export default function SportService({ service, onBack }: ServiceScreenProps) {
       setMessage({ kind: 'error', text: errorMessage(e) });
     } finally {
       setBusy(false);
-      await membership.reload();
+      await Promise.all([membership.reload(), history.reload()]);
     }
   };
 
@@ -127,6 +129,7 @@ export default function SportService({ service, onBack }: ServiceScreenProps) {
             </GlassCard>
           ))}
           <Text style={[type.caption, { color: colors.textMuted }]}>{t('sportPayNote')}</Text>
+          <MembershipHistory items={history.data?.items ?? []} />
         </>
       ) : (
         <>
@@ -142,34 +145,34 @@ export default function SportService({ service, onBack }: ServiceScreenProps) {
             ))}
           </GlassCard>
 
-          <SectionHeader title={t('sportTraining')} />
-          <GlassCard style={styles.plan}>
-            {[1, 2, 3, 4, 5, 6, 0].map((weekday) => {
-              const today = weekday === now.getDay();
-              return (
-                <View key={weekday} style={[styles.planRow, today && { backgroundColor: colors.primarySoft }]}>
-                  <Text style={[styles.planDay, { color: today ? colors.primary : colors.textMuted }]}>
-                    {dateNames[language].weekdaysShort[weekday]}
-                  </Text>
-                  <Text style={[type.body, styles.flex, { color: colors.text }]}>{tr(TRAINING_PLAN[weekday])}</Text>
-                  {today ? <Text style={[type.label, { color: colors.primary }]}>{t('today')}</Text> : null}
-                </View>
-              );
-            })}
-          </GlassCard>
-
+          <SectionHeader title={t('sportClubs')} />
+          <Text style={[type.caption, { color: colors.textMuted }]}>{t('sportClubsHint')}</Text>
           {SPORT_SECTIONS.map((section) => {
             const enrolled = campus.enrolledSections.includes(section.id);
+            const open = openSection === section.id;
             return (
               <GlassCard key={section.id}>
-                <View style={styles.row}>
+                <Pressable
+                  style={styles.row}
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded: open }}
+                  accessibilityLabel={tr(section.name)}
+                  onPress={() => {
+                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                    setOpenSection(open ? null : section.id);
+                  }}
+                >
                   <View style={[styles.sectionIcon, { backgroundColor: colors.primarySoft }]}>
                     <Ionicons name={section.icon} size={20} color={colors.primary} />
                   </View>
                   <View style={styles.flex}>
                     <Text style={[type.subheading, { color: colors.text }]}>{tr(section.name)}</Text>
+                    <Text style={[type.caption, { color: enrolled ? colors.success : colors.textMuted }]}>{enrolled ? t('sportEnrolled') : t(open ? 'sportHideSchedule' : 'sportShowSchedule')}</Text>
                   </View>
-                </View>
+                  <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={20} color={colors.textMuted} />
+                </Pressable>
+                {open ? (
+                  <>
                 <WeekSchedule sessions={SPORT_SESSIONS[section.id] ?? {}} today={now.getDay()} />
                 <PrimaryButton
                   title={enrolled ? t('sportEnrolled') : t('sportEnroll')}
@@ -179,6 +182,8 @@ export default function SportService({ service, onBack }: ServiceScreenProps) {
                   arrow={!enrolled}
                   onPress={() => toggleSection(section.id)}
                 />
+                  </>
+                ) : null}
               </GlassCard>
             );
           })}
@@ -209,6 +214,34 @@ function HealthCard({ status, onChange }: { status: HealthStatus | null; onChang
       </View>
       <Text style={[type.caption, { color: colors.textMuted }]}>{t('healthNote')}</Text>
     </GlassCard>
+  );
+}
+
+const MEMBERSHIP_STATUS: Record<Membership['status'], TranslationKey> = { pending: 'sportPending', active: 'sportActive', canceled: 'sportStatusCanceled' };
+
+/** История заявок на абонемент: все заявки, включая отменённые */
+function MembershipHistory({ items }: { items: Membership[] }) {
+  const { colors } = useTheme();
+  const { t, tr, language } = useI18n();
+  return (
+    <>
+      <SectionHeader title={t('sportHistory')} />
+      {items.length === 0 ? <Text style={[type.caption, { color: colors.textMuted }]}>{t('sportHistoryEmpty')}</Text> : null}
+      {items.map((item) => {
+        const plan = MEMBERSHIP_PLANS.find((p) => p.id === item.planId);
+        const tone = item.status === 'active' ? colors.success : item.status === 'pending' ? colors.warning : colors.textMuted;
+        return (
+          <GlassCard key={item.id} style={styles.historyCard}>
+            <Ionicons name={item.status === 'active' ? 'checkmark-circle' : item.status === 'pending' ? 'time' : 'close-circle'} size={24} color={tone} />
+            <View style={styles.flex}>
+              <Text style={[type.bodyMedium, { color: colors.text }]}>{plan ? tr(plan.name) : item.planId}</Text>
+              <Text style={[type.caption, { color: colors.textMuted }]}>{formatDateTime(item.createdAt, language)}</Text>
+            </View>
+            <Text style={[type.label, { color: tone }]}>{t(MEMBERSHIP_STATUS[item.status])}</Text>
+          </GlassCard>
+        );
+      })}
+    </>
   );
 }
 
@@ -267,17 +300,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  plan: {
-    gap: 2,
-    padding: spacing.sm,
-  },
-  planRow: {
+  historyCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radius.sm,
   },
   planDay: {
     width: 30,

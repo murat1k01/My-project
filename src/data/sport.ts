@@ -66,17 +66,6 @@ export const SPORT_SECTIONS: SportSection[] = [
   { id: 'yoga', name: lt('Йога', 'Йога', 'Yoga'), schedule: lt('Вт, Сб · 09:00–10:00', 'Сс, Сн · 09:00–10:00', 'Tue, Sat · 09:00–10:00'), coach: 'Тренер спорткомплекса', icon: 'body-outline' },
 ];
 
-/** Недельный режим тренировок в зале (индекс как у Date.getDay(): 0 — воскресенье). */
-export const TRAINING_PLAN: LocalizedText[] = [
-  lt('Отдых и восстановление', 'Демалыс және қалпына келу', 'Rest and recovery'),
-  lt('Грудь и трицепс · 60 мин', 'Кеуде және трицепс · 60 мин', 'Chest and triceps · 60 min'),
-  lt('Кардио и пресс · 45 мин', 'Кардио және іш бұлшықеті · 45 мин', 'Cardio and abs · 45 min'),
-  lt('Спина и бицепс · 60 мин', 'Арқа және бицепс · 60 мин', 'Back and biceps · 60 min'),
-  lt('Растяжка и мобильность · 30 мин', 'Созылу және қозғалғыштық · 30 мин', 'Stretching and mobility · 30 min'),
-  lt('Ноги и плечи · 60 мин', 'Аяқ және иық · 60 мин', 'Legs and shoulders · 60 min'),
-  lt('Игровые виды спорта · 90 мин', 'Ойын түрлері · 90 мин', 'Team sports · 90 min'),
-];
-
 export function getPlan(id: string): MembershipPlan | undefined {
   return MEMBERSHIP_PLANS.find((plan) => plan.id === id);
 }

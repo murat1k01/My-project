@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
+import { LOCAL_AVAILABLE, localRequest } from './local';
 
 const SERVER_PORT = 3000;
 
@@ -21,6 +22,14 @@ function resolveBaseUrl(): string {
 }
 
 export const API_URL = resolveBaseUrl();
+
+/**
+ * Где лежат данные:
+ * - на телефоне по умолчанию — встроенная SQL-база (SQLite), интернет и компьютер не нужны;
+ * - если задан EXPO_PUBLIC_API_URL или EXPO_PUBLIC_API_MODE=server — сервер;
+ * - в браузере — сервер.
+ */
+export const USE_LOCAL_DB = LOCAL_AVAILABLE && !process.env.EXPO_PUBLIC_API_URL && process.env.EXPO_PUBLIC_API_MODE !== 'server';
 
 export class ApiError extends Error {
   constructor(
@@ -52,6 +61,16 @@ export function setUnauthorizedHandler(handler: (() => void) | null): void {
 const REQUEST_TIMEOUT_MS = 15_000;
 
 export async function api<T>(method: string, path: string, body?: unknown): Promise<T> {
+  if (USE_LOCAL_DB) {
+    let result: Awaited<ReturnType<typeof localRequest>>;
+    try {
+      result = await localRequest(method, path, authToken, body);
+    } catch (error) {
+      console.warn('[local-db]', error);
+      throw new ApiError('Не удалось открыть базу данных на телефоне. Перезапустите приложение.', 'local_db', 0);
+    }
+    return handleResult<T>(result.status, result.data);
+  }
   let response: Response;
   // Недоступный адрес в локальной сети может «висеть» минутами, поэтому запрос ограничен по времени
   const controller = new AbortController();
@@ -78,11 +97,14 @@ export async function api<T>(method: string, path: string, body?: unknown): Prom
   } catch {
     // Пустой или неверный ответ обрабатывается ниже по коду статуса
   }
+  return handleResult<T>(response.status, data);
+}
 
-  if (!response.ok) {
+function handleResult<T>(status: number, data: unknown): T {
+  if (status < 200 || status >= 300) {
     const error = (data as { error?: { code?: string; message?: string } } | null)?.error;
-    if (response.status === 401 && authToken && error?.code === 'unauthorized') onUnauthorized?.();
-    throw new ApiError(error?.message ?? 'Не удалось выполнить запрос', error?.code ?? 'unknown', response.status);
+    if (status === 401 && authToken && error?.code === 'unauthorized') onUnauthorized?.();
+    throw new ApiError(error?.message ?? 'Не удалось выполнить запрос', error?.code ?? 'unknown', status);
   }
   return data as T;
 }

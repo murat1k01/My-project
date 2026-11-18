@@ -24,6 +24,7 @@ export default function ForgotPasswordScreen({ navigation }: RootStackScreenProp
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [localCode, setLocalCode] = useState<string | null>(null);
   const passwordFocus = useFieldFocus();
 
   const run = async (action: () => Promise<void>) => {
@@ -45,7 +46,9 @@ export default function ForgotPasswordScreen({ navigation }: RootStackScreenProp
       return;
     }
     void run(async () => {
-      await api('POST', '/api/auth/forgot', { contact: contact.trim() });
+      // Встроенная база на телефоне не отправляет письма: код показывается владельцу устройства
+      const result = await api<{ localCode?: string }>('POST', '/api/auth/forgot', { contact: contact.trim() });
+      setLocalCode(result.localCode ?? null);
       setStep('code');
     });
   };
@@ -77,7 +80,7 @@ export default function ForgotPasswordScreen({ navigation }: RootStackScreenProp
       ) : null}
       {step === 'code' ? (
         <GlassCard>
-          <FormBanner kind="info" text={t('forgotCodeNote')} />
+          <FormBanner kind="info" text={localCode ? t('forgotLocalCode', { code: localCode }) : t('forgotCodeNote')} />
           <FormField label={t('forgotCode')} icon="keypad-outline" value={code} onChangeText={setCode} keyboardType="number-pad" />
           <PasswordField label={t('newPassword')} value={password} onChangeText={setPassword} onFocus={passwordFocus.onFocus} onBlur={passwordFocus.onBlur} autoComplete="new-password" />
           <PasswordField label={t('passwordConfirmLabel')} value={confirm} onChangeText={setConfirm} onFocus={passwordFocus.onFocus} onBlur={passwordFocus.onBlur} autoComplete="new-password" />
