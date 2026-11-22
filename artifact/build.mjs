@@ -51,6 +51,7 @@ const data = {
   machines: all('SELECT * FROM machines ORDER BY floor, name'),
   slots: LAUNDRY_SLOTS,
   plans: PLANS,
+  places: all('SELECT * FROM campus_places ORDER BY floor, name').map((p) => ({ ...p, verified: !!p.verified })),
   transport: JSON.parse(readFileSync(join(root, 'server/data/almaty-bus-routes.json'), 'utf8')),
 };
 writeFileSync(join(out, 'js/demo-data.js'), `window.__CAMPUS_DATA__ = ${JSON.stringify(data)};\n`);

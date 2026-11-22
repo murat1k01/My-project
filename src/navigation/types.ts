@@ -34,6 +34,10 @@ export type RootStackParamList = {
   Admin: undefined;
   EventRegistration: undefined;
   Payment: undefined;
+  CampusPlan: undefined;
+  Assistant: undefined;
+  Messages: undefined;
+  Chat: { userId: string; name: string };
 };
 
 export type RootStackScreenProps<T extends keyof RootStackParamList> = NativeStackScreenProps<RootStackParamList, T>;

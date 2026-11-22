@@ -25,6 +25,7 @@ import { radius, spacing } from '../theme/metrics';
 import { fonts, type } from '../theme/typography';
 import { formatDate, formatDateTime } from '../utils/format';
 import { openExternal } from '../utils/links';
+import { ALT_ADDRESS, twoGisPointUrl, twoGisSearchUrl } from '../utils/twoGis';
 
 type Tab = 'routes' | 'stops' | 'saved';
 
@@ -77,10 +78,9 @@ export default function TransportScreen({ navigation }: RootStackScreenProps<'Tr
     scroll.current?.scrollTo({ y: 0, animated: true });
   };
 
-  const openDirections = (stop: BusStop) => {
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${stop.lat},${stop.lon}&travelmode=transit`;
-    void openExternal(url, { title: t('linkErrorTitle'), text: t('linkErrorText', { url }) });
-  };
+  // Остановка открывается в 2ГИС: там же можно построить маршрут на общественном транспорте
+  const openInTwoGis = (url: string) => void openExternal(url, { title: t('linkErrorTitle'), text: t('linkErrorText', { url }) });
+  const openDirections = (stop: BusStop) => openInTwoGis(twoGisPointUrl(stop.lat, stop.lon));
 
   const requestLocation = async () => {
     setLocationNote(null);
@@ -103,6 +103,10 @@ export default function TransportScreen({ navigation }: RootStackScreenProps<'Tr
     <ScreenScroll title={t('transportTitle')} subtitle={t('transportSubtitle')} onBack={navigation.goBack} scrollRef={scroll}>
       <RouteMap route={route} vehicles={liveAvailable ? (vehicles.data?.vehicles ?? []) : []} showUser={showUser} showTraffic={showTraffic} focusStop={focusStop} />
 
+      <View style={styles.mapActions}>
+        {route ? <Chip label={t('twoGisRoute', { number: route.number })} icon="map-outline" onPress={() => openInTwoGis(twoGisSearchUrl(`автобус ${route.number}`))} /> : null}
+        <Chip label={t('twoGisAlt')} icon="school-outline" onPress={() => openInTwoGis(twoGisSearchUrl(ALT_ADDRESS))} />
+      </View>
       {Platform.OS !== 'web' ? (
         <View style={styles.mapActions}>
           <Chip label={t('locationShow')} icon="locate-outline" selected={showUser} onPress={() => void requestLocation()} />
@@ -280,7 +284,7 @@ function StopRow({ stop, favorite, onShow, onDirections, onToggleFavorite }: Sto
         <Ionicons name="location-outline" size={18} color={colors.primary} />
         <Text style={[type.body, styles.flex, { color: colors.text }]}>{stop.name}</Text>
       </Pressable>
-      <PrimaryButton title={t('transportDirections')} variant="glass" compact icon="navigate-outline" onPress={onDirections} />
+      <PrimaryButton title={t('twoGisOpen')} variant="glass" compact icon="navigate-outline" onPress={onDirections} />
       <Star favorite={favorite} name={stop.name} onPress={onToggleFavorite} />
     </View>
   );

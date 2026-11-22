@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ImageBackground, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import type { LaundryBooking } from '../api/types';
 import { Text } from '../components/AppText';
 import Chip from '../components/Chip';
@@ -92,13 +93,31 @@ export default function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
             {[
               { title: t('quickSchedule'), image: images.serviceCal, onPress: () => navigation.navigate('ServiceDetails', { serviceId: 'cal' }) },
               { title: t('quickReading'), image: images.serviceLib, onPress: () => navigation.navigate('ServiceDetails', { serviceId: 'lib' }) },
-              { title: t('quickPlan'), image: images.news2, onPress: () => navigation.navigate('ServiceDetails', { serviceId: 'lib', tab: 'plan' }) },
+              { title: t('quickCampusPlan'), image: images.news2, onPress: () => navigation.navigate('CampusPlan') },
             ].map((item) => (
               <Pressable key={item.title} onPress={item.onPress} accessibilityRole="button" accessibilityLabel={item.title} style={({ pressed }) => [styles.quickCard, pressed && styles.quickPressed]}>
                 <ImageBackground source={item.image} style={styles.quickImage} imageStyle={styles.quickRadius}>
                   <LinearGradient colors={['rgba(4, 6, 15, 0.1)', 'rgba(4, 6, 15, 0.88)'] as const} style={[StyleSheet.absoluteFill, styles.quickRadius]} />
                   <Text style={styles.quickTitle}>{item.title}</Text>
                 </ImageBackground>
+              </Pressable>
+            ))}
+          </View>
+
+          {/* План университета и помощник ALT AI — сразу под быстрыми карточками */}
+          <View style={styles.featureRow}>
+            {[
+              { title: t('planTitle'), text: t('homePlanText'), icon: 'map' as const, colors: ['#2F6BFF', '#1E3A8A'] as const, onPress: () => navigation.navigate('CampusPlan') },
+              { title: t('aiTitle'), text: t('homeAiText'), icon: 'sparkles' as const, colors: ['#7C3AED', '#312E81'] as const, onPress: () => navigation.navigate('Assistant') },
+            ].map((item) => (
+              <Pressable key={item.title} onPress={item.onPress} accessibilityRole="button" accessibilityLabel={item.title} style={({ pressed }) => [styles.featureCard, pressed && styles.quickPressed]}>
+                <LinearGradient colors={item.colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.featureInner}>
+                  <Ionicons name={item.icon} size={24} color="#FFFFFF" />
+                  <Text style={styles.featureTitle}>{item.title}</Text>
+                  <Text style={styles.featureText} numberOfLines={3}>
+                    {item.text}
+                  </Text>
+                </LinearGradient>
               </Pressable>
             ))}
           </View>
@@ -174,6 +193,33 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 16,
     color: '#FFFFFF',
+  },
+  featureRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  featureCard: {
+    flex: 1,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+  },
+  featureInner: {
+    minHeight: 150,
+    padding: spacing.md,
+    gap: spacing.xs,
+    justifyContent: 'flex-end',
+  },
+  featureTitle: {
+    fontFamily: fonts.semibold,
+    fontSize: 16,
+    lineHeight: 20,
+    color: '#FFFFFF',
+  },
+  featureText: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    lineHeight: 16,
+    color: 'rgba(255, 255, 255, 0.85)',
   },
   grid: {
     flexDirection: 'row',

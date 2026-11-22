@@ -352,3 +352,45 @@ test('несуществующий адрес и неверный JSON', async (
   const res = await fetch(`${base}/api/auth/login`, { method: 'POST', body: '{oops' });
   assert.equal(res.status, 400);
 });
+
+test('подписка в тестовом режиме: нужна своя тестовая карта, деньги не списываются', async () => {
+  const { token } = await register({ contact: 'subtest@example.com' });
+  const other = await register({ contact: 'subother@example.com' });
+  assert.equal((await call('POST', '/api/subscription/checkout', { token, body: { plan: 'premium', mode: 'test' } })).status, 400, 'без карты нельзя');
+  await call('POST', '/api/payment-methods', { token: other.token, body: { mode: 'test', holder: 'OTHER USER', last4: '1111', expMonth: '01', expYear: '2031' } });
+  const otherCard = (await call('GET', '/api/payment-methods', { token: other.token })).data.cards[0];
+  assert.equal((await call('POST', '/api/subscription/checkout', { token, body: { plan: 'premium', mode: 'test', paymentMethodId: otherCard.id } })).status, 400, 'чужая карта не подходит');
+  await call('POST', '/api/payment-methods', { token, body: { mode: 'test', holder: 'TEST USER', last4: '4242', expMonth: '12', expYear: '2031' } });
+  const card = (await call('GET', '/api/payment-methods', { token })).data.cards[0];
+  const pay = await call('POST', '/api/subscription/checkout', { token, body: { plan: 'plus', mode: 'test', paymentMethodId: card.id } });
+  assert.equal(pay.status, 200);
+  assert.equal(pay.data.charged, 0);
+  assert.equal(pay.data.subscription.plan, 'plus');
+  assert.equal(pay.data.subscription.status, 'active');
+});
+
+test('сообщения студентам, задачи и план университета', async () => {
+  const a = await register({ contact: 'msg-a@example.com' });
+  const b = await register({ contact: 'msg-b@example.com' });
+  assert.equal((await call('POST', `/api/messages/${b.user.id}`, { token: a.token, body: { text: '  ' } })).status, 400);
+  assert.equal((await call('POST', `/api/messages/${a.user.id}`, { token: a.token, body: { text: 'себе' } })).status, 404);
+  assert.equal((await call('POST', `/api/messages/${b.user.id}`, { token: a.token, body: { text: 'Привет! Есть конспект?' } })).status, 201);
+  const inbox = (await call('GET', '/api/messages', { token: b.token })).data.chats;
+  assert.equal(inbox.length, 1);
+  assert.equal(inbox[0].unread, 1);
+  const thread = (await call('GET', `/api/messages/${a.user.id}`, { token: b.token })).data;
+  assert.equal(thread.messages[0].mine, false);
+  assert.equal((await call('GET', '/api/messages', { token: b.token })).data.chats[0].unread, 0, 'прочитано');
+  assert.equal((await call('GET', '/api/messages', { token: a.token })).status, 200);
+
+  const todo = await call('POST', '/api/todos', { token: a.token, body: { title: 'Сдать лабораторную', dueDate: '2026-12-01' } });
+  assert.equal(todo.status, 201);
+  assert.equal((await call('POST', '/api/todos', { token: a.token, body: { title: 'x', dueDate: 'завтра' } })).status, 400);
+  assert.equal((await call('PATCH', `/api/todos/${todo.data.item.id}`, { token: b.token, body: { done: true } })).status, 404, 'чужую задачу менять нельзя');
+  assert.equal((await call('PATCH', `/api/todos/${todo.data.item.id}`, { token: a.token, body: { done: true } })).data.item.done, true);
+  assert.equal((await call('GET', '/api/todos', { token: b.token })).data.items.length, 0);
+
+  const places = (await call('GET', '/api/campus/places')).data.places;
+  assert.ok(places.some((p) => p.name === 'Актовый зал' && p.floor === 2 && p.verified));
+  assert.equal((await call('POST', '/api/admin/places', { token: a.token, body: { name: 'Столовая', floor: 1 } })).status, 403);
+});

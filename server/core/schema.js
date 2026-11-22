@@ -185,6 +185,40 @@ CREATE TABLE IF NOT EXISTS requests (
   created_at TEXT NOT NULL
 );
 
+-- Личные сообщения между студентами
+CREATE TABLE IF NOT EXISTS messages (
+  id TEXT PRIMARY KEY,
+  from_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  to_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  text TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  read_at TEXT
+);
+CREATE INDEX IF NOT EXISTS messages_pair ON messages (from_id, to_id, created_at);
+
+-- Задачи, которые студент планирует сам или через помощника ALT AI
+CREATE TABLE IF NOT EXISTS todo_items (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  due_date TEXT,
+  done INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL
+);
+
+-- Места на плане университета: этаж, аудитория, вид. verified = 1 — сведения из официального источника
+CREATE TABLE IF NOT EXISTS campus_places (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  kind TEXT NOT NULL DEFAULT 'room',
+  building TEXT,
+  floor INTEGER NOT NULL,
+  room TEXT,
+  note TEXT,
+  source TEXT,
+  verified INTEGER NOT NULL DEFAULT 0
+);
+
 -- Главная защита от двойного бронирования: база сама не даст создать две активные брони на один интервал
 CREATE UNIQUE INDEX IF NOT EXISTS bookings_no_conflict ON bookings (machine_id, date, slot) WHERE canceled = 0;
 `;

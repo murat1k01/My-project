@@ -49,6 +49,13 @@ const RESOURCES: Resource[] = [
     fields: [{ key: 'slug', label: 'adminFSlug' }, { key: 'title', label: 'adminFTitle' }, { key: 'body', label: 'adminFBody', kind: 'long' }, { key: 'imageUrl', label: 'adminFImageUrl' }, { key: 'sort', label: 'adminFSort', kind: 'number' }],
   },
   {
+    id: 'places', label: 'adminPlaces', pk: 'id', titleKey: 'name', subtitleKey: 'room',
+    fields: [
+      { key: 'name', label: 'adminFName' }, { key: 'kind', label: 'adminFPlaceKind' }, { key: 'floor', label: 'laundryFloor', kind: 'number' }, { key: 'room', label: 'adminFRoom' },
+      { key: 'building', label: 'adminFBuilding' }, { key: 'note', label: 'adminFNote', kind: 'long' }, { key: 'source', label: 'adminFSourceUrl' }, { key: 'verified', label: 'adminFVerified', kind: 'bool' },
+    ],
+  },
+  {
     id: 'dorms', label: 'adminDorms', pk: 'id', titleKey: 'name', subtitleKey: 'address',
     fields: [
       { key: 'name', label: 'adminFName' }, { key: 'address', label: 'dormAddress' }, { key: 'contacts', label: 'dormContacts' }, { key: 'services', label: 'dormServices', kind: 'long' },

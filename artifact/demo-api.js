@@ -151,7 +151,14 @@
     return { ok: true };
   });
 
-  add('GET', '/api/me', ({ user }) => ({ user: publicUser(user), subscription: FREE }), true);
+  // Подписка в демо: только тестовый режим с привязанной тестовой картой
+  const subscriptionOf = (userId) => {
+    const sub = (load().subs || {})[userId];
+    if (!sub || sub.expiresAt <= nowIso()) return FREE;
+    return { plan: sub.plan, status: sub.canceled ? 'canceled' : 'active', expiresAt: sub.expiresAt, previousPlan: null };
+  };
+  add('GET', '/api/me', ({ user }) => ({ user: publicUser(user), subscription: subscriptionOf(user.id) }), true);
+  add('GET', '/api/subscription', ({ user }) => ({ subscription: subscriptionOf(user.id) }), true);
   add('PUT', '/api/me', ({ user, body }) => {
     Object.assign(user, profileFields(body));
     if (body.photo !== undefined) user.photo = body.photo;
@@ -331,13 +338,91 @@
     return { pages: DATA.pages.filter((p) => !search || p.title.toLowerCase().includes(search) || p.body.toLowerCase().includes(search)) };
   });
 
-  add('GET', '/api/plans', () => ({ plans: DATA.plans, paymentsEnabled: false }));
-  add('POST', '/api/subscription/checkout', () => {
-    throw new HttpError(501, 'payments_not_configured', 'Оплата пока не подключена. Деньги не списаны, подписка не оформлена.');
+  add('GET', '/api/plans', () => ({ plans: DATA.plans, paymentsEnabled: false, testMode: true }));
+  add('POST', '/api/subscription/checkout', ({ user, body }) => {
+    const plan = DATA.plans.find((p) => p.id === body.plan && p.price > 0);
+    if (!plan) throw bad('invalid_plan', 'Неизвестный тариф');
+    if (body.mode !== 'test') throw new HttpError(501, 'payments_not_configured', 'Оплата пока не подключена. Деньги не списаны, подписка не оформлена.');
+    const card = (load().cards || []).find((c) => c.id === body.paymentMethodId && c.userId === user.id);
+    if (!card) throw bad('card_required', 'Сначала привяжите тестовую карту в разделе «Оплата через Visa»');
+    const store = load();
+    store.subs = store.subs || {};
+    store.subs[user.id] = { plan: plan.id, canceled: false, expiresAt: new Date(Date.now() + 30 * 86400000).toISOString() };
+    return { subscription: subscriptionOf(user.id), test: true, charged: 0, card: card.last4 };
   }, true);
-  add('POST', '/api/subscription/cancel', () => {
-    throw new HttpError(404, 'not_found', 'Активной подписки нет');
+  add('POST', '/api/subscription/cancel', ({ user }) => {
+    const sub = (load().subs || {})[user.id];
+    if (!sub) throw new HttpError(404, 'not_found', 'Активной подписки нет');
+    sub.canceled = true;
+    return { subscription: subscriptionOf(user.id) };
   }, true);
+
+  // Сообщения студентам
+  const msgView = (m, me) => ({ id: m.id, text: m.text, createdAt: m.createdAt, mine: m.fromId === me, read: !!m.readAt });
+  add('GET', '/api/messages', ({ user }) => {
+    const chats = new Map();
+    for (const m of [...(load().messages || [])].reverse()) {
+      if (m.fromId !== user.id && m.toId !== user.id) continue;
+      const otherId = m.fromId === user.id ? m.toId : m.fromId;
+      const chat = chats.get(otherId) || { userId: otherId, last: msgView(m, user.id), unread: 0 };
+      if (m.toId === user.id && !m.readAt) chat.unread += 1;
+      chats.set(otherId, chat);
+    }
+    return { chats: [...chats.values()].map((c) => {
+      const other = load().users.find((u) => u.id === c.userId);
+      return other ? { ...c, firstName: other.firstName, lastName: other.lastName, photo: other.photo || null } : null;
+    }).filter(Boolean) };
+  }, true);
+  add('GET', '/api/messages/:userId', ({ user, params }) => {
+    const other = load().users.find((u) => u.id === params.userId);
+    if (!other) throw new HttpError(404, 'not_found', 'Студент не найден');
+    const list = (load().messages || []).filter((m) => (m.fromId === user.id && m.toId === other.id) || (m.fromId === other.id && m.toId === user.id));
+    for (const m of list) if (m.toId === user.id && !m.readAt) m.readAt = nowIso();
+    return { user: { id: other.id, firstName: other.firstName, lastName: other.lastName }, messages: list.map((m) => msgView(m, user.id)) };
+  }, true);
+  add('POST', '/api/messages/:userId', ({ user, params, body }) => {
+    const text = typeof body.text === 'string' ? body.text.trim() : '';
+    if (!text) throw bad('required', 'Напишите сообщение');
+    if (text.length > 1000) throw bad('too_long', 'Сообщение слишком длинное');
+    const other = load().users.find((u) => u.id === params.userId && u.id !== user.id);
+    if (!other) throw new HttpError(404, 'not_found', 'Студент не найден');
+    const store = load();
+    store.messages = store.messages || [];
+    const message = { id: newId(), fromId: user.id, toId: other.id, text, createdAt: nowIso(), readAt: null };
+    store.messages.push(message);
+    return { status: 201, data: { message: msgView(message, user.id) } };
+  }, true);
+
+  // Задачи помощника ALT AI
+  const todosOf = (userId) => (load().todos || []).filter((t) => t.userId === userId);
+  const todoView = ({ userId, ...t }) => t;
+  add('GET', '/api/todos', ({ user }) => ({ items: todosOf(user.id).sort((a, b) => (a.done - b.done) || (a.dueDate ? 0 : 1) - (b.dueDate ? 0 : 1) || String(a.dueDate).localeCompare(String(b.dueDate))).map(todoView) }), true);
+  add('POST', '/api/todos', ({ user, body }) => {
+    const title = clean(body.title);
+    if (title.length < 2) throw bad('required', 'Опишите задачу');
+    const due = body.dueDate ? String(body.dueDate) : null;
+    if (due && !/^\d{4}-\d{2}-\d{2}$/.test(due)) throw bad('invalid', 'Дата в формате ГГГГ-ММ-ДД');
+    const store = load();
+    store.todos = store.todos || [];
+    const item = { id: newId(), userId: user.id, title, dueDate: due, done: false, createdAt: nowIso() };
+    store.todos.push(item);
+    return { status: 201, data: { item: todoView(item) } };
+  }, true);
+  add('PATCH', '/api/todos/:id', ({ user, params, body }) => {
+    const item = todosOf(user.id).find((t) => t.id === params.id);
+    if (!item) throw new HttpError(404, 'not_found', 'Задача не найдена');
+    if ('dueDate' in body) item.dueDate = body.dueDate || null;
+    if ('done' in body) item.done = !!body.done;
+    return { item: todoView(item) };
+  }, true);
+  add('DELETE', '/api/todos/:id', ({ user, params }) => {
+    const store = load();
+    store.todos = (store.todos || []).filter((t) => !(t.id === params.id && t.userId === user.id));
+    return { ok: true };
+  }, true);
+
+  // План университета
+  add('GET', '/api/campus/places', () => ({ places: DATA.places || [], address: 'Алматы, ул. Шевченко, 97' }));
   // Тестовая привязка карты: в браузере хранятся только последние 4 цифры, срок и имя
   add('GET', '/api/payment-methods', ({ user }) => ({ cards: (load().cards || []).filter((c) => c.userId === user.id) }), true);
   add('POST', '/api/payment-methods', ({ user, body }) => {

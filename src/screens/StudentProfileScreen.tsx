@@ -24,7 +24,12 @@ export default function StudentProfileScreen({ navigation, route }: RootStackScr
   const { t } = useI18n();
   return (
     <ScreenScroll title={t('studentProfileTitle')} onBack={navigation.goBack}>
-      <StudentDetails studentId={route.params.studentId} onOpenRequests={() => navigation.navigate('Requests')} onDeleted={navigation.goBack} />
+      <StudentDetails
+        studentId={route.params.studentId}
+        onOpenRequests={() => navigation.navigate('Requests')}
+        onOpenChat={(name) => navigation.navigate('Chat', { userId: route.params.studentId, name })}
+        onDeleted={navigation.goBack}
+      />
     </ScreenScroll>
   );
 }
@@ -32,10 +37,11 @@ export default function StudentProfileScreen({ navigation, route }: RootStackScr
 type DetailsProps = {
   studentId: string;
   onOpenRequests: () => void;
+  onOpenChat: (name: string) => void;
   onDeleted: () => void;
 };
 
-function StudentDetails({ studentId, onOpenRequests, onDeleted }: DetailsProps) {
+function StudentDetails({ studentId, onOpenRequests, onOpenChat, onDeleted }: DetailsProps) {
   const { t } = useI18n();
   const { data, loading, error, reload } = useApi<{ student: Student }>(`/api/students/${encodeURIComponent(studentId)}`);
   const student = data?.student;
@@ -107,6 +113,8 @@ function StudentDetails({ studentId, onOpenRequests, onDeleted }: DetailsProps) 
           {student.addedByMe ? (
             <PrimaryButton title={t('deleteStudent')} variant="danger" icon="trash-outline" onPress={() => remove(`${student.firstName} ${student.lastName}`)} />
           ) : (
+            <>
+            <PrimaryButton title={t('msgWrite')} icon="chatbubble-ellipses-outline" arrow onPress={() => onOpenChat(`${student.firstName} ${student.lastName}`)} />
             <GlassCard>
               <View style={styles.kinds}>
                 <Chip label={t('reqKindResponse')} selected={kind === 'response'} onPress={() => setKind('response')} />
@@ -125,6 +133,7 @@ function StudentDetails({ studentId, onOpenRequests, onDeleted }: DetailsProps) 
               <PrimaryButton title={t('appSend')} arrow loading={sending} onPress={send} />
               <PrimaryButton title={t('requestsTitle')} variant="glass" compact onPress={onOpenRequests} />
             </GlassCard>
+            </>
           )}
         </View>
       ) : null}

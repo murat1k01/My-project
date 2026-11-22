@@ -135,6 +135,7 @@ const ADMIN_RESOURCES = {
   pages: { table: 'info_pages', pk: 'slug', order: 'sort', required: ['slug', 'title', 'body'], fields: { slug: 's', title: 's', body: 's', sort: 'i', image_url: 's' } },
   dorms: { table: 'dorms', pk: 'id', order: 'name', required: ['name'], fields: { name: 's', address: 's', contacts: 's', services: 's', rules: 's', hours: 's' } },
   machines: { table: 'machines', pk: 'id', order: 'dorm_id, name', required: ['dorm_id', 'name'], fields: { dorm_id: 's', floor: 'i', name: 's', status: 's' } },
+  places: { table: 'campus_places', pk: 'id', order: 'floor, name', required: ['name', 'floor'], fields: { name: 's', kind: 's', building: 's', floor: 'i', room: 's', note: 's', source: 's', verified: 'b' } },
   catalog: { table: 'catalog', pk: 'id', order: 'kind, name', required: ['kind', 'name'], fields: { kind: 's', name: 's' } },
 };
 
@@ -616,13 +617,21 @@ export function createRouter(db, deps) {
   });
 
   // ---------- Подписка ----------
-  add('GET', '/api/plans', () => ({ plans: PLANS, paymentsEnabled: false }));
+  add('GET', '/api/plans', () => ({ plans: PLANS, paymentsEnabled: false, testMode: true }));
   add('GET', '/api/subscription', ({ user }) => ({ subscription: subscriptionOf(user.id) }), 'user');
 
-  // Платёжная система не подключена: подписку нельзя получить «успешной оплатой», которой не было.
-  add('POST', '/api/subscription/checkout', ({ body }) => {
-    if (!PLANS.some((p) => p.id === body.plan && p.price > 0)) throw bad('invalid_plan', 'Неизвестный тариф');
-    throw new ApiError(501, 'payments_not_configured', 'Оплата пока не подключена. Деньги не списаны, подписка не оформлена.');
+  // Настоящая платёжная система не подключена. Оформление возможно только в тестовом режиме
+  // с привязанной тестовой картой: деньги не списываются, и ответ прямо говорит об этом (charged: 0).
+  add('POST', '/api/subscription/checkout', ({ user, body }) => {
+    const plan = PLANS.find((p) => p.id === body.plan && p.price > 0);
+    if (!plan) throw bad('invalid_plan', 'Неизвестный тариф');
+    if (body.mode !== 'test') throw new ApiError(501, 'payments_not_configured', 'Оплата пока не подключена. Деньги не списаны, подписка не оформлена.');
+    const card = db.prepare('SELECT id, last4 FROM payment_methods WHERE id = ? AND user_id = ?').get(String(body.paymentMethodId ?? ''), user.id);
+    if (!card) throw bad('card_required', 'Сначала привяжите тестовую карту в разделе «Оплата через Visa»');
+    db.prepare(`INSERT INTO subscriptions (user_id, plan, canceled, started_at, expires_at) VALUES (?,?,0,?,?)
+      ON CONFLICT(user_id) DO UPDATE SET plan = excluded.plan, canceled = 0, started_at = excluded.started_at, expires_at = excluded.expires_at`)
+      .run(user.id, plan.id, nowIso(), addDays(30));
+    return { subscription: subscriptionOf(user.id), test: true, charged: 0, card: card.last4 };
   }, 'user');
 
   add('POST', '/api/subscription/cancel', ({ user }) => {
@@ -655,6 +664,92 @@ export function createRouter(db, deps) {
     if (result.changes === 0) throw new ApiError(404, 'not_found', 'Карта не найдена');
     return { ok: true };
   }, 'user');
+
+  // ---------- Сообщения студентам ----------
+  const MESSAGE_MAX = 1000;
+  const messageView = (row, me) => ({ id: row.id, text: row.text, createdAt: row.created_at, mine: row.from_id === me, read: !!row.read_at });
+
+  add('GET', '/api/messages', ({ user }) => {
+    const rows = db.prepare(`SELECT m.*, CASE WHEN m.from_id = ? THEN m.to_id ELSE m.from_id END AS other_id FROM messages m
+      WHERE m.from_id = ? OR m.to_id = ? ORDER BY m.created_at DESC`).all(user.id, user.id, user.id);
+    const chats = new Map();
+    for (const row of rows) {
+      const chat = chats.get(row.other_id) ?? { userId: row.other_id, last: messageView(row, user.id), unread: 0 };
+      if (row.to_id === user.id && !row.read_at) chat.unread += 1;
+      chats.set(row.other_id, chat);
+    }
+    const list = [...chats.values()].map((chat) => {
+      const other = q.userById.get(chat.userId);
+      return other ? { ...chat, firstName: other.first_name, lastName: other.last_name, photo: other.photo } : null;
+    }).filter(Boolean);
+    return { chats: list };
+  }, 'user');
+
+  add('GET', '/api/messages/:userId', ({ user, params }) => {
+    const other = q.userById.get(params.userId);
+    if (!other) throw new ApiError(404, 'not_found', 'Студент не найден');
+    db.prepare('UPDATE messages SET read_at = ? WHERE from_id = ? AND to_id = ? AND read_at IS NULL').run(nowIso(), other.id, user.id);
+    const rows = db.prepare(`SELECT * FROM messages WHERE (from_id = ? AND to_id = ?) OR (from_id = ? AND to_id = ?)
+      ORDER BY created_at LIMIT 500`).all(user.id, other.id, other.id, user.id);
+    return { user: { id: other.id, firstName: other.first_name, lastName: other.last_name, photo: other.photo }, messages: rows.map((r) => messageView(r, user.id)) };
+  }, 'user');
+
+  add('POST', '/api/messages/:userId', ({ user, params, body }) => {
+    const text = typeof body.text === 'string' ? body.text.trim() : '';
+    if (!text) throw bad('required', 'Напишите сообщение');
+    if (text.length > MESSAGE_MAX) throw bad('too_long', 'Сообщение слишком длинное');
+    const other = q.userById.get(params.userId);
+    if (!other || other.id === user.id) throw new ApiError(404, 'not_found', 'Студент не найден');
+    // Написать первым можно только тому, кто показан в списке студентов; ответить — всегда
+    const replied = db.prepare('SELECT 1 FROM messages WHERE from_id = ? AND to_id = ? LIMIT 1').get(other.id, user.id);
+    if (!other.show_in_directory && !replied) throw new ApiError(404, 'not_found', 'Студент не найден');
+    const id = newId();
+    db.prepare('INSERT INTO messages (id, from_id, to_id, text, created_at) VALUES (?,?,?,?,?)').run(id, user.id, other.id, text, nowIso());
+    return { status: 201, data: { message: messageView(db.prepare('SELECT * FROM messages WHERE id = ?').get(id), user.id) } };
+  }, 'user');
+
+  // ---------- Задачи (планировщик помощника ALT AI) ----------
+  const todoView = (row) => ({ id: row.id, title: row.title, dueDate: row.due_date, done: !!row.done, createdAt: row.created_at });
+  const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
+
+  add('GET', '/api/todos', ({ user }) => ({
+    items: db.prepare('SELECT * FROM todo_items WHERE user_id = ? ORDER BY done, due_date IS NULL, due_date, created_at').all(user.id).map(todoView),
+  }), 'user');
+
+  add('POST', '/api/todos', ({ user, body }) => {
+    const title = clean(body.title);
+    if (title.length < 2) throw bad('required', 'Опишите задачу');
+    if (title.length > 200) throw bad('too_long', 'Задача слишком длинная');
+    const due = body.dueDate ? String(body.dueDate) : null;
+    if (due && !DATE_KEY.test(due)) throw bad('invalid', 'Дата в формате ГГГГ-ММ-ДД');
+    const count = db.prepare('SELECT COUNT(*) AS n FROM todo_items WHERE user_id = ? AND done = 0').get(user.id).n;
+    if (count >= 200) throw bad('too_many', 'Слишком много открытых задач');
+    const id = newId();
+    db.prepare('INSERT INTO todo_items (id, user_id, title, due_date, created_at) VALUES (?,?,?,?,?)').run(id, user.id, title, due, nowIso());
+    return { status: 201, data: { item: todoView(db.prepare('SELECT * FROM todo_items WHERE id = ?').get(id)) } };
+  }, 'user');
+
+  add('PATCH', '/api/todos/:id', ({ user, params, body }) => {
+    const row = db.prepare('SELECT * FROM todo_items WHERE id = ? AND user_id = ?').get(params.id, user.id);
+    if (!row) throw new ApiError(404, 'not_found', 'Задача не найдена');
+    const due = 'dueDate' in body ? (body.dueDate ? String(body.dueDate) : null) : row.due_date;
+    if (due && !DATE_KEY.test(due)) throw bad('invalid', 'Дата в формате ГГГГ-ММ-ДД');
+    const done = 'done' in body ? (body.done ? 1 : 0) : row.done;
+    db.prepare('UPDATE todo_items SET due_date = ?, done = ? WHERE id = ?').run(due, done, row.id);
+    return { item: todoView(db.prepare('SELECT * FROM todo_items WHERE id = ?').get(row.id)) };
+  }, 'user');
+
+  add('DELETE', '/api/todos/:id', ({ user, params }) => {
+    const result = db.prepare('DELETE FROM todo_items WHERE id = ? AND user_id = ?').run(params.id, user.id);
+    if (result.changes === 0) throw new ApiError(404, 'not_found', 'Задача не найдена');
+    return { ok: true };
+  }, 'user');
+
+  // ---------- План университета ----------
+  add('GET', '/api/campus/places', () => ({
+    places: db.prepare('SELECT * FROM campus_places ORDER BY floor, name').all().map((row) => ({ ...camel(row), verified: !!row.verified })),
+    address: 'Алматы, ул. Шевченко, 97',
+  }));
 
   // ---------- Абонемент спорткомплекса ----------
   // Оплата проходит на месте, поэтому заявку подтверждает администратор: онлайн деньги не списываются.

@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useIsFocused } from '@react-navigation/native';
 import { api, errorMessage } from '../api/client';
 import type { Plan, PlanId, SubscriptionInfo } from '../api/types';
 import { Text } from '../components/AppText';
+import Chip from '../components/Chip';
 import FormBanner from '../components/FormBanner';
 import GlassCard from '../components/GlassCard';
 import PrimaryButton from '../components/PrimaryButton';
@@ -19,9 +21,11 @@ import { type } from '../theme/typography';
 import { confirmAction } from '../utils/dialogs';
 import { formatDate, formatMoney } from '../utils/format';
 
+type SavedCard = { id: string; last4: string };
+
 /**
- * Тарифы и оформление. Платёжная система не подключена: сервер отвечает на оформление отказом,
- * поэтому деньги не списываются, а успешная оплата нигде не имитируется.
+ * Тарифы и оформление. Настоящая платёжная система не подключена: подписка оформляется
+ * в тестовом режиме с привязанной тестовой картой, деньги не списываются, и экран прямо об этом говорит.
  */
 export default function SubscriptionScreen({ navigation }: RootStackScreenProps<'Subscription'>) {
   const { colors } = useTheme();
@@ -38,15 +42,23 @@ export default function SubscriptionScreen({ navigation }: RootStackScreenProps<
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Привязанные тестовые карты: оплата подписки идёт только в тестовом режиме, деньги не списываются
+  // Список обновляется при возвращении с экрана привязки карты
+  const focused = useIsFocused();
+  const cards = useApi<{ cards: SavedCard[] }>(user && focused ? '/api/payment-methods' : null);
+  const cardList = cards.data?.cards ?? [];
+  const [cardId, setCardId] = useState<string | null>(null);
+  const selectedCard = cardList.find((card) => card.id === cardId) ?? cardList[0] ?? null;
+
   const checkout = async (plan: Plan) => {
-    if (busy) return;
+    if (busy || !selectedCard) return;
     setBusy(true);
     setMessage(null);
     try {
-      await api('POST', '/api/subscription/checkout', { plan: plan.id });
+      await api('POST', '/api/subscription/checkout', { plan: plan.id, mode: 'test', paymentMethodId: selectedCard.id });
       await refresh();
       setCheckoutPlan(null);
-      setMessage({ kind: 'success', text: t('subActivated') });
+      setMessage({ kind: 'success', text: t('subActivatedTest', { last4: selectedCard.last4 }) });
     } catch (e) {
       setMessage({ kind: 'info', text: errorMessage(e) });
     } finally {
@@ -88,7 +100,7 @@ export default function SubscriptionScreen({ navigation }: RootStackScreenProps<
 
   return (
     <ScreenScroll title={t('subName')} subtitle={t('subTagline')} onBack={navigation.goBack}>
-      {data && !data.paymentsEnabled ? <FormBanner kind="info" text={t('subPaymentsOff')} /> : null}
+      <FormBanner kind="info" text={t('subTestBanner')} />
       {subscription.status === 'expired' ? <FormBanner text={t('subExpiredPlan', { plan: planName(subscription.previousPlan), date: subscription.expiresAt ? formatDate(subscription.expiresAt, language) : '' })} /> : null}
       {subscription.status === 'canceled' && subscription.expiresAt ? <FormBanner kind="info" text={t('subCanceledUntil', { date: formatDate(subscription.expiresAt, language) })} /> : null}
       {message ? <FormBanner kind={message.kind} text={message.text} /> : null}
@@ -99,8 +111,23 @@ export default function SubscriptionScreen({ navigation }: RootStackScreenProps<
           <Text style={[type.body, { color: colors.textSecondary }]}>
             {formatMoney(checkoutPlan.price, t('currency'))} / {checkoutPlan.period}
           </Text>
-          <Text style={[type.caption, { color: colors.textMuted }]}>{t('subCheckoutNote')}</Text>
-          <PrimaryButton title={t('subPay', { price: formatMoney(checkoutPlan.price, t('currency')) })} arrow loading={busy} onPress={() => void checkout(checkoutPlan)} />
+          <Text style={[type.caption, { color: colors.textMuted }]}>{t('subTestNote')}</Text>
+          {cardList.length > 0 ? (
+            <>
+              <Text style={[type.label, { color: colors.textMuted }]}>{t('subChooseCard')}</Text>
+              <View style={styles.cards}>
+                {cardList.map((card) => (
+                  <Chip key={card.id} icon="card-outline" label={`•••• ${card.last4}`} selected={selectedCard?.id === card.id} onPress={() => setCardId(card.id)} />
+                ))}
+              </View>
+              <PrimaryButton title={t('subPayTest', { price: formatMoney(checkoutPlan.price, t('currency')) })} arrow loading={busy} onPress={() => void checkout(checkoutPlan)} />
+            </>
+          ) : (
+            <>
+              <Text style={[type.body, { color: colors.textSecondary }]}>{t('subNeedCard')}</Text>
+              <PrimaryButton title={t('payBind')} icon="card-outline" arrow onPress={() => navigation.navigate('Payment')} />
+            </>
+          )}
           <PrimaryButton title={t('cancel')} variant="glass" compact onPress={() => setCheckoutPlan(null)} />
         </GlassCard>
       ) : null}
@@ -147,6 +174,11 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  cards: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
   },
   feature: {

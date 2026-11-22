@@ -9,6 +9,7 @@ import Avatar from '../components/Avatar';
 import FormBanner from '../components/FormBanner';
 import FormField from '../components/FormField';
 import GlassCard from '../components/GlassCard';
+import IconButton from '../components/IconButton';
 import PrimaryButton from '../components/PrimaryButton';
 import ScreenScroll from '../components/ScreenScroll';
 import SearchField from '../components/SearchField';
@@ -23,8 +24,16 @@ import { type } from '../theme/typography';
 
 export default function StudentsScreen({ navigation }: MainTabScreenProps<'Students'>) {
   const { t } = useI18n();
+  const focused = useIsFocused();
+  // Число непрочитанных сообщений на значке
+  const chats = useApi<{ chats: { unread: number }[] }>(focused ? '/api/messages' : null);
+  const unread = (chats.data?.chats ?? []).reduce((sum, chat) => sum + chat.unread, 0);
   return (
-    <ScreenScroll title={t('studentsTitle')} subtitle={t('studentsSubtitle')}>
+    <ScreenScroll
+      title={t('studentsTitle')}
+      subtitle={t('studentsSubtitle')}
+      right={<IconButton icon="chatbubbles-outline" badge={unread} accessibilityLabel={t('msgTitle')} onPress={() => navigation.navigate('Messages')} />}
+    >
       <StudentsList onOpen={(studentId) => navigation.navigate('StudentProfile', { studentId })} />
     </ScreenScroll>
   );

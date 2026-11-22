@@ -73,6 +73,16 @@ const LEGACY_TEXT = (body) =>
 
 const DORM = { name: 'Общежитие ALT', address: 'Алматы, ул. Масанчи, 88', contacts: '6969', services: 'Прачечная', rules: 'Поддерживайте чистоту в комнате и соблюдайте тишину в комендантский час.', hours: '06:00–23:00' };
 
+/**
+ * Места главного учебного корпуса (ул. Шевченко, 97), подтверждённые сайтом alt.edu.kz.
+ * Остальные места (столовую, библиотеку и т. д.) добавляет администратор: выдуманных данных здесь нет.
+ */
+const PLACES = [
+  ['place-hall', 'Актовый зал', 'hall', 'Главный учебный корпус', 2, null, 'Рядом с музеем университета', 'https://alt.edu.kz/en/student-life/museum/'],
+  ['place-museum', 'Музей университета', 'museum', 'Главный учебный корпус', 2, null, 'Рядом с актовым залом', 'https://alt.edu.kz/en/student-life/museum/'],
+  ['place-engineering', 'Школа инженерии', 'office', 'Главный учебный корпус', 4, 'В405', null, 'https://alt.edu.kz/schools/school-of-engineering/'],
+];
+
 /** books — список книг из server/data/books.json, newId — генератор идентификаторов. */
 export function seed(db, { demoDorm = true, books = [], newId }) {
   const count = (table) => db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get().n;
@@ -86,6 +96,9 @@ export function seed(db, { demoDorm = true, books = [], newId }) {
     read.run('https://eloquentjavascript.net', '9781593279509');
     read.run('https://automatetheboringstuff.com', '9781593275990');
   }
+
+  const insertPlace = db.prepare('INSERT OR IGNORE INTO campus_places (id, name, kind, building, floor, room, note, source, verified) VALUES (?,?,?,?,?,?,?,?,1)');
+  for (const place of PLACES) insertPlace.run(...place);
 
   if (count('menu_items') === 0) {
     const insert = db.prepare('INSERT INTO menu_items (id, name, description, price, category, allergens, image_key) VALUES (?,?,?,?,?,?,?)');
