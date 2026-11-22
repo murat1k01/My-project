@@ -1,15 +1,13 @@
 import { api } from '../api/client';
 import type { Language } from '../i18n/translations';
-import type { CampusPlace } from '../screens/CampusPlanScreen';
 
 /**
  * Помощник ALT AI работает прямо в приложении, без внешнего ИИ и без интернета:
- * понимает простые команды на русском, казахском и английском, ищет места на плане университета
- * и ведёт список задач в базе данных. Ничего не придумывает: если места нет на плане, так и говорит.
+ * понимает простые команды на русском, казахском и английском и ведёт список задач в базе данных.
  */
 
 export type Todo = { id: string; title: string; dueDate: string | null; done: boolean };
-export type AssistantAction = { label: string; screen: 'CampusPlan' | 'Schedule' | 'Messages' };
+export type AssistantAction = { label: string; screen: 'Schedule' | 'Messages' };
 export type AssistantReply = { text: string; actions?: AssistantAction[]; changed?: boolean };
 
 type Say = (ru: string, kk: string, en: string) => string;
@@ -57,44 +55,6 @@ export function extractDate(text: string, now = new Date()): { date: string | nu
     }
   }
   return { date: null, rest: text.trim() };
-}
-
-/** Слова, по которым ищутся виды мест на плане */
-const PLACE_WORDS: [RegExp, string][] = [
-  [/столов|асхана|кафе|буфет|canteen|cafe/, 'canteen'],
-  [/актов|акт зал|мәжіліс|assembly|hall/, 'hall'],
-  [/музей|museum/, 'museum'],
-  [/библиотек|кітапхана|library|читальн/, 'library'],
-  [/спорт|зал для|gym/, 'sport'],
-];
-
-const normalize = (value: string) => value.toLowerCase().replace(/[\s-]/g, '').replace(/в/g, 'b');
-
-async function findPlaces(text: string, say: Say): Promise<AssistantReply> {
-  const { places } = await api<{ places: CampusPlace[] }>('GET', '/api/campus/places');
-  const lower = text.toLowerCase();
-  const room = text.match(/[a-zа-яё]?\s?-?\d{3,4}/i)?.[0];
-  const kind = PLACE_WORDS.find(([pattern]) => pattern.test(lower))?.[1];
-  let found: CampusPlace[] = [];
-  if (room) found = places.filter((p) => p.room && normalize(p.room) === normalize(room));
-  if (found.length === 0 && kind) found = places.filter((p) => p.kind === kind);
-  if (found.length === 0) {
-    const words = lower.replace(/где|найди|находится|қайда|where|is|the|аудитори[яюи]|кабинет/g, ' ').split(/\s+/).filter((w) => w.length > 3);
-    found = places.filter((p) => words.some((w) => p.name.toLowerCase().includes(w.slice(0, 5))));
-  }
-  const action: AssistantAction = { label: say('Открыть план', 'Жоспарды ашу', 'Open the plan'), screen: 'CampusPlan' };
-  if (found.length === 0) {
-    return {
-      text: say(
-        `Этого места пока нет на плане университета, а придумывать я не буду. Спросите на вахте главного корпуса (Шевченко, 97) — администратор может добавить место на план.`,
-        `Бұл орын әзірге жоспарда жоқ, ойдан шығармаймын. Бас корпустың күзетінен сұраңыз (Шевченко, 97) — әкімші орынды жоспарға қоса алады.`,
-        `This place is not on the campus plan yet, and I won't guess. Ask at the main building's front desk (Shevchenko 97); an admin can add it to the plan.`,
-      ),
-      actions: [action],
-    };
-  }
-  const lines = found.map((p) => `• ${p.name}: ${say('этаж', 'қабат', 'floor')} ${p.floor}${p.room ? `, ${say('ауд.', 'ауд.', 'room')} ${p.room}` : ''}${p.note ? ` (${p.note})` : ''}`);
-  return { text: `${say('Нашёл на плане:', 'Жоспардан таптым:', 'Found on the plan:')}\n${lines.join('\n')}`, actions: [action] };
 }
 
 const todoLine = (todo: Todo, index: number, say: Say) => `${index + 1}. ${todo.done ? '✓ ' : ''}${todo.title}${todo.dueDate ? ` — ${showDate(todo.dueDate)}` : ` — ${say('без срока', 'мерзімсіз', 'no date')}`}`;
@@ -157,7 +117,6 @@ export async function answer(input: string, language: Language): Promise<Assista
 
   if (/спланир|распредел|план на неделю|жоспарла|plan my|plan the week/.test(lower)) return planWeek(say);
   if (/мои задачи|задачи|что сделать|тапсырма|tasks|to.?do/.test(lower)) return listTodos(say);
-  if (/где|найди|находится|қайда|where|аудитори|кабинет|столов|актов|музей|асхана|\b[a-zа-я]?\d{3,4}\b/.test(lower)) return findPlaces(text, say);
   if (/расписан|пара|сабақ|schedule|lesson/.test(lower)) {
     return {
       text: say('Расписание занятий открывается в разделе «Расписание». Оно пока не связано с системой ALT, поэтому сверяйте его с офисом регистратора.', 'Сабақ кестесі «Сабақ кестесі» бөлімінде. Ол ALT жүйесімен әлі байланыспаған, тіркеу офисімен тексеріңіз.', 'The timetable is in the Schedule section. It is not connected to the ALT system yet, so check with the registrar.'),
@@ -169,9 +128,9 @@ export async function answer(input: string, language: Language): Promise<Assista
   }
   return {
     text: say(
-      'Я помощник ALT AI. Умею:\n• найти место в университете — «где актовый зал», «где аудитория В405»;\n• записать задачу — «добавь задачу сдать отчёт завтра»;\n• показать задачи — «мои задачи»;\n• распределить задачи по дням — «спланируй неделю»;\n• отметить выполненное — «готово 1».',
-      'Мен ALT AI көмекшісімін. Істей аламын:\n• университеттен орын табу — «акт залы қайда», «В405 аудитория қайда»;\n• тапсырма жазу — «тапсырма қос есеп тапсыру ертең»;\n• тапсырмаларды көрсету — «тапсырмаларым»;\n• күндерге бөлу — «аптаны жоспарла»;\n• орындалғанын белгілеу — «дайын 1».',
-      'I am the ALT AI assistant. I can:\n• find a place — "where is the assembly hall", "where is room B405";\n• add a task — "add task submit the report tomorrow";\n• show tasks — "my tasks";\n• spread tasks over days — "plan the week";\n• mark done — "done 1".',
+      'Я помощник ALT AI. Умею:\n• записать задачу — «добавь задачу сдать отчёт завтра»;\n• показать задачи — «мои задачи»;\n• распределить задачи по дням — «спланируй неделю»;\n• отметить выполненное — «готово 1».',
+      'Мен ALT AI көмекшісімін. Істей аламын:\n• тапсырма жазу — «тапсырма қос есеп тапсыру ертең»;\n• тапсырмаларды көрсету — «тапсырмаларым»;\n• күндерге бөлу — «аптаны жоспарла»;\n• орындалғанын белгілеу — «дайын 1».',
+      'I am the ALT AI assistant. I can:\n• add a task — "add task submit the report tomorrow";\n• show tasks — "my tasks";\n• spread tasks over days — "plan the week";\n• mark done — "done 1".',
     ),
   };
 }

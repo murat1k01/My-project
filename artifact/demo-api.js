@@ -421,8 +421,6 @@
     return { ok: true };
   }, true);
 
-  // План университета
-  add('GET', '/api/campus/places', () => ({ places: DATA.places || [], address: 'Алматы, ул. Шевченко, 97' }));
   // Тестовая привязка карты: в браузере хранятся только последние 4 цифры, срок и имя
   add('GET', '/api/payment-methods', ({ user }) => ({ cards: (load().cards || []).filter((c) => c.userId === user.id) }), true);
   add('POST', '/api/payment-methods', ({ user, body }) => {

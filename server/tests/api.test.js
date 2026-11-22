@@ -369,7 +369,7 @@ test('подписка в тестовом режиме: нужна своя т�
   assert.equal(pay.data.subscription.status, 'active');
 });
 
-test('сообщения студентам, задачи и план университета', async () => {
+test('сообщения студентам и задачи', async () => {
   const a = await register({ contact: 'msg-a@example.com' });
   const b = await register({ contact: 'msg-b@example.com' });
   assert.equal((await call('POST', `/api/messages/${b.user.id}`, { token: a.token, body: { text: '  ' } })).status, 400);
@@ -390,7 +390,4 @@ test('сообщения студентам, задачи и план униве
   assert.equal((await call('PATCH', `/api/todos/${todo.data.item.id}`, { token: a.token, body: { done: true } })).data.item.done, true);
   assert.equal((await call('GET', '/api/todos', { token: b.token })).data.items.length, 0);
 
-  const places = (await call('GET', '/api/campus/places')).data.places;
-  assert.ok(places.some((p) => p.name === 'Актовый зал' && p.floor === 2 && p.verified));
-  assert.equal((await call('POST', '/api/admin/places', { token: a.token, body: { name: 'Столовая', floor: 1 } })).status, 403);
 });

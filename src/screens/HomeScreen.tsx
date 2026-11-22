@@ -93,7 +93,7 @@ export default function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
             {[
               { title: t('quickSchedule'), image: images.serviceCal, onPress: () => navigation.navigate('ServiceDetails', { serviceId: 'cal' }) },
               { title: t('quickReading'), image: images.serviceLib, onPress: () => navigation.navigate('ServiceDetails', { serviceId: 'lib' }) },
-              { title: t('quickCampusPlan'), image: images.news2, onPress: () => navigation.navigate('CampusPlan') },
+              { title: t('quickPlan'), image: images.news2, onPress: () => navigation.navigate('ServiceDetails', { serviceId: 'lib', tab: 'plan' }) },
             ].map((item) => (
               <Pressable key={item.title} onPress={item.onPress} accessibilityRole="button" accessibilityLabel={item.title} style={({ pressed }) => [styles.quickCard, pressed && styles.quickPressed]}>
                 <ImageBackground source={item.image} style={styles.quickImage} imageStyle={styles.quickRadius}>
@@ -104,10 +104,9 @@ export default function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
             ))}
           </View>
 
-          {/* План университета и помощник ALT AI — сразу под быстрыми карточками */}
+          {/* Помощник ALT AI — сразу под быстрыми карточками */}
           <View style={styles.featureRow}>
             {[
-              { title: t('planTitle'), text: t('homePlanText'), icon: 'map' as const, colors: ['#2F6BFF', '#1E3A8A'] as const, onPress: () => navigation.navigate('CampusPlan') },
               { title: t('aiTitle'), text: t('homeAiText'), icon: 'sparkles' as const, colors: ['#7C3AED', '#312E81'] as const, onPress: () => navigation.navigate('Assistant') },
             ].map((item) => (
               <Pressable key={item.title} onPress={item.onPress} accessibilityRole="button" accessibilityLabel={item.title} style={({ pressed }) => [styles.featureCard, pressed && styles.quickPressed]}>
@@ -204,7 +203,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   featureInner: {
-    minHeight: 150,
+    minHeight: 110,
     padding: spacing.md,
     gap: spacing.xs,
     justifyContent: 'flex-end',

@@ -206,19 +206,6 @@ CREATE TABLE IF NOT EXISTS todo_items (
   created_at TEXT NOT NULL
 );
 
--- Места на плане университета: этаж, аудитория, вид. verified = 1 — сведения из официального источника
-CREATE TABLE IF NOT EXISTS campus_places (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  kind TEXT NOT NULL DEFAULT 'room',
-  building TEXT,
-  floor INTEGER NOT NULL,
-  room TEXT,
-  note TEXT,
-  source TEXT,
-  verified INTEGER NOT NULL DEFAULT 0
-);
-
 -- Главная защита от двойного бронирования: база сама не даст создать две активные брони на один интервал
 CREATE UNIQUE INDEX IF NOT EXISTS bookings_no_conflict ON bookings (machine_id, date, slot) WHERE canceled = 0;
 `;

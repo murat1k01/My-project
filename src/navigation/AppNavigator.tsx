@@ -17,7 +17,6 @@ import LibraryScreen from '../screens/LibraryScreen';
 import LoginScreen from '../screens/LoginScreen';
 import PaymentScreen from '../screens/PaymentScreen';
 import AssistantScreen from '../screens/AssistantScreen';
-import CampusPlanScreen from '../screens/CampusPlanScreen';
 import ChatScreen from '../screens/ChatScreen';
 import MessagesScreen from '../screens/MessagesScreen';
 import ProfileEditScreen from '../screens/ProfileEditScreen';
@@ -124,7 +123,6 @@ export default function AppNavigator() {
             <Stack.Screen name="Admin" component={AdminScreen} />
             <Stack.Screen name="EventRegistration" component={EventRegistrationScreen} />
             <Stack.Screen name="Payment" component={PaymentScreen} />
-            <Stack.Screen name="CampusPlan" component={CampusPlanScreen} />
             <Stack.Screen name="Assistant" component={AssistantScreen} />
             <Stack.Screen name="Messages" component={MessagesScreen} />
             <Stack.Screen name="Chat" component={ChatScreen} />

@@ -34,12 +34,24 @@ export default function StudentsScreen({ navigation }: MainTabScreenProps<'Stude
       subtitle={t('studentsSubtitle')}
       right={<IconButton icon="chatbubbles-outline" badge={unread} accessibilityLabel={t('msgTitle')} onPress={() => navigation.navigate('Messages')} />}
     >
-      <StudentsList onOpen={(studentId) => navigation.navigate('StudentProfile', { studentId })} />
+      <StudentsList
+        unread={unread}
+        onOpen={(studentId) => navigation.navigate('StudentProfile', { studentId })}
+        onWrite={(userId, name) => navigation.navigate('Chat', { userId, name })}
+        onOpenMessages={() => navigation.navigate('Messages')}
+      />
     </ScreenScroll>
   );
 }
 
-function StudentsList({ onOpen }: { onOpen: (id: string) => void }) {
+type ListProps = {
+  unread: number;
+  onOpen: (id: string) => void;
+  onWrite: (userId: string, name: string) => void;
+  onOpenMessages: () => void;
+};
+
+function StudentsList({ unread, onOpen, onWrite, onOpenMessages }: ListProps) {
   const { colors } = useTheme();
   const { t } = useI18n();
   const [query, setQuery] = useState('');
@@ -60,6 +72,7 @@ function StudentsList({ onOpen }: { onOpen: (id: string) => void }) {
 
   return (
     <View style={styles.content}>
+      <PrimaryButton title={unread > 0 ? t('msgOpenUnread', { n: unread }) : t('msgTitle')} icon="chatbubbles-outline" variant="glass" arrow onPress={onOpenMessages} />
       <PrimaryButton
         title={adding ? t('cancel') : t('addStudent')}
         icon={adding ? undefined : 'person-add-outline'}
@@ -92,12 +105,12 @@ function StudentsList({ onOpen }: { onOpen: (id: string) => void }) {
         onRetry={() => void reload()}
       >
         {data?.students.map((student) => (
+          <View key={student.id} style={[styles.card, { backgroundColor: colors.glass, borderColor: colors.border }]}>
           <Pressable
-            key={student.id}
             onPress={() => onOpen(student.id)}
             accessibilityRole="button"
             accessibilityLabel={`${student.firstName} ${student.lastName}`}
-            style={({ pressed }) => [styles.card, { backgroundColor: colors.glass, borderColor: colors.border }, pressed && styles.pressed]}
+            style={({ pressed }) => [styles.cardMain, pressed && styles.pressed]}
           >
             <Avatar firstName={student.firstName} lastName={student.lastName} seed={student.id} photo={student.photo} />
             <View style={styles.flex}>
@@ -115,6 +128,11 @@ function StudentsList({ onOpen }: { onOpen: (id: string) => void }) {
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
           </Pressable>
+          {/* Написать можно зарегистрированному студенту; запись, добавленная вручную, — не аккаунт */}
+          {student.addedByMe ? null : (
+            <IconButton icon="chatbubble-ellipses-outline" variant="primary" accessibilityLabel={t('msgWriteTo', { name: student.firstName })} onPress={() => onWrite(student.id, `${student.firstName} ${student.lastName}`)} />
+          )}
+          </View>
         ))}
       </StateView>
     </View>
@@ -176,6 +194,12 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: radius.md,
     borderWidth: 1,
+  },
+  cardMain: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
   },
   pressed: {
     opacity: 0.75,

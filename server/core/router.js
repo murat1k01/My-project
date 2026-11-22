@@ -135,7 +135,6 @@ const ADMIN_RESOURCES = {
   pages: { table: 'info_pages', pk: 'slug', order: 'sort', required: ['slug', 'title', 'body'], fields: { slug: 's', title: 's', body: 's', sort: 'i', image_url: 's' } },
   dorms: { table: 'dorms', pk: 'id', order: 'name', required: ['name'], fields: { name: 's', address: 's', contacts: 's', services: 's', rules: 's', hours: 's' } },
   machines: { table: 'machines', pk: 'id', order: 'dorm_id, name', required: ['dorm_id', 'name'], fields: { dorm_id: 's', floor: 'i', name: 's', status: 's' } },
-  places: { table: 'campus_places', pk: 'id', order: 'floor, name', required: ['name', 'floor'], fields: { name: 's', kind: 's', building: 's', floor: 'i', room: 's', note: 's', source: 's', verified: 'b' } },
   catalog: { table: 'catalog', pk: 'id', order: 'kind, name', required: ['kind', 'name'], fields: { kind: 's', name: 's' } },
 };
 
@@ -744,12 +743,6 @@ export function createRouter(db, deps) {
     if (result.changes === 0) throw new ApiError(404, 'not_found', 'Задача не найдена');
     return { ok: true };
   }, 'user');
-
-  // ---------- План университета ----------
-  add('GET', '/api/campus/places', () => ({
-    places: db.prepare('SELECT * FROM campus_places ORDER BY floor, name').all().map((row) => ({ ...camel(row), verified: !!row.verified })),
-    address: 'Алматы, ул. Шевченко, 97',
-  }));
 
   // ---------- Абонемент спорткомплекса ----------
   // Оплата проходит на месте, поэтому заявку подтверждает администратор: онлайн деньги не списываются.

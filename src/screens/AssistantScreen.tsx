@@ -66,7 +66,7 @@ export default function AssistantScreen({ navigation }: RootStackScreenProps<'As
     }
   };
 
-  const suggestions = [t('aiSuggestHall'), t('aiSuggestAdd'), t('aiSuggestPlan'), t('aiSuggestTasks')];
+  const suggestions = [t('aiSuggestAdd'), t('aiSuggestPlan'), t('aiSuggestTasks'), t('aiSuggestDone')];
   const items = todos.data?.items ?? [];
 
   return (
