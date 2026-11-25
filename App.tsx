@@ -9,7 +9,6 @@ import {
   Inter_700Bold,
   useFonts,
 } from '@expo-google-fonts/inter';
-import { PTSerif_400Regular, PTSerif_700Bold } from '@expo-google-fonts/pt-serif';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import SplashView from './src/components/SplashView';
 import { AppDataProvider, useAppData } from './src/context/AppDataContext';
@@ -35,14 +34,12 @@ export default function App() {
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
-    PTSerif_400Regular,
-    PTSerif_700Bold,
   });
 
-  // Пока шрифты грузятся (доли секунды) — просто фон цвета слоновой кости.
+  // Пока шрифты грузятся (доли секунды) — просто фирменный тёмный фон.
   // Если шрифты не загрузились, приложение всё равно запускается с системным шрифтом.
   if (!fontsLoaded && !fontError) {
-    return <View style={{ flex: 1, backgroundColor: '#F6F1E7' }} />;
+    return <View style={{ flex: 1, backgroundColor: '#04060F' }} />;
   }
 
   return (

@@ -71,7 +71,7 @@ export default function SettingsScreen({ navigation }: MainTabScreenProps<'Setti
             value={isDark}
             onValueChange={(value) => setMode(value ? 'dark' : 'light')}
             trackColor={{ false: colors.border, true: colors.primary }}
-            thumbColor="#FFFFFF"
+            thumbColor={Platform.OS === 'android' ? '#FFFFFF' : undefined}
             accessibilityLabel={t('darkTheme')}
           />
         </Row>

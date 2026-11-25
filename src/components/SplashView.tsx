@@ -13,9 +13,9 @@ type Props = {
 export default function SplashView({ message }: Props) {
   return (
     <View style={styles.container} accessibilityRole="progressbar" accessibilityLabel={message}>
-      <LinearGradient colors={['#A51C30', '#3A0A12'] as const} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={['#123A9C', '#04060F'] as const} style={StyleSheet.absoluteFill} />
       <Image source={images.heroEarth} style={styles.earth} resizeMode="cover" />
-      <LinearGradient colors={['#3A0A12', 'rgba(58, 10, 18, 0)'] as const} style={styles.earthFade} />
+      <LinearGradient colors={['#04060F', 'rgba(4, 6, 15, 0)'] as const} style={styles.earthFade} />
 
       <View style={styles.center}>
         <AnimatedLogo />
@@ -28,7 +28,7 @@ export default function SplashView({ message }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#3A0A12',
+    backgroundColor: '#04060F',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
