@@ -12,6 +12,9 @@ export const LANGUAGES: { code: Language; short: string; name: string }[] = [
 ];
 
 const ru = {
+  photoCredits: 'Авторы фото',
+  photoCreditsHide: 'Скрыть авторов фото',
+  photoCreditsNote: 'Фото взяты с Wikimedia Commons со свободными лицензиями. Это фото по теме разделов, а не снимки самого университета ALT.',
   twoGisAlt: 'ALT в 2ГИС',
   msgOpenUnread: 'Сообщения · новых {n}',
   msgWriteTo: 'Написать: {name}',
@@ -618,6 +621,9 @@ export type TranslationKey = keyof typeof ru;
 type Dictionary = Record<TranslationKey, string>;
 
 const kk: Dictionary = {
+  photoCredits: 'Фото авторлары',
+  photoCreditsHide: 'Фото авторларын жасыру',
+  photoCreditsNote: 'Фотолар Wikimedia Commons сайтынан еркін лицензиямен алынған. Бұл бөлімдер тақырыбына фото, ALT университетінің өз суреттері емес.',
   twoGisAlt: 'ALT 2ГИС-те',
   msgOpenUnread: 'Хабарламалар · жаңа {n}',
   msgWriteTo: 'Жазу: {name}',
@@ -1197,6 +1203,9 @@ const kk: Dictionary = {
 };
 
 const en: Dictionary = {
+  photoCredits: 'Photo credits',
+  photoCreditsHide: 'Hide photo credits',
+  photoCreditsNote: 'Photos come from Wikimedia Commons under free licences. They illustrate each section and are not photos of ALT University itself.',
   twoGisAlt: 'ALT in 2GIS',
   msgOpenUnread: 'Messages · {n} new',
   msgWriteTo: 'Message {name}',
