@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
   mark: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#2F6BFF',
+    backgroundColor: '#A51C30',
   },
   title: {
     fontFamily: fonts.regular,

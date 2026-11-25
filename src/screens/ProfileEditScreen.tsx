@@ -102,11 +102,11 @@ function EditForm({ onSaved }: { onSaved: () => void }) {
         <Text style={[type.subheading, { color: colors.text }]}>{t('privacyTitle')}</Text>
         <View style={styles.row}>
           <Text style={[type.body, styles.flex, { color: colors.textSecondary }]}>{t('privacyDirectory')}</Text>
-          <Switch value={showInDirectory} onValueChange={setShowInDirectory} trackColor={{ false: colors.border, true: colors.primary }} accessibilityLabel={t('privacyDirectory')} />
+          <Switch value={showInDirectory} onValueChange={setShowInDirectory} trackColor={{ false: colors.border, true: colors.primary }} thumbColor="#FFFFFF" accessibilityLabel={t('privacyDirectory')} />
         </View>
         <View style={styles.row}>
           <Text style={[type.body, styles.flex, { color: colors.textSecondary }]}>{t('privacyPhone')}</Text>
-          <Switch value={showPhone} onValueChange={setShowPhone} trackColor={{ false: colors.border, true: colors.primary }} accessibilityLabel={t('privacyPhone')} />
+          <Switch value={showPhone} onValueChange={setShowPhone} trackColor={{ false: colors.border, true: colors.primary }} thumbColor="#FFFFFF" accessibilityLabel={t('privacyPhone')} />
         </View>
       </GlassCard>
 

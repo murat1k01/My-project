@@ -1,81 +1,81 @@
 // Создано из assets/images/CREDITS.md: авторы и лицензии фото (Wikimedia Commons)
 export const PHOTO_CREDITS: { file: string; title: string; author: string; license: string; url: string }[] = [
   {
-    "file": "service_bus.jpg",
-    "title": "Алматы, автобус у остановки на Толе би-Розыбакиева.jpg",
-    "author": "Nikolai Bulykin",
-    "license": "CC BY-SA 4.0",
-    "url": "https://commons.wikimedia.org/wiki/File:%D0%90%D0%BB%D0%BC%D0%B0%D1%82%D1%8B,_%D0%B0%D0%B2%D1%82%D0%BE%D0%B1%D1%83%D1%81_%D1%83_%D0%BE%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%BA%D0%B8_%D0%BD%D0%B0_%D0%A2%D0%BE%D0%BB%D0%B5_%D0%B1%D0%B8-%D0%A0%D0%BE%D0%B7%D1%8B%D0%B1%D0%B0%D0%BA%D0%B8%D0%B5%D0%B2%D0%B0.jpg"
-  },
-  {
-    "file": "service_food.jpg",
-    "title": "Cafeteria in National Tsing Hua University.jpg",
-    "author": "Tbatb",
-    "license": "CC BY-SA 4.0",
-    "url": "https://commons.wikimedia.org/wiki/File:Cafeteria_in_National_Tsing_Hua_University.jpg"
-  },
-  {
-    "file": "service_lib.jpg",
-    "title": "Bookshelves and interior of the library of the Academy for Judiciary.jpg",
-    "author": "Szeronine",
-    "license": "CC BY 4.0",
-    "url": "https://commons.wikimedia.org/wiki/File:Bookshelves_and_interior_of_the_library_of_the_Academy_for_Judiciary.jpg"
-  },
-  {
-    "file": "service_sport.jpg",
-    "title": "Fitness & Wellness Center of Mandarin Oriental, Taipei 05 20260206.jpg",
-    "author": "阿道",
-    "license": "CC BY-SA 4.0",
-    "url": "https://commons.wikimedia.org/wiki/File:Fitness_%26_Wellness_Center_of_Mandarin_Oriental,_Taipei_05_20260206.jpg"
-  },
-  {
-    "file": "service_lms.jpg",
-    "title": "10 Students Collaborating On Laptop Hands On.jpg",
-    "author": "Gkm563",
-    "license": "CC0",
-    "url": "https://commons.wikimedia.org/wiki/File:10_Students_Collaborating_On_Laptop_Hands_On.jpg"
-  },
-  {
-    "file": "service_cal.jpg",
-    "title": "Mathematics lecture at the Helsinki University of Technology.jpg",
-    "author": "Tungsten",
-    "license": "Public domain",
-    "url": "https://commons.wikimedia.org/wiki/File:Mathematics_lecture_at_the_Helsinki_University_of_Technology.jpg"
-  },
-  {
-    "file": "service_dorm.jpg",
-    "title": "Roberts residence hall ut austin.jpg",
-    "author": "Larry D. Moore",
-    "license": "CC BY 4.0",
-    "url": "https://commons.wikimedia.org/wiki/File:Roberts_residence_hall_ut_austin.jpg"
-  },
-  {
     "file": "hero_earth.jpg",
-    "title": "Talgar Pass, Shymbulak, Almaty (P1180195-Pano).jpg",
-    "author": "Matti Blume",
-    "license": "CC BY-SA 4.0",
-    "url": "https://commons.wikimedia.org/wiki/File:Talgar_Pass,_Shymbulak,_Almaty_(P1180195-Pano).jpg"
+    "title": "Harvard Yard in autumn, Boston, Massachusetts, 2015.jpg",
+    "author": "Nina R from Africa",
+    "license": "CC BY 2.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Harvard_Yard_in_autumn,_Boston,_Massachusetts,_2015.jpg"
   },
   {
     "file": "service_info.jpg",
-    "title": "Алматы, улица Шевченко у парка Ганди.jpg",
-    "author": "Nikolai Bulykin",
+    "title": "Johnston Gate, Harvard, Cambridge MA.jpg",
+    "author": "John Phelan",
+    "license": "CC BY 3.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Johnston_Gate,_Harvard,_Cambridge_MA.jpg"
+  },
+  {
+    "file": "service_food.jpg",
+    "title": "Adams House Dining Hall.JPG",
+    "author": "JJH",
+    "license": "Public domain",
+    "url": "https://commons.wikimedia.org/wiki/File:Adams_House_Dining_Hall.JPG"
+  },
+  {
+    "file": "service_lib.jpg",
+    "title": "Harvard University, Baker Business Library, reading room - DPLA - 14ac8c8ebc286ff258d9895ed0615cd3.jpg",
+    "author": "автор неизвестен (Harvard University, DPLA)",
+    "license": "Public domain",
+    "url": "https://commons.wikimedia.org/wiki/File:Harvard_University,_Baker_Business_Library,_reading_room_-_DPLA_-_14ac8c8ebc286ff258d9895ed0615cd3.jpg"
+  },
+  {
+    "file": "service_cal.jpg",
+    "title": "Sanders theatre inside 3.JPG",
+    "author": "chensiyuan",
     "license": "CC BY-SA 4.0",
-    "url": "https://commons.wikimedia.org/wiki/File:%D0%90%D0%BB%D0%BC%D0%B0%D1%82%D1%8B,_%D1%83%D0%BB%D0%B8%D1%86%D0%B0_%D0%A8%D0%B5%D0%B2%D1%87%D0%B5%D0%BD%D0%BA%D0%BE_%D1%83_%D0%BF%D0%B0%D1%80%D0%BA%D0%B0_%D0%93%D0%B0%D0%BD%D0%B4%D0%B8.jpg"
+    "url": "https://commons.wikimedia.org/wiki/File:Sanders_theatre_inside_3.JPG"
+  },
+  {
+    "file": "service_lms.jpg",
+    "title": "Study Group.JPG",
+    "author": "Tbuckley89",
+    "license": "CC BY-SA 3.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Study_Group.JPG"
+  },
+  {
+    "file": "service_sport.jpg",
+    "title": "Harvard stadium 2009h.JPG",
+    "author": "chensiyuan",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Harvard_stadium_2009h.JPG"
+  },
+  {
+    "file": "service_dorm.jpg",
+    "title": "Harvard University - Eliot House (4717293674).jpg",
+    "author": "Roger W from Sarasota, Florida, U.S.A.",
+    "license": "CC BY-SA 2.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Harvard_University_-_Eliot_House_(4717293674).jpg"
+  },
+  {
+    "file": "service_bus.jpg",
+    "title": "Harvard Shuttle, October 2014.jpg",
+    "author": "Jason Lawrence from Boston",
+    "license": "CC BY 2.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Harvard_Shuttle,_October_2014.jpg"
   },
   {
     "file": "news_2.jpg",
-    "title": "HCMC Students in hallway.JPG",
-    "author": "Dragfyre",
-    "license": "CC BY-SA 3.0",
-    "url": "https://commons.wikimedia.org/wiki/File:HCMC_Students_in_hallway.JPG"
+    "title": "Harvard Class of 2015 graduates in Harvard Yard.jpg",
+    "author": "Wgreaves",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Harvard_Class_of_2015_graduates_in_Harvard_Yard.jpg"
   },
   {
     "file": "news_3.jpg",
-    "title": "Students at Lecture Hall.jpg",
-    "author": "Zahraswaty",
-    "license": "CC BY 4.0",
-    "url": "https://commons.wikimedia.org/wiki/File:Students_at_Lecture_Hall.jpg"
+    "title": "Harvard University Widener Library.jpg",
+    "author": "Joseph Williams",
+    "license": "CC BY 2.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Harvard_University_Widener_Library.jpg"
   },
   {
     "file": "food_oatmeal.jpg",
@@ -191,8 +191,8 @@ export const PHOTO_CREDITS: { file: string; title: string; author: string; licen
   },
   {
     "file": "food_icedtea.jpg",
-    "title": "Pitcher and glass of iced tea - Evan Swigart.jpg, Evan Swigart from Chicago",
-    "author": "USA",
+    "title": "Pitcher and glass of iced tea - Evan Swigart.jpg",
+    "author": "Evan Swigart from Chicago, USA",
     "license": "CC BY 2.0",
     "url": "https://commons.wikimedia.org/wiki/File:Pitcher_and_glass_of_iced_tea_-_Evan_Swigart.jpg"
   }

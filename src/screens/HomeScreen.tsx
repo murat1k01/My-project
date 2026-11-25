@@ -107,7 +107,7 @@ export default function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
           {/* Помощник ALT AI — сразу под быстрыми карточками */}
           <View style={styles.featureRow}>
             {[
-              { title: t('aiTitle'), text: t('homeAiText'), icon: 'sparkles' as const, colors: ['#7C3AED', '#312E81'] as const, onPress: () => navigation.navigate('Assistant') },
+              { title: t('aiTitle'), text: t('homeAiText'), icon: 'sparkles' as const, colors: ['#A51C30', '#5E0F1C'] as const, onPress: () => navigation.navigate('Assistant') },
             ].map((item) => (
               <Pressable key={item.title} onPress={item.onPress} accessibilityRole="button" accessibilityLabel={item.title} style={({ pressed }) => [styles.featureCard, pressed && styles.quickPressed]}>
                 <LinearGradient colors={item.colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.featureInner}>

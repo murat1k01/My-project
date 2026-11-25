@@ -1,10 +1,11 @@
 // Ищет на Wikimedia Commons свободно лицензированные фото для разделов ALTushki и скачивает кандидатов.
 // Запуск: node server/tools/fetch-service-photos.mjs <папка>
 // В папке появятся <ключ>_<n>.jpg и candidates.json с автором, лицензией и ссылкой.
-import { mkdirSync, writeFileSync } from 'node:fs';
+// QUERIES_FILE=<json> задаёт свои запросы { ключ: [запросы] } вместо встроенных.
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const QUERIES = process.env.ROUND === '2' ? {
+const QUERIES = process.env.QUERIES_FILE ? JSON.parse(readFileSync(process.env.QUERIES_FILE, 'utf8')) : process.env.ROUND === '2' ? {
   alt: ['Tynyshpayev', 'KazATK', 'Shevchenko Street Almaty'],
   food: ['student cafeteria interior', 'canteen interior tables', 'self-service canteen'],
   lib: ['library bookshelves interior', 'library interior reading tables', 'National Academic Library Kazakhstan'],

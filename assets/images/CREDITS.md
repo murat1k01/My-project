@@ -1,18 +1,18 @@
-# Фото разделов с Wikimedia Commons
+# Фото разделов: кампус Гарвардского университета (Wikimedia Commons)
 
-Фото по теме разделов, а не снимки самого университета ALT. service_bus.jpg — автобус в Алматы, service_info.jpg — улица Шевченко в Алматы, hero_earth.jpg — горы Шымбулак.
+Снимки Гарварда (Кембридж, США) со свободными лицензиями — для оформления в стиле Гарварда. Это не фото университета ALT.
 
-- service_bus.jpg: Алматы, автобус у остановки на Толе би-Розыбакиева.jpg, Nikolai Bulykin, CC BY-SA 4.0, https://commons.wikimedia.org/wiki/File:%D0%90%D0%BB%D0%BC%D0%B0%D1%82%D1%8B,_%D0%B0%D0%B2%D1%82%D0%BE%D0%B1%D1%83%D1%81_%D1%83_%D0%BE%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%BA%D0%B8_%D0%BD%D0%B0_%D0%A2%D0%BE%D0%BB%D0%B5_%D0%B1%D0%B8-%D0%A0%D0%BE%D0%B7%D1%8B%D0%B1%D0%B0%D0%BA%D0%B8%D0%B5%D0%B2%D0%B0.jpg
-- service_food.jpg: Cafeteria in National Tsing Hua University.jpg, Tbatb, CC BY-SA 4.0, https://commons.wikimedia.org/wiki/File:Cafeteria_in_National_Tsing_Hua_University.jpg
-- service_lib.jpg: Bookshelves and interior of the library of the Academy for Judiciary.jpg, Szeronine, CC BY 4.0, https://commons.wikimedia.org/wiki/File:Bookshelves_and_interior_of_the_library_of_the_Academy_for_Judiciary.jpg
-- service_sport.jpg: Fitness & Wellness Center of Mandarin Oriental, Taipei 05 20260206.jpg, 阿道, CC BY-SA 4.0, https://commons.wikimedia.org/wiki/File:Fitness_%26_Wellness_Center_of_Mandarin_Oriental,_Taipei_05_20260206.jpg
-- service_lms.jpg: 10 Students Collaborating On Laptop Hands On.jpg, Gkm563, CC0, https://commons.wikimedia.org/wiki/File:10_Students_Collaborating_On_Laptop_Hands_On.jpg
-- service_cal.jpg: Mathematics lecture at the Helsinki University of Technology.jpg, Tungsten, Public domain, https://commons.wikimedia.org/wiki/File:Mathematics_lecture_at_the_Helsinki_University_of_Technology.jpg
-- service_dorm.jpg: Roberts residence hall ut austin.jpg, Larry D. Moore, CC BY 4.0, https://commons.wikimedia.org/wiki/File:Roberts_residence_hall_ut_austin.jpg
-- hero_earth.jpg: Talgar Pass, Shymbulak, Almaty (P1180195-Pano).jpg, Matti Blume, CC BY-SA 4.0, https://commons.wikimedia.org/wiki/File:Talgar_Pass,_Shymbulak,_Almaty_(P1180195-Pano).jpg
-- service_info.jpg: Алматы, улица Шевченко у парка Ганди.jpg, Nikolai Bulykin, CC BY-SA 4.0, https://commons.wikimedia.org/wiki/File:%D0%90%D0%BB%D0%BC%D0%B0%D1%82%D1%8B,_%D1%83%D0%BB%D0%B8%D1%86%D0%B0_%D0%A8%D0%B5%D0%B2%D1%87%D0%B5%D0%BD%D0%BA%D0%BE_%D1%83_%D0%BF%D0%B0%D1%80%D0%BA%D0%B0_%D0%93%D0%B0%D0%BD%D0%B4%D0%B8.jpg
-- news_2.jpg: HCMC Students in hallway.JPG, Dragfyre, CC BY-SA 3.0, https://commons.wikimedia.org/wiki/File:HCMC_Students_in_hallway.JPG
-- news_3.jpg: Students at Lecture Hall.jpg, Zahraswaty, CC BY 4.0, https://commons.wikimedia.org/wiki/File:Students_at_Lecture_Hall.jpg
+- hero_earth.jpg: Harvard Yard in autumn, Boston, Massachusetts, 2015.jpg, Nina R from Africa, CC BY 2.0, https://commons.wikimedia.org/wiki/File:Harvard_Yard_in_autumn,_Boston,_Massachusetts,_2015.jpg
+- service_info.jpg: Johnston Gate, Harvard, Cambridge MA.jpg, John Phelan, CC BY 3.0, https://commons.wikimedia.org/wiki/File:Johnston_Gate,_Harvard,_Cambridge_MA.jpg
+- service_food.jpg: Adams House Dining Hall.JPG, JJH, Public domain, https://commons.wikimedia.org/wiki/File:Adams_House_Dining_Hall.JPG
+- service_lib.jpg: Harvard University, Baker Business Library, reading room - DPLA - 14ac8c8ebc286ff258d9895ed0615cd3.jpg, автор неизвестен (Harvard University, DPLA), Public domain, https://commons.wikimedia.org/wiki/File:Harvard_University,_Baker_Business_Library,_reading_room_-_DPLA_-_14ac8c8ebc286ff258d9895ed0615cd3.jpg
+- service_cal.jpg: Sanders theatre inside 3.JPG, chensiyuan, CC BY-SA 4.0, https://commons.wikimedia.org/wiki/File:Sanders_theatre_inside_3.JPG
+- service_lms.jpg: Study Group.JPG, Tbuckley89, CC BY-SA 3.0, https://commons.wikimedia.org/wiki/File:Study_Group.JPG
+- service_sport.jpg: Harvard stadium 2009h.JPG, chensiyuan, CC BY-SA 4.0, https://commons.wikimedia.org/wiki/File:Harvard_stadium_2009h.JPG
+- service_dorm.jpg: Harvard University - Eliot House (4717293674).jpg, Roger W from Sarasota, Florida, U.S.A., CC BY-SA 2.0, https://commons.wikimedia.org/wiki/File:Harvard_University_-_Eliot_House_(4717293674).jpg
+- service_bus.jpg: Harvard Shuttle, October 2014.jpg, Jason Lawrence from Boston, CC BY 2.0, https://commons.wikimedia.org/wiki/File:Harvard_Shuttle,_October_2014.jpg
+- news_2.jpg: Harvard Class of 2015 graduates in Harvard Yard.jpg, Wgreaves, CC BY-SA 4.0, https://commons.wikimedia.org/wiki/File:Harvard_Class_of_2015_graduates_in_Harvard_Yard.jpg
+- news_3.jpg: Harvard University Widener Library.jpg, Joseph Williams, CC BY 2.0, https://commons.wikimedia.org/wiki/File:Harvard_University_Widener_Library.jpg
 
 # Фото блюд с Wikimedia Commons
 
