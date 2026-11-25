@@ -1,6 +1,6 @@
 /**
  * Фотографии хранятся в assets/images, поэтому приложение работает без интернета.
- * Источник: Wikimedia Commons (свободные лицензии), авторы в assets/images/CREDITS.md и в «Настройках» → «Авторы фото».
+ * Источник: Unsplash (бесплатная лицензия Unsplash License); фото блюд — Wikimedia Commons, авторы в assets/images/CREDITS.md.
  */
 export const images = {
   heroEarth: require('../../assets/images/hero_earth.jpg'),

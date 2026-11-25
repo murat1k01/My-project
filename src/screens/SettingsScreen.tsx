@@ -11,7 +11,6 @@ import { useAuth } from '../context/AuthContext';
 import { useSignOut } from '../hooks/useSignOut';
 import { useI18n } from '../i18n/LanguageContext';
 import { LANGUAGES } from '../i18n/translations';
-import { PHOTO_CREDITS } from '../data/photoCredits';
 import type { MainTabScreenProps } from '../navigation/types';
 import { FONT_SCALE_MAX, FONT_SCALE_MIN, FONT_SCALE_STEP, useFontScale } from '../theme/FontScaleContext';
 import { useTheme } from '../theme/ThemeContext';
@@ -27,7 +26,6 @@ export default function SettingsScreen({ navigation }: MainTabScreenProps<'Setti
   const signOut = useSignOut();
   // Пока ползунок двигают, меняется только подпись; размер всего приложения применяется, когда его отпустили
   const [dragging, setDragging] = useState<number | null>(null);
-  const [showCredits, setShowCredits] = useState(false);
   const draftScale = dragging ?? scale;
 
   const appVersion = Constants.expoConfig?.version ?? t('notSpecified');
@@ -94,17 +92,6 @@ export default function SettingsScreen({ navigation }: MainTabScreenProps<'Setti
         <Row icon="school-outline" label={t('appNameLabel')} value={t('appName')} />
         <Row icon="pricetag-outline" label={t('version')} value={appVersion} />
         <Row icon="phone-portrait-outline" label={t('platform')} value={platformName} />
-        <PrimaryButton title={showCredits ? t('photoCreditsHide') : t('photoCredits')} icon="images-outline" variant="glass" compact style={styles.button} onPress={() => setShowCredits((prev) => !prev)} />
-        {showCredits ? (
-          <View style={styles.credits}>
-            <Text style={[type.caption, { color: colors.textMuted }]}>{t('photoCreditsNote')}</Text>
-            {PHOTO_CREDITS.map((item) => (
-              <Text key={item.file} style={[type.caption, { color: colors.textSecondary }]}>
-                {item.title} — {item.author}, {item.license}
-              </Text>
-            ))}
-          </View>
-        ) : null}
       </Section>
 
       {user ? <PrimaryButton title={t('signOut')} variant="danger" icon="log-out-outline" onPress={signOut} /> : null}
@@ -199,9 +186,5 @@ const styles = StyleSheet.create({
   },
   button: {
     marginBottom: spacing.sm,
-  },
-  credits: {
-    gap: 4,
-    paddingBottom: spacing.sm,
   },
 });
