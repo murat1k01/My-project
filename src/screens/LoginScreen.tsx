@@ -107,7 +107,7 @@ export default function LoginScreen({ navigation }: RootStackScreenProps<'Login'
         />
         <View style={styles.row}>
           <Text style={[type.body, styles.flex, { color: colors.text }]}>{t('rememberMe')}</Text>
-          <Switch value={remember} onValueChange={setRemember} trackColor={{ false: colors.border, true: colors.primary }} accessibilityLabel={t('rememberMe')} />
+          <Switch value={remember} onValueChange={setRemember} trackColor={{ false: colors.border, true: colors.primary }} thumbColor="#FFFFFF" {...{ activeThumbColor: "#FFFFFF" }} accessibilityLabel={t('rememberMe')} />
         </View>
         <PrimaryButton title={t('signIn')} arrow loading={submitting} onPress={handleSubmit} />
         <PrimaryButton title={t('forgotPassword')} variant="glass" compact onPress={() => navigation.navigate('Forgot')} />

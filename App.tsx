@@ -9,6 +9,7 @@ import {
   Inter_700Bold,
   useFonts,
 } from '@expo-google-fonts/inter';
+import { EBGaramond_500Medium, EBGaramond_600SemiBold } from '@expo-google-fonts/eb-garamond';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import SplashView from './src/components/SplashView';
 import { AppDataProvider, useAppData } from './src/context/AppDataContext';
@@ -34,12 +35,14 @@ export default function App() {
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
+    EBGaramond_500Medium,
+    EBGaramond_600SemiBold,
   });
 
-  // Пока шрифты грузятся (доли секунды) — просто фирменный тёмный фон.
+  // Пока шрифты грузятся (доли секунды) — просто фон цвета слоновой кости.
   // Если шрифты не загрузились, приложение всё равно запускается с системным шрифтом.
   if (!fontsLoaded && !fontError) {
-    return <View style={{ flex: 1, backgroundColor: '#04060F' }} />;
+    return <View style={{ flex: 1, backgroundColor: '#F8F6EF' }} />;
   }
 
   return (

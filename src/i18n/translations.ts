@@ -12,6 +12,9 @@ export const LANGUAGES: { code: Language; short: string; name: string }[] = [
 ];
 
 const ru = {
+  photoCreditsNote: 'Фото Оксфордского университета (Великобритания) с Wikimedia Commons, со свободными лицензиями. Оформление в стиле Оксфорда; это не снимки университета ALT.',
+  photoCredits: 'Авторы фото',
+  photoCreditsHide: 'Скрыть авторов фото',
   twoGisAlt: 'ALT в 2ГИС',
   msgOpenUnread: 'Сообщения · новых {n}',
   msgWriteTo: 'Написать: {name}',
@@ -618,6 +621,9 @@ export type TranslationKey = keyof typeof ru;
 type Dictionary = Record<TranslationKey, string>;
 
 const kk: Dictionary = {
+  photoCreditsNote: 'Оксфорд университетінің фотолары (Ұлыбритания), Wikimedia Commons, еркін лицензия. Оксфорд стиліндегі безендіру; бұл ALT университетінің суреттері емес.',
+  photoCredits: 'Фото авторлары',
+  photoCreditsHide: 'Фото авторларын жасыру',
   twoGisAlt: 'ALT 2ГИС-те',
   msgOpenUnread: 'Хабарламалар · жаңа {n}',
   msgWriteTo: 'Жазу: {name}',
@@ -1197,6 +1203,9 @@ const kk: Dictionary = {
 };
 
 const en: Dictionary = {
+  photoCreditsNote: 'Photos of the University of Oxford (UK) from Wikimedia Commons under free licences. Oxford-inspired styling; these are not photos of ALT University.',
+  photoCredits: 'Photo credits',
+  photoCreditsHide: 'Hide photo credits',
   twoGisAlt: 'ALT in 2GIS',
   msgOpenUnread: 'Messages · {n} new',
   msgWriteTo: 'Message {name}',

@@ -1,3 +1,19 @@
+# Фото разделов: Оксфордский университет (Wikimedia Commons)
+
+Снимки Оксфорда (Великобритания) со свободными лицензиями — для оформления в стиле Оксфорда. Это не фото университета ALT.
+
+- hero_earth.jpg: Radcliffe Camera Oxford 2018 03.jpg, Julian Herzog (Website), CC BY 4.0, https://commons.wikimedia.org/wiki/File:Radcliffe_Camera_Oxford_2018_03.jpg
+- service_info.jpg: University Of Oxford The Bridge Of Sighs.jpg, Michael D Beckwith, CC0, https://commons.wikimedia.org/wiki/File:University_Of_Oxford_The_Bridge_Of_Sighs.jpg
+- service_food.jpg: Christ Church Great Hall.jpg, Tristan Surtel, CC BY-SA 4.0, https://commons.wikimedia.org/wiki/File:Christ_Church_Great_Hall.jpg
+- service_lib.jpg: Duke Humfrey's Library Interior 6, Bodleian Library, Oxford, UK - Diliff.jpg, Diliff, CC BY-SA 3.0, https://commons.wikimedia.org/wiki/File:Duke_Humfrey%27s_Library_Interior_6,_Bodleian_Library,_Oxford,_UK_-_Diliff.jpg
+- service_cal.jpg: Sheldonian Theatre Interior, Oxford, UK - Diliff.jpg, Diliff, CC BY-SA 3.0, https://commons.wikimedia.org/wiki/File:Sheldonian_Theatre_Interior,_Oxford,_UK_-_Diliff.jpg
+- service_lms.jpg: Duke Humfrey's Library Interior 3, Bodleian Library, Oxford, UK - Diliff.jpg, Diliff, CC BY-SA 3.0, https://commons.wikimedia.org/wiki/File:Duke_Humfrey%27s_Library_Interior_3,_Bodleian_Library,_Oxford,_UK_-_Diliff.jpg
+- service_sport.jpg: Oxford rowing afternoon.jpg, Winky, CC BY 2.0, https://commons.wikimedia.org/wiki/File:Oxford_rowing_afternoon.jpg
+- service_dorm.jpg: Tom Quad, Christ Church, Oxford 2025-05-04.jpg, Andy Li, CC0, https://commons.wikimedia.org/wiki/File:Tom_Quad,_Christ_Church,_Oxford_2025-05-04.jpg
+- service_bus.jpg: 20190918 Oxford Bus 841.jpg, User:Alex Noble, CC0, https://commons.wikimedia.org/wiki/File:20190918_Oxford_Bus_841.jpg
+- news_2.jpg: Oxford - Catte street - Graduation ceremony in the Sheldonian theatre (june 2011) 04.jpg, Txllxt TxllxT, CC BY-SA 4.0, https://commons.wikimedia.org/wiki/File:Oxford_-_Catte_street_-_Graduation_ceremony_in_the_Sheldonian_theatre_(june_2011)_04.jpg
+- news_3.jpg: Weston Library Exterior by John Cairns 20.3.15-27.jpg, John Cairns photography, work commissioned by the Bodleian Libraries, CC BY-SA 4.0, https://commons.wikimedia.org/wiki/File:Weston_Library_Exterior_by_John_Cairns_20.3.15-27.jpg
+
 # Фото блюд с Wikimedia Commons
 
 - food_oatmeal.jpg: Oatmeal porridge 1-minute with additional ingredients.jpg, UserTwoSix, CC BY-SA 4.0, https://commons.wikimedia.org/wiki/File:Oatmeal_porridge_1-minute_with_additional_ingredients.jpg
