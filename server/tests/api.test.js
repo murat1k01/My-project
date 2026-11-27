@@ -391,3 +391,77 @@ test('сообщения студентам и задачи', async () => {
   assert.equal((await call('GET', '/api/todos', { token: b.token })).data.items.length, 0);
 
 });
+
+test('объявления: маркетплейс и находки, права автора, модерация, сообщение автору', async () => {
+  const seller = await register({ contact: 'seller@example.com' });
+  const buyer = await register({ contact: 'buyer@example.com' });
+  // Продавец скрыт из списка студентов, но написать автору объявления можно
+  await call('PUT', '/api/me', { token: seller.token, body: { ...student(), showInDirectory: false } });
+  assert.equal((await call('POST', '/api/listings', { token: seller.token, body: { kind: 'market', title: 'Учебник', price: 'дорого' } })).status, 400, 'цена числом');
+  assert.equal((await call('POST', '/api/listings', { token: seller.token, body: { kind: 'other', title: 'Учебник' } })).status, 400);
+  const item = await call('POST', '/api/listings', { token: seller.token, body: { kind: 'market', title: 'Учебник по Python', price: 6000, category: 'Книги' } });
+  assert.equal(item.status, 201);
+  const lost = await call('POST', '/api/listings', { token: buyer.token, body: { kind: 'lost', title: 'Рюкзак чёрный', place: 'А-корпус', eventDate: '2026-11-20' } });
+  assert.equal(lost.status, 201);
+  assert.equal(lost.data.listing.price, null);
+  const market = (await call('GET', '/api/listings?kind=market&q=python', { token: buyer.token })).data.listings;
+  assert.equal(market.length, 1);
+  assert.equal(market[0].mine, false);
+  assert.equal((await call('POST', `/api/messages/${seller.user.id}`, { token: buyer.token, body: { text: 'Учебник ещё продаётся?' } })).status, 201);
+  assert.equal((await call('PATCH', `/api/listings/${item.data.listing.id}`, { token: buyer.token, body: { status: 'closed' } })).status, 404, 'чужое закрыть нельзя');
+  assert.equal((await call('POST', `/api/listings/${item.data.listing.id}/report`, { token: buyer.token })).status, 200);
+  const admin = (await call('POST', '/api/auth/login', { body: { contact: 'admin@example.com', password: 'Passw0rd123' } })).data;
+  assert.equal((await call('GET', '/api/admin/listings', { token: buyer.token })).status, 403);
+  assert.equal((await call('GET', '/api/admin/listings', { token: admin.token })).data.items[0].reports, 1);
+  assert.equal((await call('PATCH', `/api/listings/${item.data.listing.id}`, { token: seller.token, body: { status: 'closed' } })).status, 200);
+  assert.equal((await call('GET', '/api/listings?kind=market', { token: buyer.token })).data.listings.length, 0, 'закрытое не видно другим');
+  assert.equal((await call('GET', '/api/listings?kind=market', { token: seller.token })).data.listings.length, 1, 'автор видит своё');
+  assert.equal((await call('DELETE', `/api/listings/${lost.data.listing.id}`, { token: admin.token })).status, 200, 'администратор удаляет');
+});
+
+test('учебные комнаты: бронь, занятое время, лимит и отмена', async () => {
+  const a = await register({ contact: 'study-a@example.com' });
+  const b = await register({ contact: 'study-b@example.com' });
+  const { rooms, slots } = (await call('GET', '/api/study-rooms', { token: a.token })).data;
+  assert.ok(rooms.length > 0);
+  const date = tomorrow();
+  const first = await call('POST', '/api/study-bookings', { token: a.token, body: { roomId: rooms[0].id, date, slot: slots[0] } });
+  assert.equal(first.status, 201);
+  assert.equal((await call('POST', '/api/study-bookings', { token: b.token, body: { roomId: rooms[0].id, date, slot: slots[0] } })).status, 409);
+  const view = (await call('GET', `/api/study-rooms/${rooms[0].id}/slots?date=${date}`, { token: b.token })).data.slots;
+  assert.equal(view[0].state, 'busy');
+  assert.equal((await call('POST', '/api/study-bookings', { token: a.token, body: { roomId: rooms[0].id, date, slot: slots[1] } })).status, 201);
+  assert.equal((await call('POST', '/api/study-bookings', { token: a.token, body: { roomId: rooms[0].id, date, slot: slots[2] } })).status, 403, 'лимит броней');
+  assert.equal((await call('DELETE', `/api/study-bookings/${first.data.booking.id}`, { token: b.token })).status, 404, 'чужую бронь не отменить');
+  assert.equal((await call('DELETE', `/api/study-bookings/${first.data.booking.id}`, { token: a.token })).status, 200);
+  assert.equal((await call('GET', '/api/study-bookings', { token: a.token })).data.bookings.length, 1);
+});
+
+test('кошелёк: только тестовый режим, своя карта, баланс не уходит в минус', async () => {
+  const { token } = await register({ contact: 'wallet@example.com' });
+  assert.equal((await call('GET', '/api/wallet', { token })).data.balance, 0);
+  assert.equal((await call('POST', '/api/wallet/topup', { token, body: { amount: 5000 } })).status, 501, 'без тестового режима оплаты нет');
+  assert.equal((await call('POST', '/api/wallet/topup', { token, body: { amount: 5000, mode: 'test' } })).status, 400, 'нужна карта');
+  await call('POST', '/api/payment-methods', { token, body: { mode: 'test', holder: 'TEST USER', last4: '4242', expMonth: '12', expYear: '2031' } });
+  const card = (await call('GET', '/api/payment-methods', { token })).data.cards[0];
+  const top = await call('POST', '/api/wallet/topup', { token, body: { amount: 5000, mode: 'test', paymentMethodId: card.id } });
+  assert.equal(top.data.balance, 5000);
+  assert.equal((await call('POST', '/api/wallet/pay', { token, body: { amount: 9000, purpose: 'food', mode: 'test' } })).status, 409, 'недостаточно средств');
+  const pay = await call('POST', '/api/wallet/pay', { token, body: { amount: 1200, purpose: 'food', mode: 'test' } });
+  assert.equal(pay.data.balance, 3800);
+  assert.ok(pay.data.transactions[0].title.includes('тест'));
+});
+
+test('документы: запрос справки, статус меняет только администратор', async () => {
+  const { token } = await register({ contact: 'docs@example.com' });
+  assert.equal((await call('POST', '/api/documents', { token, body: { docType: 'passport' } })).status, 400);
+  assert.equal((await call('POST', '/api/documents', { token, body: { docType: 'statement', comment: '' } })).status, 400, 'заявлению нужен текст');
+  const req = await call('POST', '/api/documents', { token, body: { docType: 'enrollment', comment: 'Для военкомата' } });
+  assert.equal(req.status, 201);
+  assert.equal((await call('PATCH', `/api/admin/documents/${req.data.request.id}`, { token, body: { status: 'ready' } })).status, 403);
+  const admin = (await call('POST', '/api/auth/login', { body: { contact: 'admin@example.com', password: 'Passw0rd123' } })).data;
+  assert.equal((await call('PATCH', `/api/admin/documents/${req.data.request.id}`, { token: admin.token, body: { status: 'ready' } })).status, 200);
+  const mine = (await call('GET', '/api/documents', { token })).data.requests[0];
+  assert.equal(mine.status, 'ready');
+  assert.equal(mine.history.length, 2);
+});

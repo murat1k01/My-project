@@ -24,6 +24,11 @@ import SearchScreen from '../screens/SearchScreen';
 import StudentCardScreen from '../screens/StudentCardScreen';
 import CareersScreen from '../screens/CareersScreen';
 import AllServicesScreen from '../screens/AllServicesScreen';
+import MarketplaceScreen from '../screens/MarketplaceScreen';
+import LostFoundScreen from '../screens/LostFoundScreen';
+import StudyRoomScreen from '../screens/StudyRoomScreen';
+import WalletScreen from '../screens/WalletScreen';
+import DocumentsScreen from '../screens/DocumentsScreen';
 import ProfileEditScreen from '../screens/ProfileEditScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import RegisterScreen from '../screens/RegisterScreen';
@@ -146,6 +151,11 @@ export default function AppNavigator() {
             <Stack.Screen name="StudentCard" component={StudentCardScreen} />
             <Stack.Screen name="Careers" component={CareersScreen} />
             <Stack.Screen name="AllServices" component={AllServicesScreen} />
+            <Stack.Screen name="Marketplace" component={MarketplaceScreen} />
+            <Stack.Screen name="LostFound" component={LostFoundScreen} />
+            <Stack.Screen name="StudyRoom" component={StudyRoomScreen} />
+            <Stack.Screen name="Wallet" component={WalletScreen} />
+            <Stack.Screen name="Documents" component={DocumentsScreen} />
           </>
         ) : (
           <>

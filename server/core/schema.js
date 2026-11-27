@@ -206,6 +206,65 @@ CREATE TABLE IF NOT EXISTS todo_items (
   created_at TEXT NOT NULL
 );
 
+-- Объявления студентов: маркетплейс (market), потерянные (lost) и найденные (found) вещи
+CREATE TABLE IF NOT EXISTS listings (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK (kind IN ('market', 'lost', 'found')),
+  title TEXT NOT NULL,
+  description TEXT,
+  category TEXT,
+  price INTEGER,
+  place TEXT,
+  event_date TEXT,
+  photo TEXT,
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'closed')),
+  reports INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS listings_kind ON listings (kind, status, created_at);
+
+-- Учебные комнаты (заполняет администратор) и их бронирование
+CREATE TABLE IF NOT EXISTS study_rooms (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  building TEXT,
+  capacity INTEGER,
+  equipment TEXT,
+  image_key TEXT
+);
+CREATE TABLE IF NOT EXISTS study_bookings (
+  id TEXT PRIMARY KEY,
+  room_id TEXT NOT NULL REFERENCES study_rooms(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  date TEXT NOT NULL,
+  slot TEXT NOT NULL,
+  canceled INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS study_no_conflict ON study_bookings (room_id, date, slot) WHERE canceled = 0;
+
+-- Кошелёк ALT Wallet: только тестовый режим, настоящие деньги не списываются
+CREATE TABLE IF NOT EXISTS wallet_tx (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  type TEXT NOT NULL CHECK (type IN ('topup', 'payment')),
+  amount INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+-- Запросы электронных документов (справки, транскрипт). Готовит и меняет статус администратор.
+CREATE TABLE IF NOT EXISTS doc_requests (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  doc_type TEXT NOT NULL CHECK (doc_type IN ('enrollment', 'academic', 'transcript', 'grant', 'statement')),
+  comment TEXT,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'ready', 'rejected')),
+  history TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
 -- Главная защита от двойного бронирования: база сама не даст создать две активные брони на один интервал
 CREATE UNIQUE INDEX IF NOT EXISTS bookings_no_conflict ON bookings (machine_id, date, slot) WHERE canceled = 0;
 `;

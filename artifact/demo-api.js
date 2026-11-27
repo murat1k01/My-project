@@ -451,6 +451,143 @@
     return { ok: true };
   }, true);
 
+
+  // ---------- Объявления: маркетплейс и бюро находок ----------
+  const listingsOf = () => {
+    const store = load();
+    store.listings = store.listings || [];
+    return store.listings;
+  };
+  const listingView = (l, me) => {
+    const owner = load().users.find((u) => u.id === l.userId);
+    const { userId, reports, ...rest } = l;
+    return { ...rest, ownerId: userId, ownerName: owner ? `${owner.firstName} ${owner.lastName}` : null, mine: userId === me };
+  };
+  add('GET', '/api/listings', ({ user, query }) => {
+    const kind = query.get('kind');
+    if (!['market', 'lost', 'found'].includes(kind)) throw bad('invalid', 'Неизвестный тип объявлений');
+    const search = clean(query.get('q') || '').toLowerCase();
+    const list = listingsOf().filter((l) => l.kind === kind && (l.status === 'active' || l.userId === user.id) && (!search || `${l.title} ${l.description || ''} ${l.category || ''} ${l.place || ''}`.toLowerCase().includes(search)));
+    return { listings: list.map((l) => listingView(l, user.id)) };
+  }, true);
+  add('POST', '/api/listings', ({ user, body }) => {
+    if (!['market', 'lost', 'found'].includes(body.kind)) throw bad('invalid', 'Неизвестный тип объявления');
+    const title = clean(body.title);
+    if (title.length < 3 || title.length > 80) throw bad('required', 'Название — от 3 до 80 символов');
+    let price = null;
+    if (body.kind === 'market') {
+      price = Number(body.price);
+      if (!Number.isInteger(price) || price < 0 || price > 10000000) throw bad('invalid_price', 'Укажите цену в тенге целым числом');
+    }
+    if (body.photo && (typeof body.photo !== 'string' || !body.photo.startsWith('data:image/') || body.photo.length > 2500000)) throw bad('invalid_photo', 'Фото слишком большое или в неверном формате');
+    const listing = { id: newId(), userId: user.id, kind: body.kind, title, description: clean(body.description) || null, category: clean(body.category) || null, price, place: clean(body.place) || null, eventDate: body.eventDate || null, photo: body.photo || null, status: 'active', reports: 0, createdAt: nowIso() };
+    listingsOf().unshift(listing);
+    return { status: 201, data: { listing: listingView(listing, user.id) } };
+  }, true);
+  add('PATCH', '/api/listings/:id', ({ user, params, body }) => {
+    const l = listingsOf().find((x) => x.id === params.id && x.userId === user.id);
+    if (!l || !['active', 'closed'].includes(body.status)) throw new HttpError(404, 'not_found', 'Объявление не найдено');
+    l.status = body.status;
+    return { ok: true };
+  }, true);
+  add('DELETE', '/api/listings/:id', ({ user, params }) => {
+    const store = load();
+    const l = listingsOf().find((x) => x.id === params.id);
+    if (!l || (l.userId !== user.id && user.role !== 'admin')) throw new HttpError(404, 'not_found', 'Объявление не найдено');
+    store.listings = store.listings.filter((x) => x.id !== params.id);
+    return { ok: true };
+  }, true);
+  add('POST', '/api/listings/:id/report', ({ user, params }) => {
+    const l = listingsOf().find((x) => x.id === params.id && x.userId !== user.id);
+    if (!l) throw new HttpError(404, 'not_found', 'Объявление не найдено');
+    l.reports += 1;
+    return { ok: true };
+  }, true);
+
+  // ---------- Учебные комнаты (пример, как на сервере) ----------
+  const STUDY_SLOTS = ['09:00', '11:00', '13:00', '15:00', '17:00'];
+  const ROOMS = [
+    { id: 'room-1', name: 'Учебная комната 1', building: 'Главный корпус', capacity: 6, equipment: 'Доска, розетки, Wi-Fi', imageKey: 'serviceLib' },
+    { id: 'room-2', name: 'Учебная комната 2', building: 'Главный корпус', capacity: 10, equipment: 'Проектор, доска, Wi-Fi', imageKey: 'serviceLms' },
+  ];
+  const studyOf = () => {
+    const store = load();
+    store.study = store.study || [];
+    return store.study;
+  };
+  add('GET', '/api/study-rooms', () => ({ rooms: ROOMS, slots: STUDY_SLOTS }), true);
+  add('GET', '/api/study-rooms/:id/slots', ({ user, params, query }) => {
+    const date = query.get('date');
+    const taken = studyOf().filter((b) => b.roomId === params.id && b.date === date && !b.canceled);
+    return { slots: STUDY_SLOTS.map((slot) => { const b = taken.find((t) => t.slot === slot); return { slot, state: b ? (b.userId === user.id ? 'mine' : 'busy') : new Date(`${date}T${slot}:00`) < new Date() ? 'past' : 'free' }; }) };
+  }, true);
+  add('POST', '/api/study-bookings', ({ user, body }) => {
+    const room = ROOMS.find((r) => r.id === body.roomId);
+    if (!room || !STUDY_SLOTS.includes(body.slot)) throw bad('invalid', 'Неверные данные брони');
+    if (new Date(`${body.date}T${body.slot}:00`) < new Date()) throw bad('slot_past', 'Это время уже прошло');
+    if (studyOf().some((b) => b.roomId === room.id && b.date === body.date && b.slot === body.slot && !b.canceled)) throw new HttpError(409, 'slot_taken', 'Это время уже занято');
+    if (studyOf().filter((b) => b.userId === user.id && !b.canceled && b.date >= localDate()).length >= 2) throw new HttpError(403, 'limit', 'Можно иметь не больше 2 активных броней комнат');
+    const booking = { id: newId(), roomId: room.id, userId: user.id, date: body.date, slot: body.slot, canceled: false };
+    studyOf().push(booking);
+    return { status: 201, data: { booking } };
+  }, true);
+  add('GET', '/api/study-bookings', ({ user }) => ({
+    bookings: studyOf().filter((b) => b.userId === user.id && !b.canceled && b.date >= localDate()).map((b) => { const r = ROOMS.find((x) => x.id === b.roomId); return { id: b.id, date: b.date, slot: b.slot, room: r.name, building: r.building }; }),
+  }), true);
+  add('DELETE', '/api/study-bookings/:id', ({ user, params }) => {
+    const b = studyOf().find((x) => x.id === params.id && x.userId === user.id);
+    if (!b) throw new HttpError(404, 'not_found', 'Бронь не найдена');
+    b.canceled = true;
+    return { ok: true };
+  }, true);
+
+  // ---------- ALT Wallet: только тестовый режим ----------
+  const walletOf = (userId) => {
+    const store = load();
+    store.wallet = store.wallet || [];
+    const transactions = store.wallet.filter((t) => t.userId === userId).map(({ userId: _u, ...t }) => t);
+    const balance = transactions.reduce((sum, t) => sum + (t.type === 'topup' ? t.amount : -t.amount), 0);
+    return { balance, testMode: true, transactions };
+  };
+  add('GET', '/api/wallet', ({ user }) => walletOf(user.id), true);
+  add('POST', '/api/wallet/topup', ({ user, body }) => {
+    if (body.mode !== 'test') throw new HttpError(501, 'payments_not_configured', 'Платёжная система не подключена');
+    const card = (load().cards || []).find((c) => c.id === body.paymentMethodId && c.userId === user.id);
+    if (!card) throw bad('no_card', 'Выберите привязанную карту');
+    const amount = Number(body.amount);
+    if (!Number.isInteger(amount) || amount < 100 || amount > 200000) throw bad('invalid_amount', 'Сумма — от 100 до 200 000 ₸');
+    load().wallet.unshift({ id: newId(), userId: user.id, type: 'topup', amount, title: `Тестовое пополнение · карта •• ${card.last4}`, createdAt: nowIso() });
+    return walletOf(user.id);
+  }, true);
+  add('POST', '/api/wallet/pay', ({ user, body }) => {
+    const titles = { food: 'Оплата столовой', dorm: 'Оплата общежития', tuition: 'Оплата обучения', transport: 'Транспортная карта' };
+    if (body.mode !== 'test') throw new HttpError(501, 'payments_not_configured', 'Платёжная система не подключена');
+    if (!titles[body.purpose]) throw bad('invalid', 'Неизвестный платёж');
+    const amount = Number(body.amount);
+    if (!Number.isInteger(amount) || amount < 1) throw bad('invalid_amount', 'Неверная сумма');
+    if (walletOf(user.id).balance < amount) throw new HttpError(409, 'insufficient', 'Недостаточно средств на тестовом балансе');
+    load().wallet.unshift({ id: newId(), userId: user.id, type: 'payment', amount, title: `${titles[body.purpose]} (тест)`, createdAt: nowIso() });
+    return walletOf(user.id);
+  }, true);
+
+  // ---------- ALT Documents ----------
+  const docsOf = () => {
+    const store = load();
+    store.docs = store.docs || [];
+    return store.docs;
+  };
+  add('GET', '/api/documents', ({ user }) => ({ requests: docsOf().filter((d) => d.userId === user.id).map(({ userId, ...d }) => d) }), true);
+  add('POST', '/api/documents', ({ user, body }) => {
+    if (!['enrollment', 'academic', 'transcript', 'grant', 'statement'].includes(body.docType)) throw bad('invalid', 'Неизвестный документ');
+    const comment = clean(body.comment);
+    if (body.docType === 'statement' && comment.length < 5) throw bad('required', 'Опишите заявление (не менее 5 символов)');
+    const now = nowIso();
+    const request = { id: newId(), userId: user.id, docType: body.docType, comment: comment || null, status: 'pending', history: [{ status: 'pending', at: now }], createdAt: now };
+    docsOf().unshift(request);
+    const { userId, ...view } = request;
+    return { status: 201, data: { request: view } };
+  }, true);
+
   const json = (status, data) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
   const realFetch = window.fetch.bind(window);
 

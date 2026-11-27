@@ -80,7 +80,16 @@ export default function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
   const campus: { image: typeof images.serviceInfo; title: string; text: string; onPress: () => void }[] = [
     { image: images.serviceInfo, title: t('homeNewsTitle'), text: t('homeNewsText'), onPress: () => navigation.navigate('Info') },
     { image: images.news2, title: t('homeEventsTitle'), text: t('homeEventsText'), onPress: () => navigation.navigate('EventRegistration') },
-    { image: images.serviceDorm, title: t('homeStudentsTitle'), text: t('homeStudentsText'), onPress: () => navigation.navigate('Students') },
+  ];
+
+  // Студенческие сервисы: объявления, комнаты, кошелёк, документы и список студентов
+  const extra: { icon: IoniconName; label: string; onPress: () => void }[] = [
+    { icon: 'storefront-outline', label: t('mpTitle'), onPress: () => navigation.navigate('Marketplace') },
+    { icon: 'search-circle-outline', label: t('lfTitle'), onPress: () => navigation.navigate('LostFound') },
+    { icon: 'easel-outline', label: t('srTitle'), onPress: () => navigation.navigate('StudyRoom') },
+    { icon: 'wallet-outline', label: t('walletTitle'), onPress: () => navigation.navigate('Wallet') },
+    { icon: 'document-text-outline', label: t('docTitle'), onPress: () => navigation.navigate('Documents') },
+    { icon: 'people-outline', label: t('homeStudentsTitle'), onPress: () => navigation.navigate('Students') },
   ];
 
   return (
@@ -153,6 +162,14 @@ export default function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
               <Ionicons name="chevron-forward" size={20} color={brand.gold} />
             </LinearGradient>
           </Pressable>
+
+          {/* Студенческие сервисы */}
+          <SectionHeader title={t('homeExtraTitle')} />
+          <View style={styles.grid}>
+            {extra.map((item) => (
+              <AcademicTile key={item.label} icon={item.icon} label={item.label} width={tileWidth} onPress={item.onPress} />
+            ))}
+          </View>
 
           {/* Университетская жизнь */}
           <SectionHeader title={t('homeCampusTitle')} />

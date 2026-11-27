@@ -110,6 +110,13 @@ export function seed(db, { demoDorm = true, books = [], newId }) {
   // Общежитие с настоящим адресом; прежнее демо-общежитие получает эти сведения
   db.prepare('UPDATE dorms SET name = ?, address = ?, contacts = ?, services = ?, rules = ?, hours = ? WHERE name = ?')
     .run(DORM.name, DORM.address, DORM.contacts, DORM.services, DORM.rules, DORM.hours, 'Демо-общежитие (замените реальным)');
+  // Учебные комнаты — ПРИМЕР: администратор заменяет их реальными в админке («Комнаты»)
+  if (demoDorm && count('study_rooms') === 0) {
+    const room = db.prepare('INSERT INTO study_rooms (id, name, building, capacity, equipment, image_key) VALUES (?,?,?,?,?,?)');
+    room.run(newId(), 'Учебная комната 1', 'Главный корпус', 6, 'Доска, розетки, Wi-Fi', 'serviceLib');
+    room.run(newId(), 'Учебная комната 2', 'Главный корпус', 10, 'Проектор, доска, Wi-Fi', 'serviceLms');
+  }
+
   if (demoDorm && count('dorms') === 0) {
     const dormId = newId();
     db.prepare('INSERT INTO dorms (id, name, address, contacts, services, rules, hours) VALUES (?,?,?,?,?,?,?)').run(dormId, DORM.name, DORM.address, DORM.contacts, DORM.services, DORM.rules, DORM.hours);

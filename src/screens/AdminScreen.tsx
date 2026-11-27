@@ -63,7 +63,15 @@ const RESOURCES: Resource[] = [
     id: 'catalog', label: 'adminCatalog', pk: 'id', titleKey: 'name', subtitleKey: 'kind',
     fields: [{ key: 'kind', label: 'adminFKind' }, { key: 'name', label: 'adminFName' }],
   },
+  {
+    id: 'rooms', label: 'adminRooms', pk: 'id', titleKey: 'name', subtitleKey: 'building',
+    fields: [{ key: 'name', label: 'adminFName' }, { key: 'building', label: 'adminFBuilding' }, { key: 'capacity', label: 'adminFCapacity', kind: 'number' }, { key: 'equipment', label: 'adminFEquipment' }, { key: 'imageKey', label: 'adminFImage' }],
+  },
 ];
+
+const DOC_STATUSES = ['pending', 'ready', 'rejected'] as const;
+const DOC_LABELS: Record<(typeof DOC_STATUSES)[number], TranslationKey> = { pending: 'docPending', ready: 'docReady', rejected: 'docRejected' };
+const DOC_TITLES: Record<string, TranslationKey> = { enrollment: 'docEnrollment', academic: 'docAcademic', transcript: 'docTranscript', grant: 'docGrant', statement: 'docStatement' };
 
 type Section = string;
 
@@ -89,6 +97,8 @@ export default function AdminScreen({ navigation }: RootStackScreenProps<'Admin'
     { id: 'bookings', label: 'adminBookings' },
     { id: 'subscriptions', label: 'adminSubscriptions' },
     { id: 'memberships', label: 'adminMemberships' },
+    { id: 'documents', label: 'docTitle' },
+    { id: 'listings', label: 'adminListings' },
   ];
 
   return (
@@ -108,6 +118,8 @@ export default function AdminScreen({ navigation }: RootStackScreenProps<'Admin'
           {section === 'bookings' ? <BookingsAdmin /> : null}
           {section === 'subscriptions' ? <SubscriptionsAdmin /> : null}
           {section === 'memberships' ? <MembershipsAdmin /> : null}
+          {section === 'documents' ? <DocumentsAdmin /> : null}
+          {section === 'listings' ? <ListingsAdmin /> : null}
         </View>
       )}
     </ScreenScroll>
@@ -275,6 +287,70 @@ function RequestsAdmin() {
             {REQUEST_STATUSES.map((status) => (
               <Chip key={status} label={t(REQUEST_LABELS[status])} selected={item.status === status} onPress={() => setStatus(item.id, status)} />
             ))}
+          </View>
+        </GlassCard>
+      ))}
+    </StateView>
+  );
+}
+
+/** Запросы документов: администратор отмечает, что документ готов или отклонён */
+function DocumentsAdmin() {
+  const { colors } = useTheme();
+  const { t, language } = useI18n();
+  const { data, loading, error, reload } = useApi<{ items: { id: string; docType: string; comment: string | null; status: (typeof DOC_STATUSES)[number]; createdAt: string; fromFirstName: string; fromLastName: string; group: string }[] }>('/api/admin/documents');
+  const [actionError, setActionError] = useState<string | null>(null);
+  const setStatus = (id: string, status: string) => {
+    setActionError(null);
+    void api('PATCH', `/api/admin/documents/${id}`, { status })
+      .then(() => reload())
+      .catch((e) => setActionError(errorMessage(e)));
+  };
+  return (
+    <StateView loading={loading} error={error} hasData={data !== null} empty={data?.items.length === 0} emptyTitle={t('adminEmpty')} onRetry={() => void reload()}>
+      {actionError ? <FormBanner text={actionError} /> : null}
+      {data?.items.map((item) => (
+        <GlassCard key={item.id}>
+          <Text style={[type.bodyMedium, { color: colors.text }]}>{DOC_TITLES[item.docType] ? t(DOC_TITLES[item.docType]) : item.docType}</Text>
+          <Text style={[type.caption, { color: colors.textMuted }]}>
+            {item.fromFirstName} {item.fromLastName} · {item.group} · {formatDateTime(item.createdAt, language)}
+          </Text>
+          {item.comment ? <Text style={[type.body, { color: colors.textSecondary }]}>{item.comment}</Text> : null}
+          <View style={styles.actions}>
+            {DOC_STATUSES.map((status) => (
+              <Chip key={status} label={t(DOC_LABELS[status])} selected={item.status === status} onPress={() => setStatus(item.id, status)} />
+            ))}
+          </View>
+        </GlassCard>
+      ))}
+    </StateView>
+  );
+}
+
+/** Объявления с жалобами: администратор может удалить нарушающее правила */
+function ListingsAdmin() {
+  const { colors } = useTheme();
+  const { t } = useI18n();
+  const { data, loading, error, reload } = useApi<{ items: { id: string; kind: string; title: string; description: string | null; ownerName: string | null; reports: number }[] }>('/api/admin/listings');
+  const [actionError, setActionError] = useState<string | null>(null);
+  const remove = (id: string) => {
+    setActionError(null);
+    void api('DELETE', `/api/listings/${id}`)
+      .then(() => reload())
+      .catch((e) => setActionError(errorMessage(e)));
+  };
+  return (
+    <StateView loading={loading} error={error} hasData={data !== null} empty={data?.items.length === 0} emptyTitle={t('adminEmpty')} onRetry={() => void reload()}>
+      {actionError ? <FormBanner text={actionError} /> : null}
+      {data?.items.map((item) => (
+        <GlassCard key={item.id}>
+          <Text style={[type.bodyMedium, { color: colors.text }]}>{item.title}</Text>
+          <Text style={[type.caption, { color: colors.textMuted }]}>
+            {item.kind} · {item.ownerName} · {t('adminReports', { n: item.reports })}
+          </Text>
+          {item.description ? <Text style={[type.body, { color: colors.textSecondary }]}>{item.description}</Text> : null}
+          <View style={styles.actions}>
+            <Chip label={t('delete')} icon="trash-outline" onPress={() => remove(item.id)} />
           </View>
         </GlassCard>
       ))}

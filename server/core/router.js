@@ -136,7 +136,15 @@ const ADMIN_RESOURCES = {
   dorms: { table: 'dorms', pk: 'id', order: 'name', required: ['name'], fields: { name: 's', address: 's', contacts: 's', services: 's', rules: 's', hours: 's' } },
   machines: { table: 'machines', pk: 'id', order: 'dorm_id, name', required: ['dorm_id', 'name'], fields: { dorm_id: 's', floor: 'i', name: 's', status: 's' } },
   catalog: { table: 'catalog', pk: 'id', order: 'kind, name', required: ['kind', 'name'], fields: { kind: 's', name: 's' } },
+  rooms: { table: 'study_rooms', pk: 'id', order: 'building, name', required: ['name'], fields: { name: 's', building: 's', capacity: 'i', equipment: 's', image_key: 's' } },
 };
+
+export const STUDY_SLOTS = ['09:00', '11:00', '13:00', '15:00', '17:00'];
+const STUDY_DAYS_AHEAD = 14;
+const STUDY_ACTIVE_LIMIT = 2;
+const LISTING_KINDS = ['market', 'lost', 'found'];
+const DOC_TYPES = ['enrollment', 'academic', 'transcript', 'grant', 'statement'];
+const WALLET_PURPOSES = { food: 'Оплата столовой', dorm: 'Оплата общежития', tuition: 'Оплата обучения', transport: 'Транспортная карта' };
 
 function readAdminFields(resource, body, partial) {
   const out = {};
@@ -701,11 +709,206 @@ export function createRouter(db, deps) {
     if (!other || other.id === user.id) throw new ApiError(404, 'not_found', 'Студент не найден');
     // Написать первым можно только тому, кто показан в списке студентов; ответить — всегда
     const replied = db.prepare('SELECT 1 FROM messages WHERE from_id = ? AND to_id = ? LIMIT 1').get(other.id, user.id);
-    if (!other.show_in_directory && !replied) throw new ApiError(404, 'not_found', 'Студент не найден');
+    const hasListing = db.prepare("SELECT 1 FROM listings WHERE user_id = ? AND status = 'active' LIMIT 1").get(other.id);
+    if (!other.show_in_directory && !replied && !hasListing) throw new ApiError(404, 'not_found', 'Студент не найден');
     const id = newId();
     db.prepare('INSERT INTO messages (id, from_id, to_id, text, created_at) VALUES (?,?,?,?,?)').run(id, user.id, other.id, text, nowIso());
     return { status: 201, data: { message: messageView(db.prepare('SELECT * FROM messages WHERE id = ?').get(id), user.id) } };
   }, 'user');
+
+  // ---------- Объявления: маркетплейс и бюро находок ----------
+  const listingView = (row, me) => ({
+    id: row.id,
+    kind: row.kind,
+    title: row.title,
+    description: row.description,
+    category: row.category,
+    price: row.price,
+    place: row.place,
+    eventDate: row.event_date,
+    photo: row.photo,
+    status: row.status,
+    createdAt: row.created_at,
+    ownerId: row.user_id,
+    ownerName: row.first_name ? `${row.first_name} ${row.last_name}` : null,
+    mine: row.user_id === me,
+  });
+
+  add('GET', '/api/listings', ({ user, query }) => {
+    const kind = query.get('kind');
+    if (!LISTING_KINDS.includes(kind)) throw bad('invalid', 'Неизвестный тип объявлений');
+    const search = clean(query.get('q') || '').toLowerCase();
+    const rows = db.prepare(`SELECT l.*, u.first_name, u.last_name FROM listings l JOIN users u ON u.id = l.user_id
+      WHERE l.kind = ? AND (l.status = 'active' OR l.user_id = ?) ORDER BY l.created_at DESC LIMIT 200`).all(kind, user.id);
+    const list = rows.filter((r) => !search || `${r.title} ${r.description ?? ''} ${r.category ?? ''} ${r.place ?? ''}`.toLowerCase().includes(search));
+    return { listings: list.map((r) => listingView(r, user.id)) };
+  }, 'user');
+
+  add('POST', '/api/listings', ({ user, body }) => {
+    if (!LISTING_KINDS.includes(body.kind)) throw bad('invalid', 'Неизвестный тип объявления');
+    const title = clean(body.title);
+    if (title.length < 3 || title.length > 80) throw bad('required', 'Название — от 3 до 80 символов');
+    const description = clean(body.description);
+    if (description.length > 1000) throw bad('too_long', 'Описание слишком длинное');
+    let price = null;
+    if (body.kind === 'market') {
+      price = Number(body.price);
+      if (!Number.isInteger(price) || price < 0 || price > 10_000_000) throw bad('invalid_price', 'Укажите цену в тенге целым числом');
+    }
+    const eventDate = body.eventDate ? String(body.eventDate) : null;
+    if (eventDate && !/^\d{4}-\d{2}-\d{2}$/.test(eventDate)) throw bad('invalid_date', 'Неверная дата');
+    let photo = null;
+    if (body.photo) {
+      if (typeof body.photo !== 'string' || !body.photo.startsWith('data:image/') || body.photo.length > MAX_PHOTO_CHARS) throw bad('invalid_photo', 'Фото слишком большое или в неверном формате');
+      photo = body.photo;
+    }
+    const active = db.prepare("SELECT COUNT(*) AS n FROM listings WHERE user_id = ? AND status = 'active'").get(user.id).n;
+    if (active >= 20) throw new ApiError(403, 'limit', 'Не больше 20 активных объявлений');
+    const id = newId();
+    db.prepare('INSERT INTO listings (id, user_id, kind, title, description, category, price, place, event_date, photo, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)')
+      .run(id, user.id, body.kind, title, description || null, clean(body.category) || null, price, clean(body.place) || null, eventDate, photo, nowIso());
+    const row = db.prepare('SELECT l.*, u.first_name, u.last_name FROM listings l JOIN users u ON u.id = l.user_id WHERE l.id = ?').get(id);
+    return { status: 201, data: { listing: listingView(row, user.id) } };
+  }, 'user');
+
+  add('PATCH', '/api/listings/:id', ({ user, params, body }) => {
+    if (!['active', 'closed'].includes(body.status)) throw bad('invalid', 'Неверный статус');
+    const result = db.prepare('UPDATE listings SET status = ? WHERE id = ? AND user_id = ?').run(body.status, params.id, user.id);
+    if (result.changes === 0) throw new ApiError(404, 'not_found', 'Объявление не найдено');
+    return { ok: true };
+  }, 'user');
+
+  add('DELETE', '/api/listings/:id', ({ user, params }) => {
+    // Удалить может автор или администратор (модерация)
+    const row = db.prepare('SELECT user_id FROM listings WHERE id = ?').get(params.id);
+    if (!row || (row.user_id !== user.id && user.role !== 'admin')) throw new ApiError(404, 'not_found', 'Объявление не найдено');
+    db.prepare('DELETE FROM listings WHERE id = ?').run(params.id);
+    return { ok: true };
+  }, 'user');
+
+  add('POST', '/api/listings/:id/report', ({ user, params }) => {
+    const result = db.prepare('UPDATE listings SET reports = reports + 1 WHERE id = ? AND user_id <> ?').run(params.id, user.id);
+    if (result.changes === 0) throw new ApiError(404, 'not_found', 'Объявление не найдено');
+    return { ok: true };
+  }, 'user');
+
+  add('GET', '/api/admin/listings', () => ({
+    items: db.prepare('SELECT l.*, u.first_name, u.last_name FROM listings l JOIN users u ON u.id = l.user_id WHERE l.reports > 0 ORDER BY l.reports DESC LIMIT 100').all().map((r) => ({ ...listingView(r, null), reports: r.reports })),
+  }), 'admin');
+
+  // ---------- Учебные комнаты ----------
+  const checkStudyDate = (date) => {
+    if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw bad('invalid_date', 'Неверная дата');
+    const last = localDate(new Date(Date.now() + STUDY_DAYS_AHEAD * 86_400_000));
+    if (date < localDate() || date > last) throw bad('invalid_date', `Бронировать можно на ${STUDY_DAYS_AHEAD} дней вперёд`);
+  };
+
+  add('GET', '/api/study-rooms', () => ({ rooms: db.prepare('SELECT * FROM study_rooms ORDER BY building, name').all().map(camel), slots: STUDY_SLOTS }), 'user');
+
+  add('GET', '/api/study-rooms/:id/slots', ({ user, params, query }) => {
+    const date = query.get('date');
+    checkStudyDate(date);
+    const taken = db.prepare('SELECT slot, user_id FROM study_bookings WHERE room_id = ? AND date = ? AND canceled = 0').all(params.id, date);
+    return {
+      slots: STUDY_SLOTS.map((slot) => {
+        const booking = taken.find((t) => t.slot === slot);
+        const past = new Date(`${date}T${slot}:00`) < new Date();
+        return { slot, state: booking ? (booking.user_id === user.id ? 'mine' : 'busy') : past ? 'past' : 'free' };
+      }),
+    };
+  }, 'user');
+
+  add('POST', '/api/study-bookings', ({ user, body }) => {
+    const { roomId, date, slot } = body;
+    checkStudyDate(date);
+    if (!STUDY_SLOTS.includes(slot)) throw bad('invalid_slot', 'Неверное время');
+    if (new Date(`${date}T${slot}:00`) < new Date()) throw bad('slot_past', 'Это время уже прошло');
+    const room = db.prepare('SELECT * FROM study_rooms WHERE id = ?').get(String(roomId));
+    if (!room) throw new ApiError(404, 'not_found', 'Комната не найдена');
+    const active = db.prepare('SELECT COUNT(*) AS n FROM study_bookings WHERE user_id = ? AND canceled = 0 AND date >= ?').get(user.id, localDate()).n;
+    if (active >= STUDY_ACTIVE_LIMIT) throw new ApiError(403, 'limit', `Можно иметь не больше ${STUDY_ACTIVE_LIMIT} активных броней комнат`);
+    const id = newId();
+    try {
+      db.prepare('INSERT INTO study_bookings (id, room_id, user_id, date, slot, created_at) VALUES (?,?,?,?,?,?)').run(id, room.id, user.id, date, slot, nowIso());
+    } catch (error) {
+      if (String(error.message).includes('UNIQUE')) throw new ApiError(409, 'slot_taken', 'Это время только что заняли. Выберите другое.');
+      throw error;
+    }
+    return { status: 201, data: { booking: { id, roomId: room.id, date, slot } } };
+  }, 'user');
+
+  add('GET', '/api/study-bookings', ({ user }) => ({
+    bookings: db.prepare(`SELECT b.id, b.date, b.slot, r.name AS room, r.building FROM study_bookings b JOIN study_rooms r ON r.id = b.room_id
+      WHERE b.user_id = ? AND b.canceled = 0 AND b.date >= ? ORDER BY b.date, b.slot`).all(user.id, localDate()),
+  }), 'user');
+
+  add('DELETE', '/api/study-bookings/:id', ({ user, params }) => {
+    const result = db.prepare('UPDATE study_bookings SET canceled = 1 WHERE id = ? AND user_id = ?').run(params.id, user.id);
+    if (result.changes === 0) throw new ApiError(404, 'not_found', 'Бронь не найдена');
+    return { ok: true };
+  }, 'user');
+
+  // ---------- ALT Wallet: только тестовый режим ----------
+  const walletOf = (userId) => {
+    const transactions = db.prepare('SELECT id, type, amount, title, created_at AS createdAt FROM wallet_tx WHERE user_id = ? ORDER BY created_at DESC LIMIT 100').all(userId);
+    const balance = db.prepare("SELECT COALESCE(SUM(CASE WHEN type = 'topup' THEN amount ELSE -amount END), 0) AS b FROM wallet_tx WHERE user_id = ?").get(userId).b;
+    return { balance, testMode: true, transactions };
+  };
+
+  add('GET', '/api/wallet', ({ user }) => walletOf(user.id), 'user');
+
+  add('POST', '/api/wallet/topup', ({ user, body }) => {
+    // Платёжный провайдер не подключён: пополнение возможно только явно в тестовом режиме, деньги не списываются
+    if (body.mode !== 'test') throw new ApiError(501, 'payments_not_configured', 'Платёжная система не подключена. Доступно только тестовое пополнение.');
+    const card = db.prepare('SELECT id, last4 FROM payment_methods WHERE id = ? AND user_id = ?').get(String(body.paymentMethodId ?? ''), user.id);
+    if (!card) throw bad('no_card', 'Выберите привязанную карту');
+    const amount = Number(body.amount);
+    if (!Number.isInteger(amount) || amount < 100 || amount > 200_000) throw bad('invalid_amount', 'Сумма — от 100 до 200 000 ₸');
+    db.prepare('INSERT INTO wallet_tx (id, user_id, type, amount, title, created_at) VALUES (?,?,?,?,?,?)').run(newId(), user.id, 'topup', amount, `Тестовое пополнение · карта •• ${card.last4}`, nowIso());
+    return walletOf(user.id);
+  }, 'user');
+
+  add('POST', '/api/wallet/pay', ({ user, body }) => {
+    if (body.mode !== 'test') throw new ApiError(501, 'payments_not_configured', 'Платёжная система не подключена. Доступна только тестовая оплата.');
+    const title = WALLET_PURPOSES[body.purpose];
+    if (!title) throw bad('invalid', 'Неизвестный платёж');
+    const amount = Number(body.amount);
+    if (!Number.isInteger(amount) || amount < 1 || amount > 2_000_000) throw bad('invalid_amount', 'Неверная сумма');
+    if (walletOf(user.id).balance < amount) throw new ApiError(409, 'insufficient', 'Недостаточно средств на тестовом балансе');
+    db.prepare('INSERT INTO wallet_tx (id, user_id, type, amount, title, created_at) VALUES (?,?,?,?,?,?)').run(newId(), user.id, 'payment', amount, `${title} (тест)`, nowIso());
+    return walletOf(user.id);
+  }, 'user');
+
+  // ---------- ALT Documents: запросы справок ----------
+  const docView = (row) => ({ id: row.id, docType: row.doc_type, comment: row.comment, status: row.status, history: JSON.parse(row.history), createdAt: row.created_at });
+
+  add('GET', '/api/documents', ({ user }) => ({ requests: db.prepare('SELECT * FROM doc_requests WHERE user_id = ? ORDER BY created_at DESC').all(user.id).map(docView) }), 'user');
+
+  add('POST', '/api/documents', ({ user, body }) => {
+    if (!DOC_TYPES.includes(body.docType)) throw bad('invalid', 'Неизвестный документ');
+    const comment = clean(body.comment);
+    if (comment.length > 1000) throw bad('too_long', 'Комментарий слишком длинный');
+    if (body.docType === 'statement' && comment.length < 5) throw bad('required', 'Опишите заявление (не менее 5 символов)');
+    const pending = db.prepare("SELECT COUNT(*) AS n FROM doc_requests WHERE user_id = ? AND status = 'pending'").get(user.id).n;
+    if (pending >= 10) throw new ApiError(403, 'limit', 'Не больше 10 запросов в обработке');
+    const id = newId();
+    const now = nowIso();
+    db.prepare('INSERT INTO doc_requests (id, user_id, doc_type, comment, history, created_at) VALUES (?,?,?,?,?,?)').run(id, user.id, body.docType, comment || null, JSON.stringify([{ status: 'pending', at: now }]), now);
+    return { status: 201, data: { request: docView(db.prepare('SELECT * FROM doc_requests WHERE id = ?').get(id)) } };
+  }, 'user');
+
+  add('GET', '/api/admin/documents', () => ({
+    items: db.prepare(`SELECT d.*, u.first_name, u.last_name, u.group_name FROM doc_requests d JOIN users u ON u.id = d.user_id ORDER BY d.created_at DESC LIMIT 100`).all().map((r) => ({ ...docView(r), fromFirstName: r.first_name, fromLastName: r.last_name, group: r.group_name })),
+  }), 'admin');
+
+  add('PATCH', '/api/admin/documents/:id', ({ params, body }) => {
+    if (!['pending', 'ready', 'rejected'].includes(body.status)) throw bad('invalid', 'Неверный статус');
+    const row = db.prepare('SELECT * FROM doc_requests WHERE id = ?').get(params.id);
+    if (!row) throw new ApiError(404, 'not_found', 'Запрос не найден');
+    const history = [...JSON.parse(row.history), { status: body.status, at: nowIso() }];
+    db.prepare('UPDATE doc_requests SET status = ?, history = ? WHERE id = ?').run(body.status, JSON.stringify(history), params.id);
+    return { ok: true };
+  }, 'admin');
 
   // ---------- Задачи (планировщик помощника ALT AI) ----------
   const todoView = (row) => ({ id: row.id, title: row.title, dueDate: row.due_date, done: !!row.done, createdAt: row.created_at });
