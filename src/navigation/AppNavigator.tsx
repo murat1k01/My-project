@@ -29,6 +29,7 @@ import LostFoundScreen from '../screens/LostFoundScreen';
 import StudyRoomScreen from '../screens/StudyRoomScreen';
 import WalletScreen from '../screens/WalletScreen';
 import DocumentsScreen from '../screens/DocumentsScreen';
+import CampusMapScreen from '../screens/CampusMapScreen';
 import ProfileEditScreen from '../screens/ProfileEditScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import RegisterScreen from '../screens/RegisterScreen';
@@ -156,6 +157,7 @@ export default function AppNavigator() {
             <Stack.Screen name="StudyRoom" component={StudyRoomScreen} />
             <Stack.Screen name="Wallet" component={WalletScreen} />
             <Stack.Screen name="Documents" component={DocumentsScreen} />
+            <Stack.Screen name="CampusMap" component={CampusMapScreen} />
           </>
         ) : (
           <>

@@ -80,6 +80,7 @@ export default function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
   const campus: { image: typeof images.serviceInfo; title: string; text: string; onPress: () => void }[] = [
     { image: images.serviceInfo, title: t('homeNewsTitle'), text: t('homeNewsText'), onPress: () => navigation.navigate('Info') },
     { image: images.news2, title: t('homeEventsTitle'), text: t('homeEventsText'), onPress: () => navigation.navigate('EventRegistration') },
+    { image: images.serviceDorm, title: t('homeStudentsTitle'), text: t('homeStudentsText'), onPress: () => navigation.navigate('Students') },
   ];
 
   // Студенческие сервисы: объявления, комнаты, кошелёк, документы и список студентов
@@ -89,7 +90,7 @@ export default function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
     { icon: 'easel-outline', label: t('srTitle'), onPress: () => navigation.navigate('StudyRoom') },
     { icon: 'wallet-outline', label: t('walletTitle'), onPress: () => navigation.navigate('Wallet') },
     { icon: 'document-text-outline', label: t('docTitle'), onPress: () => navigation.navigate('Documents') },
-    { icon: 'people-outline', label: t('homeStudentsTitle'), onPress: () => navigation.navigate('Students') },
+    { icon: 'map-outline', label: t('mapTitle'), onPress: () => navigation.navigate('CampusMap') },
   ];
 
   return (

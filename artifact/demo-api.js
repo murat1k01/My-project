@@ -317,6 +317,32 @@
     if (!route) throw new HttpError(404, 'not_found', 'Маршрут не найден');
     return { route, ...transportInfo };
   });
+  add('GET', '/api/transport/near', ({ query }) => {
+    const lat = Number(query.get('lat'));
+    const lon = Number(query.get('lon'));
+    const radius = Math.min(Number(query.get('radius')) || 600, 2000);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return { stops: [] };
+    // Расстояние по формуле гаверсинусов, в метрах
+    const dist = (aLat, aLon) => {
+      const rad = Math.PI / 180;
+      const dLat = (aLat - lat) * rad;
+      const dLon = (aLon - lon) * rad;
+      const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat * rad) * Math.cos(aLat * rad) * Math.sin(dLon / 2) ** 2;
+      return Math.round(2 * 6371000 * Math.asin(Math.sqrt(h)));
+    };
+    const found = new Map();
+    for (const route of DATA.transport.routes) {
+      for (const stop of route.stops) {
+        const meters = dist(stop.lat, stop.lon);
+        if (meters > radius) continue;
+        const key = stop.name + '|' + stop.lat.toFixed(4);
+        const entry = found.get(key) ?? { name: stop.name, lat: stop.lat, lon: stop.lon, meters, routes: [] };
+        if (!entry.routes.some((r) => r.number === route.number)) entry.routes.push({ id: route.id, number: route.number });
+        found.set(key, entry);
+      }
+    }
+    return { stops: [...found.values()].sort((a, b) => a.meters - b.meters).slice(0, 12) };
+  });
   add('GET', '/api/transport/stops', ({ query }) => {
     const search = clean(query.get('q') || '').toLowerCase();
     if (search.length < 2) return { stops: [] };

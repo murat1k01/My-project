@@ -47,6 +47,7 @@ export type RootStackParamList = {
   StudyRoom: undefined;
   Wallet: undefined;
   Documents: undefined;
+  CampusMap: undefined;
 };
 
 export type RootStackScreenProps<T extends keyof RootStackParamList> = NativeStackScreenProps<RootStackParamList, T>;

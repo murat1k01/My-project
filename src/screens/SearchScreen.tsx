@@ -33,6 +33,7 @@ export default function SearchScreen({ navigation }: MainTabScreenProps<'Search'
       { key: 'card', icon: 'id-card-outline', title: t('cardTitle'), text: t('cardHomeText'), onPress: () => navigation.navigate('StudentCard') },
       { key: 'careers', icon: 'briefcase-outline', title: t('gridCareers'), text: t('careersSubtitle'), onPress: () => navigation.navigate('Careers') },
       { key: 'ai', icon: 'sparkles-outline', title: t('gridAi'), text: t('homeAiText'), onPress: () => navigation.navigate('Assistant') },
+      { key: 'map', icon: 'map-outline', title: t('mapTitle'), text: t('mapBuildings') + ' · ' + t('mapStops'), onPress: () => navigation.navigate('CampusMap') },
       { key: 'market', icon: 'storefront-outline', title: t('mpTitle'), text: t('mpSubtitle'), onPress: () => navigation.navigate('Marketplace') },
       { key: 'lostfound', icon: 'search-circle-outline', title: t('lfTitle'), text: t('lfSubtitle'), onPress: () => navigation.navigate('LostFound') },
       { key: 'study', icon: 'easel-outline', title: t('srTitle'), text: t('srSubtitle'), onPress: () => navigation.navigate('StudyRoom') },

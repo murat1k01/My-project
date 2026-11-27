@@ -465,3 +465,12 @@ test('документы: запрос справки, статус меняет
   assert.equal(mine.status, 'ready');
   assert.equal(mine.history.length, 2);
 });
+
+test('карта кампуса: ближайшие остановки к главному корпусу из данных OpenStreetMap', async () => {
+  const { token } = await register({ contact: 'map@example.com' });
+  const near = (await call('GET', '/api/transport/near?lat=43.24549&lon=76.92935&radius=700', { token })).data.stops;
+  assert.ok(near.length > 0, 'рядом с ALT есть остановки');
+  assert.ok(near.every((s) => s.meters <= 700));
+  assert.ok(near[0].meters <= near[near.length - 1].meters, 'по возрастанию расстояния');
+  assert.ok(near[0].routes.length > 0);
+});
