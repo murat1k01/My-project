@@ -1,5 +1,6 @@
 // Создано из assets/images/CREDITS.md: авторы и лицензии фото (Wikimedia Commons)
 export const PHOTO_CREDITS: { file: string; title: string; author: string; license: string; url: string }[] = [
+  {"file":"dorm_laundry.jpg","title":"Condominium laundry room in Gothenburg Sweden 2025.jpg","author":"R. Henrik Nilsson","license":"CC BY 4.0","url":"https://commons.wikimedia.org/wiki/File:Condominium_laundry_room_in_Gothenburg_Sweden_2025.jpg"},
   {
     "file": "hero_earth.jpg",
     "title": "Radcliffe Camera Oxford 2018 03.jpg",

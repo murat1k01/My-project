@@ -156,6 +156,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   hero: {
+    width: '100%',
     minHeight: 340,
     paddingHorizontal: SCREEN_PADDING,
     paddingBottom: 56,

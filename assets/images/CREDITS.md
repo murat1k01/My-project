@@ -13,6 +13,7 @@
 - service_bus.jpg: 20190918 Oxford Bus 841.jpg, User:Alex Noble, CC0, https://commons.wikimedia.org/wiki/File:20190918_Oxford_Bus_841.jpg
 - news_2.jpg: Oxford - Catte street - Graduation ceremony in the Sheldonian theatre (june 2011) 04.jpg, Txllxt TxllxT, CC BY-SA 4.0, https://commons.wikimedia.org/wiki/File:Oxford_-_Catte_street_-_Graduation_ceremony_in_the_Sheldonian_theatre_(june_2011)_04.jpg
 - news_3.jpg: Weston Library Exterior by John Cairns 20.3.15-27.jpg, John Cairns photography, work commissioned by the Bodleian Libraries, CC BY-SA 4.0, https://commons.wikimedia.org/wiki/File:Weston_Library_Exterior_by_John_Cairns_20.3.15-27.jpg
+- dorm_laundry.jpg: Condominium laundry room in Gothenburg Sweden 2025.jpg, R. Henrik Nilsson, CC BY 4.0, https://commons.wikimedia.org/wiki/File:Condominium_laundry_room_in_Gothenburg_Sweden_2025.jpg
 
 # Фото блюд с Wikimedia Commons
 

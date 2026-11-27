@@ -123,6 +123,7 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
   },
   banner: {
+    width: '100%',
     height: 170,
     justifyContent: 'flex-end',
   },

@@ -12,6 +12,16 @@ export const LANGUAGES: { code: Language; short: string; name: string }[] = [
 ];
 
 const ru = {
+  foodToday: 'Меню на сегодня',
+  foodTodayText: 'Быстро, вкусно и доступно',
+  foodPopular: 'Блюда',
+  foodCartSummary: '{count} шт. · {total}',
+  laundryMachines: 'Стиральные машины',
+  laundryAvailable: 'Доступна',
+  laundryRepairStatus: 'На ремонте',
+  aiGreeting: 'Здравствуйте, {name}!',
+  aiHowHelp: 'Чем могу помочь?',
+  aiTyping: 'ALT AI печатает…',
   gpaTabCurrent: 'Текущий',
   gpaTabSemester: 'Семестр',
   gpaTabOverall: 'Общий',
@@ -704,6 +714,16 @@ export type TranslationKey = keyof typeof ru;
 type Dictionary = Record<TranslationKey, string>;
 
 const kk: Dictionary = {
+  foodToday: 'Бүгінгі мәзір',
+  foodTodayText: 'Тез, дәмді және қолжетімді',
+  foodPopular: 'Танымал тағамдар',
+  foodCartSummary: '{count} тағам · {total}',
+  laundryMachines: 'Кір жуғыш машиналар',
+  laundryAvailable: 'Бос',
+  laundryRepairStatus: 'Жөндеуде',
+  aiGreeting: 'Сәлем, {name}!',
+  aiHowHelp: 'Қалай көмектесе аламын?',
+  aiTyping: 'ALT AI жазып жатыр…',
   gpaTabCurrent: 'Ағымдағы',
   gpaTabSemester: 'Семестр',
   gpaTabOverall: 'Жалпы',
@@ -1369,6 +1389,16 @@ const kk: Dictionary = {
 };
 
 const en: Dictionary = {
+  foodToday: 'Today\'s menu',
+  foodTodayText: 'Quick, tasty and affordable',
+  foodPopular: 'Dishes',
+  foodCartSummary: '{count} items · {total}',
+  laundryMachines: 'Washing machines',
+  laundryAvailable: 'Available',
+  laundryRepairStatus: 'Under repair',
+  aiGreeting: 'Hello, {name}!',
+  aiHowHelp: 'How can I help?',
+  aiTyping: 'ALT AI is typing…',
   gpaTabCurrent: 'Current',
   gpaTabSemester: 'Semester',
   gpaTabOverall: 'Overall',

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { api, errorMessage } from '../../api/client';
 import type { Dorm, LaundryBooking, LaundrySlot, Machine } from '../../api/types';
 import { Text } from '../../components/AppText';
@@ -12,12 +13,13 @@ import SectionHeader from '../../components/SectionHeader';
 import SegmentedTabs from '../../components/SegmentedTabs';
 import ServiceLayout from '../../components/ServiceLayout';
 import StateView from '../../components/StateView';
+import { images } from '../../data/images';
 import { useApi } from '../../hooks/useApi';
 import { useI18n } from '../../i18n/LanguageContext';
 import type { TranslationKey } from '../../i18n/translations';
 import { useTheme } from '../../theme/ThemeContext';
-import { spacing } from '../../theme/metrics';
-import { type } from '../../theme/typography';
+import { radius, spacing } from '../../theme/metrics';
+import { fonts, type } from '../../theme/typography';
 import { addDays, dayKey, formatDayMonth } from '../../utils/format';
 import type { ServiceScreenProps } from './types';
 
@@ -101,7 +103,7 @@ function DormInfo({ dorm }: { dorm: Dorm }) {
 }
 
 function Laundry({ dorm }: { dorm: Dorm }) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { t, language } = useI18n();
   const machines = useApi<{ machines: Machine[] }>(`/api/dorms/${encodeURIComponent(dorm.id)}/machines`);
   const bookings = useApi<{ bookings: LaundryBooking[] }>('/api/laundry/bookings');
@@ -164,6 +166,7 @@ function Laundry({ dorm }: { dorm: Dorm }) {
 
   return (
     <View style={styles.block}>
+      <Image source={images.dormLaundry} style={styles.photo} resizeMode="cover" accessibilityIgnoresInvertColors />
       {bookings.data && bookings.data.bookings.length > 0 ? (
         <>
           <SectionHeader title={t('laundryMine')} />
@@ -200,11 +203,38 @@ function Laundry({ dorm }: { dorm: Dorm }) {
             ))}
           </Picker>
         ) : null}
-        <Picker label={t('laundryMachine')}>
-          {onFloor.map((item) => (
-            <Chip key={item.id} label={item.name} icon={item.status === 'ok' ? undefined : 'construct-outline'} selected={item.id === machine?.id} onPress={() => setMachineId(item.id)} />
-          ))}
-        </Picker>
+        {/* Стиральные машины карточками: статус от администратора, выбранная машина выделена */}
+        <Text style={[type.heading, { color: isDark ? colors.text : colors.primary }]}>{t('laundryMachines')}</Text>
+        <View style={styles.machines}>
+          {onFloor.map((item) => {
+            const selected = item.id === machine?.id;
+            const ok = item.status === 'ok';
+            return (
+              <Pressable
+                key={item.id}
+                onPress={() => setMachineId(item.id)}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                accessibilityLabel={`${item.name}. ${ok ? t('laundryAvailable') : t('laundryRepairStatus')}`}
+                style={({ pressed }) => [
+                  styles.machine,
+                  { backgroundColor: colors.surface, borderColor: selected ? colors.gold : colors.border },
+                  selected && styles.machineSelected,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <View style={[styles.machineIcon, { backgroundColor: colors.surfaceAlt }]}>
+                  <MaterialCommunityIcons name="washing-machine" size={26} color={isDark ? colors.gold : colors.primary} />
+                </View>
+                <Text style={[styles.machineName, styles.flex, { color: colors.text }]}>{item.name}</Text>
+                <View style={[styles.status, { backgroundColor: ok ? colors.successSoft : colors.dangerSoft }]}>
+                  <Text style={[styles.statusText, { color: ok ? colors.success : colors.danger }]}>{ok ? t('laundryAvailable') : t('laundryRepairStatus')}</Text>
+                </View>
+                <Ionicons name={selected ? 'checkmark-circle' : 'chevron-forward'} size={20} color={selected ? colors.gold : colors.textMuted} />
+              </Pressable>
+            );
+          })}
+        </View>
         <Picker label={t('laundryDate')}>
           {dates.map((value) => (
             <Chip key={dayKey(value)} label={formatDayMonth(value, language)} selected={dayKey(value) === date} onPress={() => setDate(dayKey(value))} />
@@ -306,6 +336,52 @@ function RepairForm({ onOpenRequests }: { onOpenRequests: () => void }) {
 }
 
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
+  photo: {
+    width: '100%',
+    height: 160,
+    borderRadius: radius.lg,
+  },
+  machines: {
+    gap: spacing.sm,
+  },
+  machine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.sm,
+    paddingRight: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+  },
+  machineSelected: {
+    borderWidth: 1.5,
+  },
+  machineIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  machineName: {
+    fontFamily: fonts.card,
+    fontSize: 16,
+  },
+  status: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+  },
+  statusText: {
+    fontFamily: fonts.semibold,
+    fontSize: 12,
+  },
+  pressed: {
+    opacity: 0.8,
+  },
   block: {
     gap: spacing.md,
   },

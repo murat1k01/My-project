@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Image, ImageBackground, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { api, errorMessage } from '../../api/client';
 import type { MenuItem, Order, OrderStatus } from '../../api/types';
@@ -21,9 +22,11 @@ import { useApi } from '../../hooks/useApi';
 import { useFavorites } from '../../hooks/useFavorites';
 import { useI18n } from '../../i18n/LanguageContext';
 import type { TranslationKey } from '../../i18n/translations';
+import { brand } from '../../theme/brand';
 import { useTheme } from '../../theme/ThemeContext';
 import { radius, spacing } from '../../theme/metrics';
-import { type } from '../../theme/typography';
+import { fonts, type } from '../../theme/typography';
+import type { IoniconName } from '../../types/Service';
 import { formatClock, formatDateTime, formatMoney } from '../../utils/format';
 import type { ServiceScreenProps } from './types';
 
@@ -39,7 +42,21 @@ const STATUS_LABELS: Record<OrderStatus, TranslationKey> = {
   canceled: 'orderCanceled',
 };
 
-/** Столовая: меню и цены с сервера, корзина на устройстве, заказ и его статус на сервере. */
+/** Иконка категории меню по её названию (на любом из языков). */
+function categoryIcon(name: string): IoniconName {
+  const n = name.toLowerCase();
+  if (/напит|сусын|drink|кофе|чай/.test(n)) return 'cafe-outline';
+  if (/салат|salad/.test(n)) return 'leaf-outline';
+  if (/десерт|выпеч|dessert|тәтті/.test(n)) return 'ice-cream-outline';
+  if (/завтрак|таңғы|breakfast/.test(n)) return 'sunny-outline';
+  if (/суп|сорпа|soup/.test(n)) return 'water-outline';
+  return 'restaurant-outline';
+}
+
+/**
+ * «Асхана»: баннер «Бүгінгі мәзір», категории с иконками, блюда строками с фото и золотой кнопкой «+»,
+ * тёмно-синяя панель корзины снизу. Меню и цены с сервера, корзина на устройстве, заказ и статус на сервере.
+ */
 export default function FoodService({ service, onBack }: ServiceScreenProps) {
   const { colors } = useTheme();
   const { t } = useI18n();
@@ -99,7 +116,23 @@ export default function FoodService({ service, onBack }: ServiceScreenProps) {
   };
 
   return (
-    <ServiceLayout service={service} onBack={onBack} notice="foodExampleNote">
+    <ServiceLayout
+      service={service}
+      onBack={onBack}
+      notice="foodExampleNote"
+      footer={
+        cartCount > 0 && tab !== 'cart' ? (
+          <Pressable onPress={() => setTab('cart')} accessibilityRole="button" accessibilityLabel={t('foodCart')} style={({ pressed }) => [styles.cartBar, pressed && styles.pressed]}>
+            <Ionicons name="cart-outline" size={24} color={brand.gold} />
+            <View style={styles.flex}>
+              <Text style={styles.cartBarTitle}>{t('foodCart')}</Text>
+              <Text style={styles.cartBarText}>{t('foodCartSummary', { count: cartCount, total: formatMoney(total, t('currency')) })}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={brand.ivory} />
+          </Pressable>
+        ) : undefined
+      }
+    >
       <SegmentedTabs<Tab>
         options={[
           { value: 'menu', label: t('foodMenu') },
@@ -112,11 +145,17 @@ export default function FoodService({ service, onBack }: ServiceScreenProps) {
 
       {tab === 'menu' ? (
         <>
+          <ImageBackground source={images.foodPlov} style={styles.todayBanner} imageStyle={styles.todayImage}>
+            <LinearGradient colors={['rgba(7, 22, 38, 0.9)', 'rgba(7, 22, 38, 0.35)'] as const} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[StyleSheet.absoluteFill, styles.todayImage]} />
+            <Text style={styles.todayTitle}>{t('foodToday')}</Text>
+            <Text style={styles.todayText}>{t('foodTodayText')}</Text>
+          </ImageBackground>
           <SearchField value={query} onChangeText={setQuery} placeholder={t('foodSearch')} />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} keyboardShouldPersistTaps="handled">
-            <Chip label={t('filterAll')} selected={category === null} onPress={() => setCategory(null)} />
-            {menu.data?.categories.map((name) => <Chip key={name} label={name} selected={category === name} onPress={() => setCategory(name)} />)}
+            <Chip label={t('filterAll')} icon="grid-outline" selected={category === null} onPress={() => setCategory(null)} />
+            {menu.data?.categories.map((name) => <Chip key={name} label={name} icon={categoryIcon(name)} selected={category === name} onPress={() => setCategory(name)} />)}
           </ScrollView>
+          <Text style={[type.heading, { color: colors.text }]}>{t('foodPopular')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
             <Chip label={t('sortTitle')} selected={sort === 'name'} onPress={() => setSort('name')} />
             <Chip label={t('sortPriceAsc')} selected={sort === 'priceAsc'} onPress={() => setSort('priceAsc')} />
@@ -231,12 +270,12 @@ type DishProps = {
 };
 
 function DishCard({ item, qty, favorite, onToggleFavorite, onChangeQty }: DishProps) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { t } = useI18n();
   const image = item.imageKey ? images[item.imageKey as keyof typeof images] : undefined;
 
   return (
-    <GlassCard style={styles.dish}>
+    <View style={[styles.dish, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       {image ? (
         <Image source={image} style={styles.dishImage} accessibilityIgnoresInvertColors />
       ) : (
@@ -247,25 +286,33 @@ function DishCard({ item, qty, favorite, onToggleFavorite, onChangeQty }: DishPr
       )}
       <View style={styles.dishInfo}>
         <View style={styles.cartRow}>
-          <Text style={[type.subheading, styles.flex, { color: colors.text }]}>{item.name}</Text>
+          <Text style={[styles.dishName, styles.flex, { color: colors.text }]} numberOfLines={2}>
+            {item.name}
+          </Text>
           <Pressable onPress={onToggleFavorite} hitSlop={8} accessibilityRole="button" accessibilityLabel={favorite ? t('removeFavoriteA11y', { name: item.name }) : t('addFavoriteA11y', { name: item.name })}>
-            <Ionicons name={favorite ? 'heart' : 'heart-outline'} size={22} color={favorite ? colors.danger : colors.textMuted} />
+            <Ionicons name={favorite ? 'heart' : 'heart-outline'} size={20} color={favorite ? colors.danger : colors.textMuted} />
           </Pressable>
         </View>
-        {item.description ? <Text style={[type.caption, { color: colors.textSecondary }]}>{item.description}</Text> : null}
+        {item.description ? (
+          <Text style={[type.caption, { color: colors.textSecondary }]} numberOfLines={1}>
+            {item.description}
+          </Text>
+        ) : null}
         {item.allergens ? <Text style={[type.caption, { color: colors.warning }]}>{t('foodAllergens', { list: item.allergens })}</Text> : null}
         <View style={styles.cartRow}>
-          <Text style={[type.bodyMedium, styles.flex, { color: colors.text }]}>{formatMoney(item.price, t('currency'))}</Text>
+          <Text style={[styles.price, styles.flex, { color: isDark ? colors.gold : colors.primary }]}>{formatMoney(item.price, t('currency'))}</Text>
           {!item.available ? (
             <Text style={[type.label, { color: colors.textMuted }]}>{t('foodUnavailable')}</Text>
           ) : qty > 0 ? (
             <Stepper qty={qty} name={item.name} onChange={onChangeQty} />
           ) : (
-            <PrimaryButton title={t('foodAdd')} compact onPress={() => onChangeQty(1)} />
+            <Pressable onPress={() => onChangeQty(1)} accessibilityRole="button" accessibilityLabel={`${t('foodAdd')}: ${item.name}`} style={({ pressed }) => [styles.addButton, pressed && styles.pressed]}>
+              <Ionicons name="add" size={22} color="#FFFFFF" />
+            </Pressable>
           )}
         </View>
       </View>
-    </GlassCard>
+    </View>
   );
 }
 
@@ -300,12 +347,78 @@ const styles = StyleSheet.create({
   },
   dish: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.sm,
+    borderRadius: radius.md,
+    borderWidth: 1,
   },
   dishImage: {
-    width: 84,
-    height: 84,
+    width: 92,
+    height: 80,
     borderRadius: radius.sm,
+  },
+  dishName: {
+    fontFamily: fonts.card,
+    fontSize: 15,
+    lineHeight: 20,
+  },
+  price: {
+    fontFamily: fonts.card,
+    fontSize: 16,
+  },
+  addButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: brand.antiqueGold,
+  },
+  todayBanner: {
+    width: '100%',
+    height: 150,
+    justifyContent: 'center',
+    padding: spacing.lg,
+    gap: 4,
+  },
+  todayImage: {
+    borderRadius: radius.lg,
+  },
+  todayTitle: {
+    fontFamily: fonts.serifBold,
+    fontSize: 30,
+    lineHeight: 34,
+    color: brand.ivory,
+  },
+  todayText: {
+    fontFamily: fonts.greeting,
+    fontSize: 14,
+    color: '#EDE3D2',
+  },
+  cartBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: radius.lg,
+    backgroundColor: brand.navy,
+    borderWidth: 1,
+    borderColor: 'rgba(212, 183, 124, 0.5)',
+    maxWidth: 760,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  cartBarTitle: {
+    fontFamily: fonts.card,
+    fontSize: 16,
+    color: brand.ivory,
+  },
+  cartBarText: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: 'rgba(248, 243, 232, 0.8)',
   },
   dishPlaceholder: {
     alignItems: 'center',

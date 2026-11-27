@@ -19,6 +19,7 @@ export const images = {
   serviceInfo: require('../../assets/images/service_info.jpg'),
   serviceSport: require('../../assets/images/service_sport.jpg'),
   serviceDorm: require('../../assets/images/service_dorm.jpg'),
+  dormLaundry: require('../../assets/images/dorm_laundry.jpg'),
   news2: require('../../assets/images/news_2.jpg'),
   news3: require('../../assets/images/news_3.jpg'),
   foodSoup: require('../../assets/images/food_soup.jpg'),
