@@ -80,7 +80,7 @@ export default function LoginScreen({ navigation }: RootStackScreenProps<'Login'
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" bounces={false}>
           <ImageBackground source={images.oxfordSunset} style={[styles.hero, { paddingTop: insets.top + spacing.md }]} resizeMode="cover">
-            <LinearGradient colors={['rgba(12, 35, 63, 0.25)', 'rgba(12, 35, 63, 0.7)', isDark ? colors.background : 'rgba(12, 35, 63, 0.92)'] as const} style={StyleSheet.absoluteFill} />
+            <LinearGradient colors={['rgba(0, 33, 71, 0.25)', 'rgba(0, 33, 71, 0.7)', isDark ? colors.background : 'rgba(0, 33, 71, 0.92)'] as const} style={StyleSheet.absoluteFill} />
             <View style={styles.langs}>
               {LANGUAGES.map((item) => (
                 <Chip key={item.code} label={item.short} selected={language === item.code} onPress={() => setLanguage(item.code)} />

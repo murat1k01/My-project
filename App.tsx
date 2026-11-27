@@ -10,6 +10,8 @@ import {
   useFonts,
 } from '@expo-google-fonts/inter';
 import { CormorantGaramond_600SemiBold, CormorantGaramond_700Bold } from '@expo-google-fonts/cormorant-garamond';
+import { Lora_600SemiBold } from '@expo-google-fonts/lora';
+import { NotoSerif_600SemiBold } from '@expo-google-fonts/noto-serif';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import SplashView from './src/components/SplashView';
 import { AppDataProvider, useAppData } from './src/context/AppDataContext';
@@ -37,12 +39,14 @@ export default function App() {
     Inter_700Bold,
     CormorantGaramond_600SemiBold,
     CormorantGaramond_700Bold,
+    NotoSerif_600SemiBold,
+    Lora_600SemiBold,
   });
 
-  // Пока шрифты грузятся (доли секунды) — просто фон Oxford Navy, как у заставки.
+  // Пока шрифты грузятся (доли секунды) — просто фон Oxford Blue, как у заставки.
   // Если шрифты не загрузились, приложение всё равно запускается с системным шрифтом.
   if (!fontsLoaded && !fontError) {
-    return <View style={{ flex: 1, backgroundColor: '#0C233F' }} />;
+    return <View style={{ flex: 1, backgroundColor: '#002147' }} />;
   }
 
   return (

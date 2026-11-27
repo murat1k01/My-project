@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.xl,
     borderWidth: 1,
-    borderColor: 'rgba(197, 164, 109, 0.55)',
+    borderColor: 'rgba(212, 183, 124, 0.55)',
   },
   laurelRow: {
     flexDirection: 'row',

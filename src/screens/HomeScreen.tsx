@@ -116,7 +116,7 @@ export default function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
               accessibilityIgnoresInvertColors
             />
             <LinearGradient colors={brand.photoShade} style={StyleSheet.absoluteFill} />
-            <View style={[styles.bannerFrame, { borderColor: 'rgba(197, 164, 109, 0.55)' }]} pointerEvents="none" />
+            <View style={[styles.bannerFrame, { borderColor: 'rgba(212, 183, 124, 0.55)' }]} pointerEvents="none" />
             <View style={styles.bannerText}>
               <Text style={styles.bannerTitle}>ALTushki</Text>
               <View style={styles.goldRule} />
@@ -140,7 +140,7 @@ export default function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
             ].map((item) => (
               <Pressable key={item.title} onPress={item.onPress} accessibilityRole="button" accessibilityLabel={item.title} style={({ pressed }) => [styles.quickCard, pressed && styles.pressed]}>
                 <ImageBackground source={item.image} style={styles.quickImage} imageStyle={styles.quickRadius}>
-                  <LinearGradient colors={['rgba(12, 35, 63, 0.05)', 'rgba(12, 35, 63, 0.9)'] as const} style={[StyleSheet.absoluteFill, styles.quickRadius]} />
+                  <LinearGradient colors={['rgba(0, 33, 71, 0.05)', 'rgba(0, 33, 71, 0.9)'] as const} style={[StyleSheet.absoluteFill, styles.quickRadius]} />
                   <View style={styles.quickRule} />
                   <Text style={styles.quickTitle}>{item.title}</Text>
                 </ImageBackground>
@@ -150,7 +150,7 @@ export default function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
 
           {/* Помощник ALT AI */}
           <Pressable onPress={() => navigation.navigate('Assistant')} accessibilityRole="button" accessibilityLabel={t('aiTitle')} style={({ pressed }) => [styles.aiCard, pressed && styles.pressed]}>
-            <LinearGradient colors={['#1A3557', '#0C233F'] as const} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.aiInner}>
+            <LinearGradient colors={['#0C2035', '#002147'] as const} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.aiInner}>
               <View style={styles.aiIcon}>
                 <Ionicons name="sparkles-outline" size={22} color={brand.gold} />
               </View>
@@ -220,9 +220,9 @@ const styles = StyleSheet.create({
     gap: 1,
   },
   name: {
-    fontFamily: fonts.serifBold,
-    fontSize: 24,
-    lineHeight: 28,
+    fontFamily: fonts.greeting,
+    fontSize: 21,
+    lineHeight: 27,
   },
   avatarRing: {
     borderWidth: 1.5,
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.serif,
     fontSize: 19,
     lineHeight: 24,
-    color: '#EDE3CF',
+    color: '#EDE3D2',
   },
   quickRow: {
     flexDirection: 'row',
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(197, 164, 109, 0.45)',
+    borderColor: 'rgba(212, 183, 124, 0.45)',
   },
   aiIcon: {
     width: 46,
@@ -333,16 +333,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   aiTitle: {
-    fontFamily: fonts.serifBold,
-    fontSize: 21,
-    lineHeight: 25,
+    fontFamily: fonts.card,
+    fontSize: 17,
+    lineHeight: 23,
     color: brand.ivory,
   },
   aiText: {
     fontFamily: fonts.regular,
     fontSize: 13,
     lineHeight: 18,
-    color: 'rgba(245, 240, 230, 0.8)',
+    color: 'rgba(248, 243, 232, 0.8)',
   },
   grid: {
     flexDirection: 'row',

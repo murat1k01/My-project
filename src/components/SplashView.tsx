@@ -11,8 +11,8 @@ type Props = {
   message: string;
 };
 
-const NAVY = '#0C233F';
-const GOLD = '#C5A46D';
+const NAVY = '#002147';
+const GOLD = '#D4B77C';
 
 /**
  * Экран запуска Oxford Academic Premium: фото Оксфорда на весь экран с тёмно-синим затемнением,
@@ -53,10 +53,10 @@ export default function SplashView({ message }: Props) {
         style={[StyleSheet.absoluteFill, styles.photo, { transform: [{ scale: zoom.interpolate({ inputRange: [0, 1], outputRange: [1.08, 1] }) }] }]}
         resizeMode="cover"
       />
-      <LinearGradient colors={['rgba(12, 35, 63, 0.35)', 'rgba(12, 35, 63, 0.78)', NAVY] as const} locations={[0, 0.55, 1]} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={['rgba(0, 33, 71, 0.35)', 'rgba(0, 33, 71, 0.78)', NAVY] as const} locations={[0, 0.55, 1]} style={StyleSheet.absoluteFill} />
 
       <View style={styles.center}>
-        <AnimatedLogo size={84} color="#F5F0E6" />
+        <AnimatedLogo size={84} color="#F8F3E8" />
         <Text style={styles.university}>ALT UNIVERSITY</Text>
         <View style={styles.rule} />
         <Text style={styles.slogan}>{SLOGAN}</Text>
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.serif,
     fontSize: 22,
     lineHeight: 28,
-    color: '#F5F0E6',
+    color: '#F8F3E8',
     textAlign: 'center',
   },
   bottom: {
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     height: 2,
     borderRadius: 1,
     overflow: 'hidden',
-    backgroundColor: 'rgba(245, 240, 230, 0.18)',
+    backgroundColor: 'rgba(248, 243, 232, 0.18)',
   },
   bar: {
     width: 60,
@@ -129,6 +129,6 @@ const styles = StyleSheet.create({
   message: {
     fontFamily: fonts.regular,
     fontSize: 13,
-    color: 'rgba(245, 240, 230, 0.75)',
+    color: 'rgba(248, 243, 232, 0.75)',
   },
 });
