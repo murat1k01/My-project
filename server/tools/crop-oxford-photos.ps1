@@ -2,7 +2,7 @@
 # Запуск: powershell -File server/tools/crop-oxford-photos.ps1 <папка с фото>
 Add-Type -AssemblyName PresentationCore
 $src = $args[0]  # папка с присланными фото
-$out = Join-Path $PSScriptRoot '....assetsimages'
+$out = Join-Path $PSScriptRoot '../../assets/images'
 
 function Save-Crop($file, $name, $x, $y, $w, $h) {
   $s = [System.IO.File]::OpenRead("$src\$file")
