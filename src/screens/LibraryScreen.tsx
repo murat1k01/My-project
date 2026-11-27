@@ -1,37 +1,39 @@
 import { useState } from 'react';
-import { FlatList, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Book } from '../api/types';
 import { Text } from '../components/AppText';
 import BookCover from '../components/BookCover';
 import Chip from '../components/Chip';
 import EmptyState from '../components/EmptyState';
-import IconButton from '../components/IconButton';
-import PrimaryButton from '../components/PrimaryButton';
-import SearchField from '../components/SearchField';
 import StateView from '../components/StateView';
-import { images } from '../data/images';
 import { useApi } from '../hooks/useApi';
 import { useDebounced } from '../hooks/useDebounced';
 import { useFavorites } from '../hooks/useFavorites';
 import { useI18n } from '../i18n/LanguageContext';
 import type { RootStackScreenProps } from '../navigation/types';
-import { withAlpha } from '../theme/colors';
+import { brand } from '../theme/brand';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, SCREEN_PADDING, spacing } from '../theme/metrics';
-import { type } from '../theme/typography';
+import { fonts, type } from '../theme/typography';
+import type { IoniconName } from '../types/Service';
 
 type Sort = 'title' | 'year';
+type Mode = 'all' | 'favorites' | 'ebooks';
 
-/** Библиотека: каталог с сервера, поиск, категории, сортировка и избранное на фоне книжных полок. */
+/**
+ * «Кітапхана»: тёмно-синяя шапка с поиском, категории, полка рекомендуемых книг с настоящими обложками,
+ * быстрые действия (бронирование места, электронные книги, мои книги) и весь каталог с сервера.
+ */
 export default function LibraryScreen({ navigation }: RootStackScreenProps<'Library'>) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { t } = useI18n();
+  const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<string | null>(null);
   const [sort, setSort] = useState<Sort>('title');
-  const [onlyFavorites, setOnlyFavorites] = useState(false);
+  const [mode, setMode] = useState<Mode>('all');
   const search = useDebounced(query.trim());
   const favorites = useFavorites('book');
 
@@ -42,29 +44,70 @@ export default function LibraryScreen({ navigation }: RootStackScreenProps<'Libr
   const suffix = params.toString();
   const { data, loading, error, reload } = useApi<{ books: Book[]; categories: string[] }>(`/api/books${suffix ? `?${suffix}` : ''}`);
 
-  const books = (data?.books ?? []).filter((book) => !onlyFavorites || favorites.isFavorite(book.id));
+  const all = data?.books ?? [];
+  const books = all.filter((book) => (mode === 'favorites' ? favorites.isFavorite(book.id) : mode === 'ebooks' ? Boolean(book.readUrl) : true));
+  // Полка: книги с обложками из текущей выборки
+  const shelf = all.filter((book) => book.coverUrl).slice(0, 10);
+  const heading = isDark ? colors.text : colors.primary;
+
+  const actions: { icon: IoniconName; label: string; badge?: string; active?: boolean; onPress: () => void }[] = [
+    { icon: 'calendar-outline', label: t('libActionBook'), onPress: () => navigation.navigate('ServiceDetails', { serviceId: 'lib' }) },
+    { icon: 'tablet-portrait-outline', label: t('libActionEbooks'), active: mode === 'ebooks', badge: String(all.filter((b) => b.readUrl).length), onPress: () => setMode(mode === 'ebooks' ? 'all' : 'ebooks') },
+    { icon: 'heart-outline', label: t('libActionMine'), active: mode === 'favorites', badge: String(all.filter((b) => favorites.isFavorite(b.id)).length), onPress: () => setMode(mode === 'favorites' ? 'all' : 'favorites') },
+  ];
 
   const header = (
     <View style={styles.header}>
-      <View style={styles.titleRow}>
-        <IconButton icon="chevron-back" variant="glass" accessibilityLabel={t('back')} onPress={navigation.goBack} />
-        <View style={styles.flex}>
-          <Text style={[type.title, { color: colors.text }]} accessibilityRole="header">
-            {t('tabLibrary')}
-          </Text>
-          {data ? <Text style={[type.caption, { color: colors.textSecondary }]}>{t('libCount', { count: books.length })}</Text> : null}
-        </View>
-        <IconButton icon={onlyFavorites ? 'heart' : 'heart-outline'} variant="glass" accessibilityLabel={t('filterFavorites')} onPress={() => setOnlyFavorites((prev) => !prev)} />
-      </View>
-      <SearchField value={query} onChangeText={setQuery} placeholder={t('libSearch')} />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
         <Chip label={t('filterAll')} selected={category === null} onPress={() => setCategory(null)} />
         {data?.categories.map((name) => <Chip key={name} label={name} selected={category === name} onPress={() => setCategory(name)} />)}
       </ScrollView>
-      <View style={styles.sortRow}>
-        <Chip label={t('sortTitle')} icon="text-outline" selected={sort === 'title'} onPress={() => setSort('title')} />
-        <Chip label={t('sortYear')} icon="calendar-outline" selected={sort === 'year'} onPress={() => setSort('year')} />
+
+      {shelf.length > 0 && mode === 'all' ? (
+        <View style={styles.section}>
+          <Text style={[type.heading, { color: heading }]}>{t('libRecommended')}</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.shelf}>
+            {shelf.map((book) => (
+              <Pressable key={book.id} onPress={() => navigation.navigate('BookDetails', { bookId: book.id })} accessibilityRole="button" accessibilityLabel={book.title} style={({ pressed }) => [styles.shelfBook, pressed && styles.pressed]}>
+                <BookCover uri={book.coverUrl} width={104} />
+                <Text style={[styles.shelfTitle, { color: colors.text }]} numberOfLines={2}>
+                  {book.title}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+          {/* Деревянная полка с золотой кромкой */}
+          <View style={styles.plank} />
+        </View>
+      ) : null}
+
+      <View style={[styles.actions, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        {actions.map((action, index) => (
+          <Pressable
+            key={action.label}
+            onPress={action.onPress}
+            accessibilityRole="button"
+            accessibilityState={{ selected: action.active }}
+            style={({ pressed }) => [styles.actionRow, index > 0 && { borderTopWidth: 1, borderTopColor: colors.border }, pressed && styles.pressed]}
+          >
+            <Ionicons name={action.icon} size={21} color={isDark ? colors.gold : colors.primary} />
+            <Text style={[styles.actionLabel, { color: colors.text }]}>{action.label}</Text>
+            {action.badge ? (
+              <View style={[styles.badge, { backgroundColor: action.active ? colors.primary : colors.primarySoft }]}>
+                <Text style={[styles.badgeText, { color: action.active ? colors.onPrimary : heading }]}>{action.badge}</Text>
+              </View>
+            ) : null}
+            <Ionicons name={action.active ? 'close' : 'chevron-forward'} size={18} color={colors.gold} />
+          </Pressable>
+        ))}
       </View>
+
+      <View style={styles.catalogHead}>
+        <Text style={[type.heading, styles.flex, { color: heading }]}>{mode === 'favorites' ? t('libActionMine') : mode === 'ebooks' ? t('libActionEbooks') : t('libCatalog')}</Text>
+        <Chip label={t('sortTitle')} selected={sort === 'title'} onPress={() => setSort('title')} />
+        <Chip label={t('sortYear')} selected={sort === 'year'} onPress={() => setSort('year')} />
+      </View>
+      {data ? <Text style={[type.caption, { color: colors.textSecondary }]}>{t('libCount', { count: books.length })}</Text> : null}
       <StateView loading={loading} error={error} hasData={data !== null} onRetry={() => void reload()}>
         {null}
       </StateView>
@@ -72,34 +115,58 @@ export default function LibraryScreen({ navigation }: RootStackScreenProps<'Libr
   );
 
   return (
-    <View style={styles.flex}>
-      <Image source={images.serviceLib} style={styles.background} resizeMode="cover" />
-      {/* Тёплый оттенок поверх фото библиотеки; текст остаётся читаемым в обеих темах */}
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: withAlpha(colors.background, 0.88) }]} />
-      <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={styles.flex}>
+    <View style={[styles.flex, { backgroundColor: isDark ? brand.midnight : brand.navy }]}>
+      <View style={[styles.navy, { paddingTop: insets.top + spacing.sm }]}>
+        <View style={styles.navyRow}>
+          <Pressable onPress={navigation.goBack} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('back')} style={styles.back}>
+            <Ionicons name="chevron-back" size={24} color={brand.ivory} />
+          </Pressable>
+          <Text style={styles.navyTitle} accessibilityRole="header">
+            {t('gridLibrary')}
+          </Text>
+          <View style={styles.back} />
+        </View>
+        <View style={styles.search}>
+          <Ionicons name="search-outline" size={19} color={brand.navy} />
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder={t('libSearch')}
+            placeholderTextColor="#77746D"
+            accessibilityLabel={t('libSearch')}
+            style={styles.searchInput}
+            autoCorrect={false}
+            returnKeyType="search"
+          />
+          {query ? (
+            <Pressable onPress={() => setQuery('')} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('close')}>
+              <Ionicons name="close-circle" size={18} color="#77746D" />
+            </Pressable>
+          ) : null}
+        </View>
+      </View>
+
+      <View style={[styles.sheet, { backgroundColor: colors.background, borderColor: colors.gold }]}>
         <FlatList
           data={data ? books : []}
           keyExtractor={(book) => book.id}
           ListHeaderComponent={header}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + spacing.xxl }]}
           ListEmptyComponent={
             data ? (
               <EmptyState
-                icon={onlyFavorites ? 'heart-outline' : 'search-outline'}
-                title={onlyFavorites ? t('libFavEmptyTitle') : t('noResultsTitle')}
-                message={onlyFavorites ? t('libFavEmptyText') : t('libNoResults')}
+                icon={mode === 'favorites' ? 'heart-outline' : 'search-outline'}
+                title={mode === 'favorites' ? t('libFavEmptyTitle') : t('noResultsTitle')}
+                message={mode === 'favorites' ? t('libFavEmptyText') : t('libNoResults')}
               />
             ) : undefined
-          }
-          ListFooterComponent={
-            <PrimaryButton title={t('libReadingRoom')} variant="glass" icon="map-outline" style={styles.footer} onPress={() => navigation.navigate('ServiceDetails', { serviceId: 'lib' })} />
           }
           renderItem={({ item }) => (
             <BookRow book={item} favorite={favorites.isFavorite(item.id)} onToggleFavorite={() => void favorites.toggle(item.id)} onPress={() => navigation.navigate('BookDetails', { bookId: item.id })} />
           )}
         />
-      </SafeAreaView>
+      </View>
     </View>
   );
 }
@@ -148,10 +215,110 @@ function BookRow({ book, favorite, onToggleFavorite, onPress }: RowProps) {
 }
 
 const styles = StyleSheet.create({
-  background: {
-    position: 'absolute',
+  navy: {
+    paddingHorizontal: SCREEN_PADDING,
+    paddingBottom: spacing.xl + spacing.md,
+    gap: spacing.md,
+  },
+  navyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  back: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navyTitle: {
+    flex: 1,
+    textAlign: 'center',
+    fontFamily: fonts.card,
+    fontSize: 20,
+    color: brand.ivory,
+  },
+  search: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    minHeight: 50,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: brand.ivory,
     width: '100%',
-    height: '100%',
+    maxWidth: 760,
+    alignSelf: 'center',
+  },
+  searchInput: {
+    flex: 1,
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    color: '#17212B',
+    paddingVertical: spacing.sm,
+  },
+  sheet: {
+    flex: 1,
+    marginTop: -spacing.lg,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    borderTopWidth: 1,
+    overflow: 'hidden',
+  },
+  section: {
+    gap: spacing.sm,
+  },
+  shelf: {
+    gap: spacing.md,
+    paddingHorizontal: 4,
+    paddingTop: spacing.xs,
+  },
+  shelfBook: {
+    width: 104,
+    gap: 6,
+  },
+  shelfTitle: {
+    fontFamily: fonts.card,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  plank: {
+    height: 8,
+    borderRadius: 3,
+    backgroundColor: '#5B3A1E',
+    borderBottomWidth: 2,
+    borderBottomColor: brand.antiqueGold,
+  },
+  actions: {
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    paddingHorizontal: spacing.md,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    minHeight: 54,
+  },
+  actionLabel: {
+    flex: 1,
+    fontFamily: fonts.card,
+    fontSize: 15,
+  },
+  badge: {
+    minWidth: 28,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+  },
+  badgeText: {
+    fontFamily: fonts.semibold,
+    fontSize: 12,
+  },
+  catalogHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
   flex: {
     flex: 1,
@@ -165,8 +332,9 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   header: {
-    gap: spacing.md,
-    paddingTop: spacing.md,
+    gap: spacing.lg,
+    paddingTop: spacing.xl,
+    marginBottom: spacing.md,
   },
   titleRow: {
     flexDirection: 'row',
