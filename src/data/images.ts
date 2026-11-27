@@ -4,6 +4,8 @@
  * Фото блюд — тоже Wikimedia Commons, авторы в assets/images/CREDITS.md.
  */
 export const images = {
+  /** Логотип ALTushki (assets/images/logo.png из присланного герба) */
+  logo: require('../../assets/images/logo.png'),
   heroEarth: require('../../assets/images/hero_earth.jpg'),
   // Фото Оксфорда, которые прислал автор проекта: заставка, вход и баннер главной
   oxfordSunset: require('../../assets/images/oxford_sunset.jpg'),

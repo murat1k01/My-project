@@ -3,6 +3,7 @@ import { useIsFocused } from '@react-navigation/native';
 import { Text } from '../components/AppText';
 import Avatar from '../components/Avatar';
 import GlassCard from '../components/GlassCard';
+import IconButton from '../components/IconButton';
 import ScreenScroll from '../components/ScreenScroll';
 import StateView from '../components/StateView';
 import { useApi } from '../hooks/useApi';
@@ -22,8 +23,21 @@ export type ChatSummary = {
   last: { text: string; createdAt: string; mine: boolean };
 };
 
-/** Список переписок со студентами: последнее сообщение и число непрочитанных. */
+/** Экран сообщений в стеке (с кнопкой «Назад»). */
 export default function MessagesScreen({ navigation }: RootStackScreenProps<'Messages'>) {
+  return <MessagesView onBack={navigation.goBack} onOpenChat={(userId, name) => navigation.navigate('Chat', { userId, name })} onOpenStudents={() => navigation.navigate('Students')} />;
+}
+
+type ViewProps = {
+  /** Есть у экрана стека; у вкладки «Хабарлама» кнопки «Назад» нет */
+  onBack?: () => void;
+  onOpenChat: (userId: string, name: string) => void;
+  /** Открыть список студентов, чтобы начать новую переписку */
+  onOpenStudents?: () => void;
+};
+
+/** Список переписок со студентами: последнее сообщение и число непрочитанных. */
+export function MessagesView({ onBack, onOpenChat, onOpenStudents }: ViewProps) {
   const { colors } = useTheme();
   const { t, language } = useI18n();
   const focused = useIsFocused();
@@ -31,7 +45,12 @@ export default function MessagesScreen({ navigation }: RootStackScreenProps<'Mes
   const chats = data?.chats ?? [];
 
   return (
-    <ScreenScroll title={t('msgTitle')} subtitle={t('msgSubtitle')} onBack={navigation.goBack}>
+    <ScreenScroll
+      title={t('msgTitle')}
+      subtitle={t('msgSubtitle')}
+      onBack={onBack}
+      right={onOpenStudents ? <IconButton icon="people-outline" variant={onBack ? 'light' : 'glass'} accessibilityLabel={t('studentsTitle')} onPress={onOpenStudents} /> : undefined}
+    >
       <StateView
         loading={loading}
         error={error}
@@ -45,7 +64,7 @@ export default function MessagesScreen({ navigation }: RootStackScreenProps<'Mes
         {chats.map((chat) => {
           const name = `${chat.firstName} ${chat.lastName}`;
           return (
-            <Pressable key={chat.userId} accessibilityRole="button" accessibilityLabel={name} onPress={() => navigation.navigate('Chat', { userId: chat.userId, name })}>
+            <Pressable key={chat.userId} accessibilityRole="button" accessibilityLabel={name} onPress={() => onOpenChat(chat.userId, name)}>
               <GlassCard style={styles.row}>
                 <Avatar firstName={chat.firstName} lastName={chat.lastName} seed={chat.userId} photo={chat.photo} size={46} />
                 <View style={styles.flex}>

@@ -12,14 +12,14 @@ import { useSignOut } from '../hooks/useSignOut';
 import { useI18n } from '../i18n/LanguageContext';
 import { LANGUAGES } from '../i18n/translations';
 import { PHOTO_CREDITS } from '../data/photoCredits';
-import type { MainTabScreenProps } from '../navigation/types';
+import type { RootStackScreenProps } from '../navigation/types';
 import { FONT_SCALE_MAX, FONT_SCALE_MIN, FONT_SCALE_STEP, useFontScale } from '../theme/FontScaleContext';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, spacing } from '../theme/metrics';
 import { type } from '../theme/typography';
 import type { IoniconName } from '../types/Service';
 
-export default function SettingsScreen({ navigation }: MainTabScreenProps<'Settings'>) {
+export default function SettingsScreen({ navigation }: RootStackScreenProps<'Settings'>) {
   const { colors, isDark, setMode } = useTheme();
   const { t, language, setLanguage } = useI18n();
   const { scale, setScale } = useFontScale();
@@ -35,7 +35,7 @@ export default function SettingsScreen({ navigation }: MainTabScreenProps<'Setti
   const percent = Math.round(draftScale * 100);
 
   return (
-    <ScreenScroll title={t('settingsTitle')}>
+    <ScreenScroll title={t('settingsTitle')} onBack={navigation.goBack}>
       <Section title={t('fontSize')}>
         <View style={styles.sliderRow}>
           <Text style={[styles.small, { color: colors.textMuted }]} accessibilityElementsHidden>

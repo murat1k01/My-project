@@ -8,6 +8,7 @@ import GlassCard from '../components/GlassCard';
 import ProgressBar from '../components/ProgressBar';
 import ScreenContainer from '../components/ScreenContainer';
 import TopBar from '../components/TopBar';
+import type { RootStackScreenProps } from '../navigation/types';
 import { JOURNAL, JournalEntry } from '../data/academic';
 import { useI18n } from '../i18n/LanguageContext';
 import { useTheme } from '../theme/ThemeContext';
@@ -25,7 +26,7 @@ import {
 } from '../utils/grades';
 
 /** Журнал успеваемости: РК1, РК2, рейтинг, экзамен, итог, буквенная оценка, GPA и посещаемость. */
-export default function JournalScreen() {
+export default function JournalScreen({ navigation }: RootStackScreenProps<'Journal'>) {
   const { colors } = useTheme();
   const { t } = useI18n();
 
@@ -41,7 +42,7 @@ export default function JournalScreen() {
 
   const header = (
     <View style={styles.header}>
-      <TopBar label={t('appName')} />
+      <TopBar onBack={navigation.goBack} />
       <View style={styles.titleBlock}>
         <Text style={[type.display, { color: colors.text }]} accessibilityRole="header">
           {t('journalTitle')}

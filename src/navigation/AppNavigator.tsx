@@ -19,7 +19,11 @@ import LoginScreen from '../screens/LoginScreen';
 import PaymentScreen from '../screens/PaymentScreen';
 import AssistantScreen from '../screens/AssistantScreen';
 import ChatScreen from '../screens/ChatScreen';
-import MessagesScreen from '../screens/MessagesScreen';
+import MessagesScreen, { MessagesView } from '../screens/MessagesScreen';
+import SearchScreen from '../screens/SearchScreen';
+import StudentCardScreen from '../screens/StudentCardScreen';
+import CareersScreen from '../screens/CareersScreen';
+import AllServicesScreen from '../screens/AllServicesScreen';
 import ProfileEditScreen from '../screens/ProfileEditScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import RegisterScreen from '../screens/RegisterScreen';
@@ -34,7 +38,7 @@ import { useFontScale } from '../theme/FontScaleContext';
 import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/typography';
 import type { IoniconName } from '../types/Service';
-import type { MainTabParamList, RootStackParamList } from './types';
+import type { MainTabParamList, MainTabScreenProps, RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -42,11 +46,15 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 /** Иконки вкладок: [активная, неактивная] */
 const TAB_ICONS: Record<keyof MainTabParamList, [IoniconName, IoniconName]> = {
   Home: ['home', 'home-outline'],
-  Journal: ['ribbon', 'ribbon-outline'],
-  Students: ['people', 'people-outline'],
-  Profile: ['person-circle', 'person-circle-outline'],
-  Settings: ['settings', 'settings-outline'],
+  Inbox: ['mail-unread', 'mail-unread-outline'],
+  Search: ['search', 'search-outline'],
+  Profile: ['person', 'person-outline'],
 };
+
+/** Вкладка «Хабарлама»: тот же список переписок, что и экран сообщений, но без кнопки «Назад». */
+function InboxTab({ navigation }: MainTabScreenProps<'Inbox'>) {
+  return <MessagesView onOpenChat={(userId, name) => navigation.navigate('Chat', { userId, name })} />;
+}
 
 function MainTabs() {
   const { colors } = useTheme();
@@ -80,10 +88,9 @@ function MainTabs() {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} options={{ title: t('tabHome') }} />
-      <Tab.Screen name="Journal" component={JournalScreen} options={{ title: t('tabJournal') }} />
-      <Tab.Screen name="Students" component={StudentsScreen} options={{ title: t('tabStudents') }} />
+      <Tab.Screen name="Inbox" component={InboxTab} options={{ title: t('tabInbox') }} />
+      <Tab.Screen name="Search" component={SearchScreen} options={{ title: t('tabSearch') }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: t('tabProfile') }} />
-      <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: t('tabSettings') }} />
     </Tab.Navigator>
   );
 }
@@ -133,6 +140,12 @@ export default function AppNavigator() {
             <Stack.Screen name="Assistant" component={AssistantScreen} />
             <Stack.Screen name="Messages" component={MessagesScreen} />
             <Stack.Screen name="Chat" component={ChatScreen} />
+            <Stack.Screen name="Journal" component={JournalScreen} />
+            <Stack.Screen name="Students" component={StudentsScreen} />
+            <Stack.Screen name="Settings" component={SettingsScreen} />
+            <Stack.Screen name="StudentCard" component={StudentCardScreen} />
+            <Stack.Screen name="Careers" component={CareersScreen} />
+            <Stack.Screen name="AllServices" component={AllServicesScreen} />
           </>
         ) : (
           <>

@@ -106,7 +106,9 @@ export default function ProfileScreen({ navigation }: MainTabScreenProps<'Profil
           </GlassCard>
           <PrimaryButton title={t('profileEdit')} arrow onPress={() => navigation.navigate('ProfileEdit')} />
           <SubscriptionBanner onPress={() => navigation.navigate('Subscription')} />
+          <PrimaryButton title={t('cardTitle')} variant="glass" icon="id-card-outline" onPress={() => navigation.navigate('StudentCard')} />
           <PrimaryButton title={t('requestsTitle')} variant="glass" icon="document-text-outline" onPress={() => navigation.navigate('Requests')} />
+          <PrimaryButton title={t('settingsTitle')} variant="glass" icon="settings-outline" onPress={() => navigation.navigate('Settings')} />
           {isAdmin ? <PrimaryButton title={t('adminTitle')} variant="glass" icon="shield-checkmark-outline" onPress={() => navigation.navigate('Admin')} /> : null}
           <PrimaryButton title={t('signOut')} variant="danger" icon="log-out-outline" onPress={signOut} />
         </View>

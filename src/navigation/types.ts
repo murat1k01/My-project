@@ -3,13 +3,12 @@ import type { CompositeScreenProps, NavigatorScreenParams } from '@react-navigat
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { ServiceId } from '../types/Service';
 
-/** Вкладки нижней навигации */
+/** Вкладки нижней навигации: Басты, Хабарлама, Ізденіс, Профиль */
 export type MainTabParamList = {
   Home: undefined;
-  Journal: undefined;
-  Students: undefined;
+  Inbox: undefined;
+  Search: undefined;
   Profile: undefined;
-  Settings: undefined;
 };
 
 /**
@@ -37,6 +36,12 @@ export type RootStackParamList = {
   Assistant: undefined;
   Messages: undefined;
   Chat: { userId: string; name: string };
+  Journal: undefined;
+  Students: undefined;
+  Settings: undefined;
+  StudentCard: undefined;
+  Careers: undefined;
+  AllServices: undefined;
 };
 
 export type RootStackScreenProps<T extends keyof RootStackParamList> = NativeStackScreenProps<RootStackParamList, T>;

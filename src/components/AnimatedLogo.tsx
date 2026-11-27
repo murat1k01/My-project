@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { AccessibilityInfo, Animated, Easing, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { AccessibilityInfo, Animated, Easing, Image, StyleSheet, View } from 'react-native';
 import { Text } from './AppText';
+import { images } from '../data/images';
 import { fonts } from '../theme/typography';
 
 type Props = {
@@ -13,7 +13,7 @@ type Props = {
 const APPEAR_MS = 900;
 
 /**
- * Логотип ALTushki: синий квадрат со скруглёнными углами и белой шапочкой, под ним название.
+ * Логотип ALTushki — герб автора проекта: тёмно-синий щит, шапочка, книга, здание и лавровые ветви. Под ним название.
  * При входе он один раз мягко проявляется и чуть приближается, затем проявляется название.
  * При системной настройке «уменьшить движение» логотип показывается сразу.
  */
@@ -45,13 +45,13 @@ export default function AnimatedLogo({ size = 80, color = '#FFFFFF' }: Props) {
           {
             width: size,
             height: size,
-            borderRadius: size * 0.32,
+            borderRadius: size * 0.22,
             opacity: appear,
             transform: [{ scale: appear.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) }],
           },
         ]}
       >
-        <Ionicons name="school" size={size * 0.48} color="#FFFFFF" />
+        <Image source={images.logo} style={styles.image} resizeMode="cover" />
       </Animated.View>
       <Animated.View style={{ opacity: titleOpacity, transform: [{ translateY: titleOpacity.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] }}>
         <Text style={[styles.title, { color, fontSize: size * 0.42 }]}>ALTushki</Text>
@@ -63,8 +63,8 @@ export default function AnimatedLogo({ size = 80, color = '#FFFFFF' }: Props) {
 /** Тот же значок логотипа без названия и анимации — для шапки главного экрана. */
 export function LogoMark({ size = 40 }: { size?: number }) {
   return (
-    <View style={[styles.mark, { width: size, height: size, borderRadius: size * 0.32 }]} accessibilityRole="image" accessibilityLabel="ALTushki">
-      <Ionicons name="school" size={size * 0.48} color="#FFFFFF" />
+    <View style={[styles.mark, { width: size, height: size, borderRadius: size * 0.22 }]} accessibilityRole="image" accessibilityLabel="ALTushki">
+      <Image source={images.logo} style={styles.image} resizeMode="cover" />
     </View>
   );
 }
@@ -77,10 +77,17 @@ const styles = StyleSheet.create({
   mark: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#2F6BFF',
+    overflow: 'hidden',
+    backgroundColor: '#15253E',
+    borderWidth: 1,
+    borderColor: 'rgba(212, 183, 124, 0.6)',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
   },
   title: {
-    fontFamily: fonts.regular,
-    letterSpacing: -1,
+    fontFamily: fonts.serifBold,
+    letterSpacing: 0.5,
   },
 });

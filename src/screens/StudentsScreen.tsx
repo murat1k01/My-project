@@ -17,12 +17,12 @@ import StateView from '../components/StateView';
 import { useApi } from '../hooks/useApi';
 import { useDebounced } from '../hooks/useDebounced';
 import { useI18n } from '../i18n/LanguageContext';
-import type { MainTabScreenProps } from '../navigation/types';
+import type { RootStackScreenProps } from '../navigation/types';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, spacing } from '../theme/metrics';
 import { type } from '../theme/typography';
 
-export default function StudentsScreen({ navigation }: MainTabScreenProps<'Students'>) {
+export default function StudentsScreen({ navigation }: RootStackScreenProps<'Students'>) {
   const { t } = useI18n();
   const focused = useIsFocused();
   // Число непрочитанных сообщений на значке
@@ -32,7 +32,8 @@ export default function StudentsScreen({ navigation }: MainTabScreenProps<'Stude
     <ScreenScroll
       title={t('studentsTitle')}
       subtitle={t('studentsSubtitle')}
-      right={<IconButton icon="chatbubbles-outline" badge={unread} accessibilityLabel={t('msgTitle')} onPress={() => navigation.navigate('Messages')} />}
+      onBack={navigation.goBack}
+      right={<IconButton icon="chatbubbles-outline" variant="light" badge={unread} accessibilityLabel={t('msgTitle')} onPress={() => navigation.navigate('Messages')} />}
     >
       <StudentsList
         unread={unread}

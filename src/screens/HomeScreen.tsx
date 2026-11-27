@@ -3,22 +3,19 @@ import { Animated, ImageBackground, Pressable, StyleSheet, useWindowDimensions, 
 import { useIsFocused } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { LaundryBooking } from '../api/types';
+import AcademicTile from '../components/AcademicTile';
 import { LogoMark } from '../components/AnimatedLogo';
 import { Text } from '../components/AppText';
 import Avatar from '../components/Avatar';
-import Chip from '../components/Chip';
-import EmptyState from '../components/EmptyState';
 import FormBanner from '../components/FormBanner';
-import IconButton from '../components/IconButton';
-import ScreenContainer from '../components/ScreenContainer';
+import PhotoCarousel, { Slide } from '../components/PhotoCarousel';
 import SectionHeader from '../components/SectionHeader';
-import ServiceCard from '../components/ServiceCard';
-import { useAppData } from '../context/AppDataContext';
 import { useAuth } from '../context/AuthContext';
 import { images } from '../data/images';
-import { SERVICES } from '../data/services';
 import { useApi } from '../hooks/useApi';
+import { useAppear } from '../hooks/useAppear';
 import { useNow } from '../hooks/useNow';
 import { useI18n } from '../i18n/LanguageContext';
 import type { MainTabScreenProps } from '../navigation/types';
@@ -26,33 +23,28 @@ import { brand, SLOGAN } from '../theme/brand';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, SCREEN_PADDING, spacing } from '../theme/metrics';
 import { fonts, type } from '../theme/typography';
-import type { Service } from '../types/Service';
-import { formatDayMonth, formatToday, getGreetingKey } from '../utils/format';
-
-type Filter = 'all' | 'favorites';
+import type { IoniconName } from '../types/Service';
+import { formatDayMonth, getGreetingKey } from '../utils/format';
 
 const GRID_GAP = spacing.sm + 2;
-/** Ширина, начиная с которой считаем устройство планшетом */
-const TABLET_BREAKPOINT = 600;
 /** На очень широких экранах контент не растягивается бесконечно */
-const MAX_CONTENT_WIDTH = 960;
-const BANNER_HEIGHT = 210;
+const MAX_CONTENT_WIDTH = 760;
 
-const HOME_SERVICES = SERVICES.filter((service) => !service.hidden);
-
-/** Главный экран в стиле Oxford Academic Premium: шапка студента, баннер с фото Оксфорда, быстрые карточки и плитки сервисов. */
+/**
+ * Главный экран Oxford Academic Heritage: тёмно-синяя полоса с логотипом, приветствие студента,
+ * баннер с фото Оксфорда, сетка 3 × 3 основных сервисов, студенческий билет и университетские разделы.
+ */
 export default function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
   const { colors, isDark } = useTheme();
   const { t, language } = useI18n();
   const { user } = useAuth();
-  const { favorites, isFavorite, toggleFavorite } = useAppData();
-  const [filter, setFilter] = useState<Filter>('all');
+  const insets = useSafeAreaInsets();
   const now = useNow();
   const focused = useIsFocused();
-  // Напоминание о ближайшей стирке: запрашиваем, когда экран открыт и пользователь вошёл
+  const appear = useAppear(16);
+  // Напоминание о ближайшей стирке и непрочитанные сообщения: запрашиваем, когда экран открыт
   const bookings = useApi<{ bookings: LaundryBooking[] }>(user && focused ? '/api/laundry/bookings' : null);
   const nextBooking = user ? bookings.data?.bookings[0] : undefined;
-  // Непрочитанные сообщения — значок на колокольчике
   const chats = useApi<{ chats: { unread: number }[] }>(user && focused ? '/api/messages' : null);
   const unread = (chats.data?.chats ?? []).reduce((sum, chat) => sum + chat.unread, 0);
 
@@ -60,69 +52,79 @@ export default function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
   const [scrollY] = useState(() => new Animated.Value(0));
   const photoShift = scrollY.interpolate({ inputRange: [-100, 0, 300], outputRange: [-30, 0, 90], extrapolate: 'clamp' });
 
-  // Адаптивная сетка: 3 колонки на телефоне, 4 на планшете; ширина плитки считается от фактической ширины сетки
   const { width } = useWindowDimensions();
   const [gridWidth, setGridWidth] = useState(0);
-  const columns = width >= TABLET_BREAKPOINT ? 4 : 3;
   const availableWidth = gridWidth || Math.min(width, MAX_CONTENT_WIDTH) - SCREEN_PADDING * 2;
-  const cardWidth = Math.floor((availableWidth - GRID_GAP * (columns - 1)) / columns);
+  const tileWidth = Math.floor((availableWidth - GRID_GAP * 2) / 3);
+  const heading = isDark ? colors.text : colors.primary;
 
-  const visibleServices = filter === 'favorites' ? HOME_SERVICES.filter((service) => isFavorite(service.id)) : HOME_SERVICES;
-  const headingColor = isDark ? colors.text : colors.primary;
+  const slides: Slide[] = [
+    { image: isDark ? images.oxfordEvening : images.oxfordDay, title: 'ALTushki', subtitle: SLOGAN },
+    { image: images.oxfordSunset, title: t('slideStudyTitle'), subtitle: t('slideStudyText') },
+    { image: images.serviceLib, title: t('slideLibTitle'), subtitle: t('slideLibText') },
+    { image: images.serviceDorm, title: t('slideCampusTitle'), subtitle: t('slideCampusText') },
+  ];
 
-  const openService = (service: Service) => {
-    if (service.route) navigation.navigate(service.route);
-    else navigation.navigate('ServiceDetails', { serviceId: service.id });
-  };
+  const grid: { icon: IoniconName; label: string; onPress: () => void }[] = [
+    { icon: 'calendar-outline', label: t('gridSchedule'), onPress: () => navigation.navigate('ServiceDetails', { serviceId: 'cal' }) },
+    { icon: 'book-outline', label: t('gridLibrary'), onPress: () => navigation.navigate('Library') },
+    { icon: 'stats-chart-outline', label: t('gridGpa'), onPress: () => navigation.navigate('Journal') },
+    { icon: 'bus-outline', label: t('gridTransport'), onPress: () => navigation.navigate('Transport') },
+    { icon: 'restaurant-outline', label: t('gridFood'), onPress: () => navigation.navigate('ServiceDetails', { serviceId: 'food' }) },
+    { icon: 'bed-outline', label: t('gridDorm'), onPress: () => navigation.navigate('ServiceDetails', { serviceId: 'dorm' }) },
+    { icon: 'briefcase-outline', label: t('gridCareers'), onPress: () => navigation.navigate('Careers') },
+    { icon: 'sparkles-outline', label: t('gridAi'), onPress: () => navigation.navigate('Assistant') },
+    { icon: 'grid-outline', label: t('gridAll'), onPress: () => navigation.navigate('AllServices') },
+  ];
+
+  const campus: { image: typeof images.serviceInfo; title: string; text: string; onPress: () => void }[] = [
+    { image: images.serviceInfo, title: t('homeNewsTitle'), text: t('homeNewsText'), onPress: () => navigation.navigate('Info') },
+    { image: images.news2, title: t('homeEventsTitle'), text: t('homeEventsText'), onPress: () => navigation.navigate('EventRegistration') },
+    { image: images.serviceDorm, title: t('homeStudentsTitle'), text: t('homeStudentsText'), onPress: () => navigation.navigate('Students') },
+  ];
 
   return (
-    <ScreenContainer>
+    <View style={[styles.flex, { backgroundColor: colors.background }]}>
+      {/* Тёмно-синяя полоса с логотипом */}
+      <View style={[styles.bar, { paddingTop: insets.top + spacing.sm, backgroundColor: isDark ? brand.midnight : brand.navy }]}>
+        <LogoMark size={38} />
+        <View style={styles.flex}>
+          <Text style={styles.barTitle}>ALTushki</Text>
+          <Text style={styles.barSubtitle}>ALT UNIVERSITY</Text>
+        </View>
+        <Pressable onPress={() => navigation.navigate('Inbox')} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('msgTitle')} style={styles.bell}>
+          <Ionicons name="notifications-outline" size={24} color={brand.ivory} />
+          {unread > 0 ? <View style={styles.bellDot} /> : null}
+        </Pressable>
+      </View>
+
       <Animated.ScrollView
         contentContainerStyle={styles.scroll}
         scrollEventThrottle={16}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
       >
-        <View style={[styles.content, { maxWidth: MAX_CONTENT_WIDTH }]}>
-          {/* Шапка: логотип, приветствие, уведомления и фото профиля */}
-          <View style={styles.header}>
-            <LogoMark size={40} />
-            <View style={styles.headerText}>
-              <Text style={[type.caption, { color: colors.textSecondary }]} numberOfLines={1}>
-                {t(getGreetingKey(now))} · {formatToday(now, language)}
-              </Text>
-              <Text style={[styles.name, { color: headingColor }]} numberOfLines={1}>
-                {user ? `${user.firstName} ${user.lastName}` : 'ALTushki'}
+        <Animated.View style={[styles.content, appear]}>
+          {/* Приветствие студента */}
+          <View style={styles.greeting}>
+            <View style={styles.flex}>
+              <Text style={[styles.hello, { color: heading }]}>{t(getGreetingKey(now))},</Text>
+              <Text style={[styles.name, { color: heading }]} numberOfLines={1}>
+                {user ? `${user.firstName}!` : 'ALTushki'}
               </Text>
               {user ? (
-                <Text style={[type.caption, { color: colors.textMuted }]} numberOfLines={1}>
-                  {[user.faculty, t('courseN', { n: user.course })].filter(Boolean).join(' · ')}
+                <Text style={[type.caption, { color: colors.textSecondary }]} numberOfLines={1}>
+                  {[t('courseN', { n: user.course }), user.faculty].filter(Boolean).join(' · ')}
                 </Text>
               ) : null}
             </View>
-            {user ? <IconButton icon="notifications-outline" variant="glass" badge={unread} accessibilityLabel={t('msgTitle')} onPress={() => navigation.navigate('Messages')} /> : null}
             {user ? (
               <Pressable onPress={() => navigation.navigate('Profile')} accessibilityRole="button" accessibilityLabel={t('tabProfile')} style={[styles.avatarRing, { borderColor: colors.gold }]}>
-                <Avatar firstName={user.firstName} lastName={user.lastName} seed={user.id} size={40} photo={user.photo} />
+                <Avatar firstName={user.firstName} lastName={user.lastName} seed={user.id} size={58} photo={user.photo} />
               </Pressable>
             ) : null}
           </View>
 
-          {/* Баннер с фото Оксфорда: дневное в светлой теме, вечернее в тёмной */}
-          <View style={[styles.banner, { shadowColor: colors.shadow }]}>
-            <Animated.Image
-              source={isDark ? images.oxfordEvening : images.oxfordDay}
-              style={[styles.bannerPhoto, { transform: [{ translateY: photoShift }, { scale: 1.15 }] }]}
-              resizeMode="cover"
-              accessibilityIgnoresInvertColors
-            />
-            <LinearGradient colors={brand.photoShade} style={StyleSheet.absoluteFill} />
-            <View style={[styles.bannerFrame, { borderColor: 'rgba(212, 183, 124, 0.55)' }]} pointerEvents="none" />
-            <View style={styles.bannerText}>
-              <Text style={styles.bannerTitle}>ALTushki</Text>
-              <View style={styles.goldRule} />
-              <Text style={styles.bannerSlogan}>{SLOGAN}</Text>
-            </View>
-          </View>
+          <PhotoCarousel slides={slides} parallax={photoShift} />
 
           {nextBooking ? (
             <FormBanner
@@ -131,68 +133,48 @@ export default function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
             />
           ) : null}
 
-          {/* Самое нужное сверху, чтобы не прокручивать главную вниз */}
-          <View style={styles.quickRow}>
-            {[
-              { title: t('quickSchedule'), image: images.serviceCal, onPress: () => navigation.navigate('ServiceDetails', { serviceId: 'cal' }) },
-              { title: t('quickReading'), image: images.serviceLib, onPress: () => navigation.navigate('ServiceDetails', { serviceId: 'lib' }) },
-              { title: t('quickPlan'), image: images.news2, onPress: () => navigation.navigate('ServiceDetails', { serviceId: 'lib', tab: 'plan' }) },
-            ].map((item) => (
-              <Pressable key={item.title} onPress={item.onPress} accessibilityRole="button" accessibilityLabel={item.title} style={({ pressed }) => [styles.quickCard, pressed && styles.pressed]}>
-                <ImageBackground source={item.image} style={styles.quickImage} imageStyle={styles.quickRadius}>
-                  <LinearGradient colors={['rgba(0, 33, 71, 0.05)', 'rgba(0, 33, 71, 0.9)'] as const} style={[StyleSheet.absoluteFill, styles.quickRadius]} />
-                  <View style={styles.quickRule} />
-                  <Text style={styles.quickTitle}>{item.title}</Text>
-                </ImageBackground>
-              </Pressable>
+          {/* Основные сервисы: сетка 3 × 3 */}
+          <View style={styles.grid} onLayout={(event) => setGridWidth(event.nativeEvent.layout.width)}>
+            {grid.map((item) => (
+              <AcademicTile key={item.label} icon={item.icon} label={item.label} width={tileWidth} onPress={item.onPress} />
             ))}
           </View>
 
-          {/* Помощник ALT AI */}
-          <Pressable onPress={() => navigation.navigate('Assistant')} accessibilityRole="button" accessibilityLabel={t('aiTitle')} style={({ pressed }) => [styles.aiCard, pressed && styles.pressed]}>
-            <LinearGradient colors={['#0C2035', '#002147'] as const} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.aiInner}>
-              <View style={styles.aiIcon}>
-                <Ionicons name="sparkles-outline" size={22} color={brand.gold} />
-              </View>
+          {/* Быстрый доступ к студенческому билету */}
+          <Pressable onPress={() => navigation.navigate('StudentCard')} accessibilityRole="button" accessibilityLabel={t('cardTitle')} style={({ pressed }) => [styles.cardLink, pressed && styles.pressed]}>
+            <LinearGradient colors={[brand.deepNavy, brand.navy] as const} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cardLinkInner}>
+              <LogoMark size={46} />
               <View style={styles.flex}>
-                <Text style={styles.aiTitle}>{t('aiTitle')}</Text>
-                <Text style={styles.aiText} numberOfLines={2}>
-                  {t('homeAiText')}
+                <Text style={styles.cardLinkTitle}>{t('cardTitle')}</Text>
+                <Text style={styles.cardLinkText} numberOfLines={1}>
+                  {t('cardHomeText')}
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color={brand.gold} />
             </LinearGradient>
           </Pressable>
 
-          <SectionHeader
-            title={t('servicesTitle')}
-            right={
-              <>
-                <Chip label={`${t('filterAll')} ${HOME_SERVICES.length}`} selected={filter === 'all'} onPress={() => setFilter('all')} />
-                <Chip label={`${t('filterFavorites')} ${favorites.filter((id) => HOME_SERVICES.some((s) => s.id === id)).length}`} icon="star" selected={filter === 'favorites'} onPress={() => setFilter('favorites')} />
-              </>
-            }
-          />
-
-          {visibleServices.length > 0 ? (
-            <View style={styles.grid} onLayout={(event) => setGridWidth(event.nativeEvent.layout.width)}>
-              {visibleServices.map((service) => (
-                <ServiceCard
-                  key={service.id}
-                  service={service}
-                  width={cardWidth}
-                  isFavorite={isFavorite(service.id)}
-                  onPress={() => openService(service)}
-                  onToggleFavorite={() => toggleFavorite(service.id)}
-                />
-              ))}
-            </View>
-          ) : (
-            <EmptyState icon="star-outline" title={t('emptyFavTitle')} message={t('emptyFavText')} actionLabel={t('showAll')} onAction={() => setFilter('all')} />
-          )}
-        </View>
+          {/* Университетская жизнь */}
+          <SectionHeader title={t('homeCampusTitle')} />
+          <View style={styles.campusList}>
+            {campus.map((item) => (
+              <Pressable key={item.title} onPress={item.onPress} accessibilityRole="button" accessibilityLabel={item.title} style={({ pressed }) => [styles.campusRow, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && styles.pressed]}>
+                <ImageBackground source={item.image} style={styles.campusPhoto} imageStyle={styles.campusPhotoRadius} />
+                <View style={styles.flex}>
+                  <Text style={[styles.campusTitle, { color: colors.text }]} numberOfLines={2}>
+                    {item.title}
+                  </Text>
+                  <Text style={[type.caption, { color: colors.textSecondary }]} numberOfLines={2}>
+                    {item.text}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.gold} />
+              </Pressable>
+            ))}
+          </View>
+        </Animated.View>
       </Animated.ScrollView>
-    </ScreenContainer>
+    </View>
   );
 }
 
@@ -200,153 +182,131 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
   },
+  bar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: SCREEN_PADDING,
+    paddingBottom: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(212, 183, 124, 0.45)',
+  },
+  barTitle: {
+    fontFamily: fonts.serifBold,
+    fontSize: 22,
+    lineHeight: 24,
+    color: brand.ivory,
+  },
+  barSubtitle: {
+    fontFamily: fonts.semibold,
+    fontSize: 9,
+    letterSpacing: 3,
+    color: brand.gold,
+  },
+  bell: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bellDot: {
+    position: 'absolute',
+    top: 9,
+    right: 10,
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: '#B94A48',
+    borderWidth: 1.5,
+    borderColor: brand.navy,
+  },
   scroll: {
     paddingHorizontal: SCREEN_PADDING,
     paddingBottom: spacing.xxl,
   },
   content: {
     width: '100%',
+    maxWidth: MAX_CONTENT_WIDTH,
     alignSelf: 'center',
     gap: spacing.lg,
+    paddingTop: spacing.lg,
   },
-  header: {
+  greeting: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    paddingTop: spacing.md,
   },
-  headerText: {
-    flex: 1,
-    gap: 1,
+  hello: {
+    fontFamily: fonts.greeting,
+    fontSize: 22,
+    lineHeight: 28,
   },
   name: {
     fontFamily: fonts.greeting,
-    fontSize: 21,
-    lineHeight: 27,
+    fontSize: 30,
+    lineHeight: 36,
   },
   avatarRing: {
     borderWidth: 1.5,
-    borderRadius: 24,
-    padding: 2,
+    borderRadius: 34,
+    padding: 3,
   },
-  banner: {
-    height: BANNER_HEIGHT,
-    borderRadius: radius.lg,
-    overflow: 'hidden',
-    justifyContent: 'flex-end',
-    shadowOpacity: 0.18,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 4,
-  },
-  bannerPhoto: {
-    position: 'absolute',
-    top: -40,
-    left: 0,
-    right: 0,
-    height: BANNER_HEIGHT + 80,
-    width: '100%',
-  },
-  bannerFrame: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    right: 10,
-    bottom: 10,
-    borderWidth: 1,
-    borderRadius: radius.lg - 8,
-  },
-  bannerText: {
-    padding: spacing.xl,
-    gap: spacing.sm,
-  },
-  bannerTitle: {
-    fontFamily: fonts.serifBold,
-    fontSize: 38,
-    lineHeight: 42,
-    color: brand.ivory,
-  },
-  goldRule: {
-    width: 56,
-    height: 1,
-    backgroundColor: brand.gold,
-  },
-  bannerSlogan: {
-    fontFamily: fonts.serif,
-    fontSize: 19,
-    lineHeight: 24,
-    color: '#EDE3D2',
-  },
-  quickRow: {
+  grid: {
     flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  quickCard: {
-    flex: 1,
-    borderRadius: radius.md,
+    flexWrap: 'wrap',
+    gap: GRID_GAP,
   },
   pressed: {
     opacity: 0.9,
-    transform: [{ scale: 0.97 }],
+    transform: [{ scale: 0.98 }],
   },
-  quickImage: {
-    width: '100%',
-    height: 112,
-    justifyContent: 'flex-end',
-    padding: spacing.sm,
-    gap: 6,
-  },
-  quickRadius: {
-    borderRadius: radius.md,
-  },
-  quickRule: {
-    width: 18,
-    height: 1,
-    backgroundColor: brand.gold,
-  },
-  quickTitle: {
-    fontFamily: fonts.semibold,
-    fontSize: 13,
-    lineHeight: 16,
-    color: '#FFFFFF',
-  },
-  aiCard: {
+  cardLink: {
     borderRadius: radius.lg,
     overflow: 'hidden',
   },
-  aiInner: {
+  cardLinkInner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
     padding: spacing.lg,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(212, 183, 124, 0.45)',
+    borderColor: 'rgba(212, 183, 124, 0.5)',
   },
-  aiIcon: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    borderWidth: 1,
-    borderColor: brand.gold,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  aiTitle: {
+  cardLinkTitle: {
     fontFamily: fonts.card,
     fontSize: 17,
     lineHeight: 23,
     color: brand.ivory,
   },
-  aiText: {
+  cardLinkText: {
     fontFamily: fonts.regular,
     fontSize: 13,
     lineHeight: 18,
-    color: 'rgba(248, 243, 232, 0.8)',
+    color: 'rgba(248, 243, 232, 0.78)',
   },
-  grid: {
+  campusList: {
+    gap: spacing.sm,
+  },
+  campusRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: GRID_GAP,
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.sm,
+    paddingRight: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+  },
+  campusPhoto: {
+    width: 84,
+    height: 64,
+  },
+  campusPhotoRadius: {
+    borderRadius: radius.sm,
+  },
+  campusTitle: {
+    fontFamily: fonts.card,
+    fontSize: 15,
+    lineHeight: 20,
   },
 });
