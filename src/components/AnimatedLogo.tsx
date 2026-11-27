@@ -60,6 +60,15 @@ export default function AnimatedLogo({ size = 80, color = '#FFFFFF' }: Props) {
   );
 }
 
+/** Тот же значок логотипа без названия и анимации — для шапки главного экрана. */
+export function LogoMark({ size = 40 }: { size?: number }) {
+  return (
+    <View style={[styles.mark, { width: size, height: size, borderRadius: size * 0.32 }]} accessibilityRole="image" accessibilityLabel="ALTushki">
+      <Ionicons name="school" size={size * 0.48} color="#FFFFFF" />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   wrap: {
     alignItems: 'center',
@@ -68,7 +77,7 @@ const styles = StyleSheet.create({
   mark: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#002147',
+    backgroundColor: '#2F6BFF',
   },
   title: {
     fontFamily: fonts.regular,

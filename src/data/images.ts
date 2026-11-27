@@ -5,6 +5,10 @@
  */
 export const images = {
   heroEarth: require('../../assets/images/hero_earth.jpg'),
+  // Фото Оксфорда, которые прислал автор проекта: заставка, вход и баннер главной
+  oxfordSunset: require('../../assets/images/oxford_sunset.jpg'),
+  oxfordDay: require('../../assets/images/oxford_day.jpg'),
+  oxfordEvening: require('../../assets/images/oxford_evening.jpg'),
   serviceLib: require('../../assets/images/service_lib.jpg'),
   serviceCal: require('../../assets/images/service_cal.jpg'),
   serviceLms: require('../../assets/images/service_lms.jpg'),

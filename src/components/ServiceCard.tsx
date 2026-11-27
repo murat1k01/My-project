@@ -1,23 +1,27 @@
-import { ImageBackground, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Text } from './AppText';
-import { Feather, Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useI18n } from '../i18n/LanguageContext';
+import { useTheme } from '../theme/ThemeContext';
 import { radius, spacing } from '../theme/metrics';
 import { fonts } from '../theme/typography';
 import type { Service } from '../types/Service';
 
 type Props = {
   service: Service;
-  /** Ширина рассчитывается на главном экране под 2 или 3 колонки */
+  /** Ширина рассчитывается на главном экране под 3 или 4 колонки */
   width: number;
   isFavorite: boolean;
   onPress: () => void;
   onToggleFavorite: () => void;
 };
 
-/** Фото-карточка сервиса в стиле «Popular destination» из референса. */
+/**
+ * Плитка сервиса в стиле Oxford Academic Premium: кремовая карточка, тёмно-синяя иконка в золотом кольце.
+ * При нажатии плитка слегка уменьшается.
+ */
 export default function ServiceCard({ service, width, isFavorite, onPress, onToggleFavorite }: Props) {
+  const { colors, isDark } = useTheme();
   const { t, tr } = useI18n();
   const title = tr(service.title);
 
@@ -29,41 +33,29 @@ export default function ServiceCard({ service, width, isFavorite, onPress, onTog
         onPress={onPress}
         accessibilityRole="button"
         accessibilityLabel={`${title}. ${tr(service.description)}`}
-        style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+        style={({ pressed }) => [
+          styles.card,
+          { backgroundColor: colors.surface, borderColor: colors.border, shadowColor: colors.shadow },
+          pressed && styles.pressed,
+        ]}
       >
-        <ImageBackground source={service.image} style={[styles.image, { height: Math.max(190, width * 1.22) }]} imageStyle={styles.imageRadius}>
-          <LinearGradient
-            colors={['rgba(4, 6, 15, 0.05)', 'rgba(4, 6, 15, 0.35)', 'rgba(4, 6, 15, 0.92)'] as const}
-            style={[StyleSheet.absoluteFill, styles.imageRadius]}
-          />
-          <View style={styles.codeChip}>
-            <Ionicons name={service.icon} size={16} color="#FFFFFF" />
-          </View>
-          <View>
-            <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
-              {title}
-            </Text>
-            <View style={styles.bottom}>
-              <Text style={[styles.description, styles.texts]} numberOfLines={2}>
-                {tr(service.description)}
-              </Text>
-              <View style={styles.arrow}>
-                <Feather name="arrow-up-right" size={16} color="#0A0F24" />
-              </View>
-            </View>
-          </View>
-        </ImageBackground>
+        <View style={[styles.ring, { borderColor: colors.gold, backgroundColor: colors.primarySoft }]}>
+          <Ionicons name={service.icon} size={24} color={isDark ? colors.gold : colors.primary} />
+        </View>
+        <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
+          {title}
+        </Text>
       </Pressable>
 
       <Pressable
         onPress={onToggleFavorite}
-        hitSlop={6}
+        hitSlop={8}
         accessibilityRole="button"
         accessibilityLabel={isFavorite ? t('removeFavoriteA11y', { name: title }) : t('addFavoriteA11y', { name: title })}
         accessibilityState={{ selected: isFavorite }}
         style={({ pressed }) => [styles.favorite, pressed && styles.pressed]}
       >
-        <Ionicons name={isFavorite ? 'star' : 'star-outline'} size={18} color={isFavorite ? '#FBBF24' : '#FFFFFF'} />
+        <Ionicons name={isFavorite ? 'star' : 'star-outline'} size={15} color={isFavorite ? colors.gold : colors.textMuted} />
       </Pressable>
     </View>
   );
@@ -71,65 +63,44 @@ export default function ServiceCard({ service, width, isFavorite, onPress, onTog
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: radius.lg,
-    overflow: 'hidden',
+    minHeight: 118,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.md,
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 1,
   },
   pressed: {
     opacity: 0.9,
-    transform: [{ scale: 0.97 }],
+    transform: [{ scale: 0.96 }],
   },
-  image: {
-    width: '100%',
-    justifyContent: 'space-between',
-    padding: spacing.md,
-  },
-  imageRadius: {
-    borderRadius: radius.lg,
-  },
-  codeChip: {
-    alignSelf: 'flex-start',
-    padding: 8,
-    borderRadius: radius.pill,
-    backgroundColor: 'rgba(4, 6, 15, 0.55)',
-  },
-  bottom: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: spacing.sm,
-  },
-  texts: {
-    flex: 1,
-  },
-  title: {
-    fontFamily: fonts.medium,
-    fontSize: 16,
-    letterSpacing: -0.3,
-    color: '#FFFFFF',
-  },
-  description: {
-    marginTop: 2,
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    lineHeight: 16,
-    color: 'rgba(255, 255, 255, 0.78)',
-  },
-  arrow: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+  ring: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+  },
+  title: {
+    fontFamily: fonts.semibold,
+    fontSize: 13,
+    lineHeight: 17,
+    textAlign: 'center',
   },
   favorite: {
     position: 'absolute',
-    top: spacing.sm,
-    right: spacing.sm,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    top: 6,
+    right: 6,
+    width: 28,
+    height: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(4, 6, 15, 0.55)',
   },
 });

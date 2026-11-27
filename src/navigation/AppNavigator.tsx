@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { DarkTheme, DefaultTheme, NavigationContainer, Theme } from '@react-navigation/native';
@@ -68,7 +69,13 @@ function MainTabs() {
         tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: Math.min(11 * scale, 13) },
         tabBarIcon: ({ focused, color, size }) => {
           const [active, inactive] = TAB_ICONS[route.name];
-          return <Ionicons name={focused ? active : inactive} size={size} color={color} />;
+          // Активная вкладка отмечена тонкой золотой чертой над иконкой
+          return (
+            <View style={tabStyles.iconWrap}>
+              {focused ? <View style={[tabStyles.indicator, { backgroundColor: colors.gold }]} /> : null}
+              <Ionicons name={focused ? active : inactive} size={size} color={color} />
+            </View>
+          );
         },
       })}
     >
@@ -139,3 +146,17 @@ export default function AppNavigator() {
     </NavigationContainer>
   );
 }
+
+const tabStyles = StyleSheet.create({
+  iconWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  indicator: {
+    position: 'absolute',
+    top: -9,
+    width: 22,
+    height: 2,
+    borderRadius: 1,
+  },
+});

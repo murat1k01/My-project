@@ -1,6 +1,6 @@
 export type ThemeMode = 'light' | 'dark';
 
-/** Цвета в стиле Оксфорда: Oxford Blue, слоновая кость, камень и золото. */
+/** Дизайн-система Oxford Academic Premium: Oxford Navy, Royal Gold, Ivory Cream, Midnight, Academic Green, Burgundy. */
 export type ThemeColors = {
   background: string;
   /** Цвет свечения в верхней части экрана (градиент к background) */
@@ -33,66 +33,70 @@ export type ThemeColors = {
   warningSoft: string;
   tabBar: string;
   shadow: string;
+  /** Royal Gold: декоративные линии, активные элементы, достижения */
+  gold: string;
 };
 
 export const palettes: Record<ThemeMode, ThemeColors> = {
-  // Тёмная тема в стиле Оксфорда: глубокий тёмно-синий фон, золотые акценты, светлые кнопки цвета слоновой кости.
+  // Oxford Midnight: глубокий тёмно-синий фон, золотые акценты, тёплый белый текст.
   dark: {
-    background: '#001226',
-    glow: '#1F3B5B',
-    surface: '#0A2240',
-    surfaceAlt: '#13304F',
-    glass: 'rgba(248, 246, 239, 0.07)',
-    border: 'rgba(201, 179, 126, 0.24)',
-    text: '#F8F6EF',
-    textSecondary: '#D9D3C4',
-    textMuted: '#9BA6B5',
-    primary: '#C9B37E',
-    onPrimary: '#001A34',
-    primarySoft: 'rgba(201, 179, 126, 0.18)',
-    pill: '#F8F6EF',
-    onPill: '#002147',
-    round: '#C9B37E',
-    onRound: '#001A34',
-    cardStart: '#1F3B5B',
-    cardEnd: '#001A34',
-    danger: '#FF8A8A',
-    dangerSoft: 'rgba(255, 138, 138, 0.16)',
-    success: '#6FCF97',
-    successSoft: 'rgba(111, 207, 151, 0.16)',
-    warning: '#E8C66A',
-    warningSoft: 'rgba(232, 198, 106, 0.14)',
-    tabBar: '#000E1E',
+    background: '#0B1828',
+    glow: '#1A3557',
+    surface: '#12233A',
+    surfaceAlt: '#18212C',
+    glass: 'rgba(245, 240, 230, 0.07)',
+    border: 'rgba(197, 164, 109, 0.24)',
+    text: '#F5F0E6',
+    textSecondary: '#D8CFBF',
+    textMuted: '#9AA3AF',
+    primary: '#C5A46D',
+    onPrimary: '#0C233F',
+    primarySoft: 'rgba(197, 164, 109, 0.18)',
+    pill: '#F5F0E6',
+    onPill: '#0C233F',
+    round: '#C5A46D',
+    onRound: '#0C233F',
+    cardStart: '#1A3557',
+    cardEnd: '#0C233F',
+    danger: '#E08A92',
+    dangerSoft: 'rgba(224, 138, 146, 0.16)',
+    success: '#7FB58F',
+    successSoft: 'rgba(127, 181, 143, 0.16)',
+    warning: '#E3C27E',
+    warningSoft: 'rgba(227, 194, 126, 0.14)',
+    tabBar: '#081322',
     shadow: '#000000',
+    gold: '#C5A46D',
   },
-  // Светлая тема в стиле Оксфорда: фон цвета слоновой кости, камень (stone), кнопки Oxford Blue #002147 и золото.
+  // Oxford Classic: фон Ivory Cream, белые карточки, кнопки Oxford Navy, золотые акценты.
   light: {
-    background: '#F8F6EF',
-    glow: '#E5DFD1',
+    background: '#F5F0E6',
+    glow: '#E5D9C5',
     surface: '#FFFFFF',
-    surfaceAlt: '#EFEADF',
-    glass: 'rgba(255, 255, 255, 0.84)',
-    border: 'rgba(0, 33, 71, 0.12)',
-    text: '#0E1A2B',
-    textSecondary: '#3E4A5C',
-    textMuted: '#6E7787',
-    primary: '#002147',
+    surfaceAlt: '#EDE5D6',
+    glass: 'rgba(255, 255, 255, 0.86)',
+    border: 'rgba(12, 35, 63, 0.12)',
+    text: '#18212C',
+    textSecondary: '#4B4740',
+    textMuted: '#776F63',
+    primary: '#0C233F',
     onPrimary: '#FFFFFF',
-    primarySoft: 'rgba(0, 33, 71, 0.08)',
+    primarySoft: 'rgba(12, 35, 63, 0.08)',
     pill: '#FFFFFF',
-    onPill: '#002147',
-    round: '#002147',
+    onPill: '#0C233F',
+    round: '#0C233F',
     onRound: '#FFFFFF',
-    cardStart: '#1F3B5B',
-    cardEnd: '#001A34',
-    danger: '#B3261E',
-    dangerSoft: '#F8E4E1',
-    success: '#2E7D4F',
-    successSoft: '#E3F1E8',
-    warning: '#8A6A1E',
-    warningSoft: '#F5EDD6',
-    tabBar: '#FFFDF8',
-    shadow: '#001A34',
+    cardStart: '#1A3557',
+    cardEnd: '#0C233F',
+    danger: '#722F37',
+    dangerSoft: '#F3E3E3',
+    success: '#426B50',
+    successSoft: '#E2ECE4',
+    warning: '#8A6A2E',
+    warningSoft: '#F3EAD7',
+    tabBar: '#FFFCF6',
+    shadow: '#0C233F',
+    gold: '#C5A46D',
   },
 };
 

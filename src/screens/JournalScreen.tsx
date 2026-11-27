@@ -53,9 +53,14 @@ export default function JournalScreen() {
 
       <LinearGradient colors={[colors.cardStart, colors.cardEnd] as const} style={styles.summary}>
         <Text style={styles.summaryLabel}>{t('journalGpa')}</Text>
-        <View style={styles.gpaRow}>
-          <Text style={styles.gpaValue}>{gpa.toFixed(2)}</Text>
-          <Text style={styles.gpaScale}>/ 4.00</Text>
+        {/* Число GPA в золотом «венке» из двух веточек */}
+        <View style={styles.laurelRow}>
+          <Ionicons name="leaf-outline" size={30} color={colors.gold} style={styles.laurelLeft} />
+          <View style={styles.gpaRow}>
+            <Text style={styles.gpaValue}>{gpa.toFixed(2)}</Text>
+            <Text style={styles.gpaScale}>/ 4.00</Text>
+          </View>
+          <Ionicons name="leaf-outline" size={30} color={colors.gold} style={styles.laurelRight} />
         </View>
         <View style={styles.summaryStats}>
           {summary.map((item) => (
@@ -205,6 +210,20 @@ const styles = StyleSheet.create({
   summary: {
     borderRadius: radius.lg,
     padding: spacing.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(197, 164, 109, 0.55)',
+  },
+  laurelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.md,
+  },
+  laurelLeft: {
+    transform: [{ rotate: '-35deg' }, { scaleX: -1 }],
+  },
+  laurelRight: {
+    transform: [{ rotate: '35deg' }],
   },
   summaryLabel: {
     fontFamily: fonts.semibold,
@@ -217,9 +236,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   gpaValue: {
-    fontFamily: fonts.light,
-    fontSize: 56,
-    letterSpacing: -2,
+    fontFamily: fonts.serifBold,
+    fontSize: 58,
     color: '#FFFFFF',
   },
   gpaScale: {

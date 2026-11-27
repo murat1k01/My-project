@@ -34,3 +34,7 @@ Edited Version by: Arad, Public domain, https://commons.wikimedia.org/wiki/File:
 - food_ayran.jpg: Naneli ayran - Dara.jpg, Hamdigumus, CC0, https://commons.wikimedia.org/wiki/File:Naneli_ayran_-_Dara.jpg
 - food_milkshake.jpg: Strawberry milk shake in cola glass.jpg, Punker1999, CC0, https://commons.wikimedia.org/wiki/File:Strawberry_milk_shake_in_cola_glass.jpg
 - food_icedtea.jpg: Pitcher and glass of iced tea - Evan Swigart.jpg, Evan Swigart from Chicago, USA, CC BY 2.0, https://commons.wikimedia.org/wiki/File:Pitcher_and_glass_of_iced_tea_-_Evan_Swigart.jpg
+
+# Фото Оксфорда от автора проекта
+
+oxford_sunset.jpg (заставка и вход), oxford_day.jpg (баннер главной, светлая тема), oxford_evening.jpg (баннер главной, тёмная тема) — фото, которые прислал автор проекта. Источник и лицензия этих фото не указаны: перед публикацией приложения проверьте право на их использование.
